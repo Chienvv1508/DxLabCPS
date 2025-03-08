@@ -20,6 +20,7 @@ namespace DxLabCoworkingSpace
         public void Add(User entity)
         {
            _unitOfWork.UserRepository.Add(entity);
+           _unitOfWork.Commit();
         }
 
         public User Get(Expression<Func<User, bool>> expression)
