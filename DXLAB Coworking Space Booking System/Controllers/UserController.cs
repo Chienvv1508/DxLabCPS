@@ -27,29 +27,32 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPost]
         public IActionResult VerifyAccount([FromBody] User userinfo)
         {
-            if (!userinfo.Email.EndsWith("@fpt.edu.vn"))
-            {
-                return BadRequest(new { message = "Email phải thuộc miền @fpt.edu.vn" });
-            }
-
-
+            if(!ModelState.IsValid)
+                return BadRequest(ModelState);
             var user = _userService.Get(x => x.Email == userinfo.Email);
-
-            if (user == null)
-            {
-                user = new User
+           
+                if (user == null)
                 {
-                    Email = userinfo.Email,
-                    WalletAddress = userinfo.WalletAddress,
-                    RoleId = 3
-                };
+                    user = new User
+                    {
+                        Email = userinfo.Email,
+                        WalletAddress = userinfo.WalletAddress,
+                        RoleId = 3,
+                        FullName = userinfo.FullName
+                        ,
+                        Status = true
+                    };
 
-                _userService.Add(user);
-            }
+                    _userService.Add(user);
+                }
 
+
+                var token = GenerateJwtToken(user);
+                return Ok(token);
+          
+           
+               
             
-            var token = GenerateJwtToken(user);
-            return Ok(new { token, user });
 
         }
 
