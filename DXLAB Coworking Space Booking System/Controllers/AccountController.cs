@@ -68,10 +68,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 Email = worksheet.Cells[row, 1].Value?.ToString(),
                                 FullName = worksheet.Cells[row, 2].Value?.ToString(),
                                 RoleId = role.RoleId,
-                                Avatar = worksheet.Cells[row, 4].Value?.ToString(),
-                                WalletAddress = worksheet.Cells[row, 5].Value?.ToString(),
-                                Status = bool.TryParse(worksheet.Cells[row, 6].Value?.ToString(), out bool status) ? status : true,
-                                AccessToken = Guid.NewGuid().ToString()
+                                Status = bool.TryParse(worksheet.Cells[row, 4   ].Value?.ToString(), out bool status) ? status : true,
                             });
                         }
                     }
@@ -187,8 +184,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if ((accountDto.Email != existingUser.Email && !string.IsNullOrEmpty(accountDto.Email)) ||
                     (accountDto.FullName != existingUser.FullName && !string.IsNullOrEmpty(accountDto.FullName)) ||
-                    (accountDto.Avatar != existingUser.Avatar && !string.IsNullOrEmpty(accountDto.Avatar)) ||
-                    (accountDto.WalletAddress != existingUser.WalletAddress && !string.IsNullOrEmpty(accountDto.WalletAddress)) ||
                     (accountDto.Status != existingUser.Status))
                 {
                     return BadRequest(new { Message = "Chỉ có RoleName mới được cập nhật!" });

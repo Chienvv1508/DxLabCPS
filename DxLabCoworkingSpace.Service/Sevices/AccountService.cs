@@ -69,8 +69,6 @@ namespace DxLabCoworkingSpace.Service.Sevices
                     Email = user.Email,
                     FullName = user.FullName,
                     RoleName = role?.RoleName ?? string.Empty,
-                    Avatar = user.Avatar,
-                    WalletAddress = user.WalletAddress,
                     Status = user.Status
                 };
 
@@ -93,8 +91,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
                 }
 
                 user.Status = true;
-                user.AccessToken = Guid.NewGuid().ToString();
-                _unitOfWork.UserRepository.Add(user); 
+                await _unitOfWork.UserRepository.Add(user); 
             }
 
             if (validationErrors.Any())

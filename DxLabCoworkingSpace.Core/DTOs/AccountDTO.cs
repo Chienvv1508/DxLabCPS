@@ -22,8 +22,6 @@ namespace DxLabCoworkingSpace
         [Required(ErrorMessage = "FullName không được để trống.")]
         [MinLength(5, ErrorMessage = "FullName phải có ít nhất 5 ký tự.")]
         public string FullName { get; set; } = null!;
-        public string? Avatar { get; set; }
-        public string? WalletAddress { get; set; }
         public bool Status { get; set; }
     }
 }
