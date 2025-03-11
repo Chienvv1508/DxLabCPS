@@ -1,11 +1,16 @@
 ﻿using DxLabCoworkingSpace;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
+
+
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -17,11 +22,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     {
         private readonly IConfiguration _config;
         private IUserService _userService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public UserController(IConfiguration config, IUserService userService)
+        public UserController(IConfiguration config, IUserService userService, IHttpClientFactory httpClientFactory)
         {
             _config = config;
             _userService = userService;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpPost]
@@ -30,6 +37,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);
             var user = _userService.Get(x => x.Email == userinfo.Email);
+            
            
                 if (user == null)
                 {
@@ -49,12 +57,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 var token = GenerateJwtToken(user);
                 return Ok(token);
-          
-           
-               
-            
 
         }
+
+  
 
         private string GenerateJwtToken(User user)
         {
@@ -76,5 +82,47 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        [HttpPost]
+        [Route("api/auth")]
+        public async Task<IActionResult> Auth([FromBody] AuthPayload payload)
+        {
+            try
+            {
+                var token = payload.Payload;
+                var validationSettings = new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { "399e21caec21e6a96434eb49a0da5d13" } 
+                };
+                var payloadData = await GoogleJsonWebSignature.ValidateAsync(token, validationSettings);
+                var email = payloadData.Email;
+                if (email.EndsWith("@fpt.edu.vn"))
+                {
+
+                    var user = new User()
+                    {
+                        Email = email
+                    };
+                    return Ok(GenerateJwtToken(user));
+                }
+                else
+                {
+                    
+                    return Unauthorized();
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+    }
+
+   
+
+    public class AuthPayload
+    {
+        public string Payload { get; set; }
     }
 }
