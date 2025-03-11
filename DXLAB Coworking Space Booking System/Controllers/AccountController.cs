@@ -65,8 +65,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                             users.Add(new User
                             {
-                                Email = worksheet.Cells[row, 1].Value?.ToString(),
-                                FullName = worksheet.Cells[row, 2].Value?.ToString(),
+                                Email = worksheet.Cells[row, 1].Value?.ToString() ?? "",
+                                FullName = worksheet.Cells[row, 2].Value?.ToString() ?? "",
                                 RoleId = role.RoleId,
                                 Status = bool.TryParse(worksheet.Cells[row, 4   ].Value?.ToString(), out bool status) ? status : true,
                             });
