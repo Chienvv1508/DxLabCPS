@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DXLAB_Coworking_Space_Booking_System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,35 +14,37 @@ namespace DxLabCoworkingSpace
 
         public RoleService(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork;   
         }
 
-        public void Add(Role entity)
+        async Task IGenericService<Role>.Add(Role entity)
         {
             throw new NotImplementedException();
         }
 
+        IEnumerable<Role> IGenericService<Role>.GetAll()
+        {
+            return _unitOfWork.RoleRepository.GetAll(r => r.RoleId == 2 || r.RoleId ==3);
+        }
+
+        Role IGenericService<Role>.GetById(int id)
+        {
+            return _unitOfWork.RoleRepository.GetById(id);
+        }
+
+        async Task IGenericService<Role>.Update(Role entity)
+        {
+            throw new NotImplementedException();
+        }
         public Role Get(Expression<Func<Role, bool>> expression)
         {
-            return _unitOfWork.RoleRepository.Get(expression);
+            throw new NotImplementedException();
         }
-
-        public IEnumerable<Role> GetAll()
-        {
-            return _unitOfWork.RoleRepository.GetAll();
-        }
-
         public IEnumerable<Role> GetAll(Expression<Func<Role, bool>> expression)
         {
             throw new NotImplementedException();
         }
-
-        public void Remove(Role entity)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Update(Role entity)
+        async Task IGenericService<Role>.Delete(int id)
         {
             throw new NotImplementedException();
         }

@@ -1,4 +1,5 @@
-﻿using DxLabCoworkingSpace.Infrastructure.Data;
+﻿using DXLAB_Coworking_Space_Booking_System;
+using DxLabCoworkingSpace;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -11,16 +12,17 @@ namespace DxLabCoworkingSpace
     public class UnitOfWork : IUnitOfWork
     {
         private readonly DxLabCoworkingSpaceContext _dbContext;
-        private IGenericeRepository<Role> _roleRepository;
-        private IGenericeRepository<User> _userRepository;
-
-        public UnitOfWork(DxLabCoworkingSpaceContext dbContext)
+        private IGenericRepository<Role> _roleRepository;
+        private IGenericRepository<Slot> _slotRepository;
+        private IGenericRepository<User> _userRepository;
+        public UnitOfWork(DxLabCoworkingSpaceContext dbContext) 
         {
             _dbContext = dbContext;
         }
-        public IGenericeRepository<Role> RoleRepository => _roleRepository ?? new GenericRepository<Role>(_dbContext);
-        public IGenericeRepository<User> UserRepository => _userRepository ?? new GenericRepository<User>(_dbContext);
-
+        public IGenericRepository<Role> RoleRepository => _roleRepository ?? new GenericRepository<Role>(_dbContext);
+        public IGenericRepository<Slot> SlotRepository => _slotRepository ?? new GenericRepository<Slot>(_dbContext);
+        public IGenericRepository<User> UserRepository => _userRepository ?? new GenericRepository<User>(_dbContext);
+        public DbContext Context => _dbContext;
         public void Commit()
         {
             _dbContext.SaveChanges();
@@ -32,7 +34,7 @@ namespace DxLabCoworkingSpace
         }
 
         public void Rollback()
-        {
+        {                                               
             _dbContext.Dispose();
         }
 

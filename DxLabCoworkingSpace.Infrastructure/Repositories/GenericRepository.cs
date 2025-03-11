@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public class GenericRepository<T> : IGenericeRepository<T> where T : class
+    public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         protected readonly DbContext _dbContext;
         protected readonly DbSet<T> _entitySet;
@@ -18,11 +18,6 @@ namespace DxLabCoworkingSpace
             _dbContext = context;
             _entitySet = _dbContext.Set<T>();
         }
-        public void Add(T entity)
-        {
-            _dbContext.Add(entity);
-        }
-
         public T Get(Expression<Func<T, bool>> expression)
         {
             return _entitySet.FirstOrDefault(expression);
@@ -37,15 +32,30 @@ namespace DxLabCoworkingSpace
         {
             return _entitySet.Where(expression).AsEnumerable();
         }
-
-        public void Remove(T entity)
+        public T GetById(int id)
         {
-            _dbContext.Remove(entity);
+            return _entitySet.Find(id);
+        }
+        public async Task Add(T entity)
+        {
+            _entitySet.Add(entity);
+            await _dbContext.SaveChangesAsync();
         }
 
-        public void Update(T entity)
+        public async Task Update(T entity)
         {
-            _dbContext.Update(entity);
+            _entitySet.Update(entity);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task Delete(int id)
+        {
+            var entity = await _entitySet.FindAsync(id);
+            if (entity != null)
+            {
+                _entitySet.Remove(entity);
+                await _dbContext.SaveChangesAsync();
+            }
         }
     }
 }

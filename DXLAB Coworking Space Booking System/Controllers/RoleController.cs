@@ -2,6 +2,7 @@
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -17,13 +18,27 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _roleSevice = roleSevice;
             _mapper = mapper;
         }
-        [HttpGet]
-        public IActionResult Index()
-        {
-           var roles = _roleSevice.GetAll();
 
-            var roleDTOs = _mapper.Map<List<RoleDto>>(roles);
+        // Get All Student and Staff Role
+        [HttpGet("GetRoleByAdmin")]
+        public IActionResult GetAllRole()
+        {
+            var roles = _roleSevice.GetAll();
+            var roleDTOs = _mapper.Map<List<RoleDTO>>(roles);
             return Ok(roleDTOs);
+        }
+
+        //Get Role By Id
+        [HttpGet("{id}")]
+        public IActionResult GetRoleById(int id)
+        {
+            var role = _roleSevice.GetById(id);
+            if (role == null)
+            {
+                return NotFound($"Role với id: {id} không tìm thấy!");
+            }
+            var roleDTO = _mapper.Map<RoleDTO>(role);
+            return Ok(roleDTO);
         }
     }
 }

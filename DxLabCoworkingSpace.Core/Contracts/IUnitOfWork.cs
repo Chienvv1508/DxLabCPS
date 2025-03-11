@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DxLabCoworkingSpace;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +10,10 @@ namespace DxLabCoworkingSpace
 {
     public interface IUnitOfWork
     {
-
-        IGenericeRepository<Role> RoleRepository { get; }
-        IGenericeRepository<User> UserRepository { get; }
-
+        IGenericRepository<Role> RoleRepository { get; }
+        IGenericRepository<Slot> SlotRepository { get; }
+        IGenericRepository<User> UserRepository { get; }
+        DbContext Context { get; }
         void Commit();
         void Rollback();
         Task CommitAsync();
