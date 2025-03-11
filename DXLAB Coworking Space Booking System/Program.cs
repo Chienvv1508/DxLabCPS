@@ -1,22 +1,22 @@
 using DXLAB_Coworking_Space_Booking_System;
 using DxLabCoworkingSpace;
-using DxLabCoworkingSpace.Infrastructure.Data;
+using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var key = builder.Configuration.GetSection("Jwt")["key"];
 var issuer = builder.Configuration.GetSection("Jwt")["Issuer"];
 var audience = builder.Configuration.GetSection("Jwt")["Audience"];
@@ -32,24 +32,38 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = issuer,
             ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            ClockSkew = TimeSpan.Zero
         };
     });
 
 builder.Services.AddAuthorization();
-
-//Dependency Injection LibraryDbContext 
+//Dependency Injection LibraryDbContext
 builder.Services.AddDbContext<DxLabCoworkingSpaceContext>(options =>
 {
     options.UseSqlServer(connectionString);
 });
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-//DI AuthorService
 
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IRoleSevice, RoleService>();
+builder.Services.AddScoped<ISlotService, SlotService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
-builder.Services.AddCors();
+
+// ✅ Cập nhật CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173") // Chỉ định frontend của bạn
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials(); // Cho phép gửi token/cookie
+        });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -61,7 +75,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowFrontend");
+
 app.UseAuthentication();
+
 app.UseAuthorization();
 app.UseCors(builder =>
 {
@@ -72,5 +89,4 @@ app.UseCors(builder =>
 });
 
 app.MapControllers();
-
 app.Run();

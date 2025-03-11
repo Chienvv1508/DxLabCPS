@@ -1,4 +1,4 @@
-﻿using DxLabCoworkingSpace;
+﻿using DXLAB_Coworking_Space_Booking_System;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpace
+namespace DxLabCoworkingSpace.Service.Sevices
 {
     public class UserService : IUserService
     {
@@ -17,15 +17,15 @@ namespace DxLabCoworkingSpace
             _unitOfWork = unitOfWork;
         }
 
-        public void Add(User entity)
+        public async Task Add(User entity)
         {
-           _unitOfWork.UserRepository.Add(entity);
-           _unitOfWork.Commit();
+            await _unitOfWork.UserRepository.Add(entity);
+            _unitOfWork.Commit();
         }
 
         public User Get(Expression<Func<User, bool>> expression)
         {
-           return _unitOfWork.UserRepository.Get(expression);
+            return _unitOfWork.UserRepository.Get(expression);
         }
 
         public IEnumerable<User> GetAll()
@@ -37,13 +37,16 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
+        User IGenericService<User>.GetById(int id)
+        {
+            return _unitOfWork.UserRepository.GetById(id);
+        }
 
-        public void Remove(User entity)
+        public async Task Update(User entity)
         {
             throw new NotImplementedException();
         }
-
-        public void Update(User entity)
+        async Task IGenericService<User>.Delete(int id)
         {
             throw new NotImplementedException();
         }
