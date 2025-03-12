@@ -39,10 +39,13 @@ namespace DxLabCoworkingSpace.Service.Sevices
                 throw new ArgumentException("Danh sách người dùng không được rỗng hoặc null");
             }
 
-            var existingEmails = _unitOfWork.UserRepository.GetAll().Select(u => u.Email).ToList();
-            var validationErrors = new List<string>();
+            var existingEmails = _unitOfWork.UserRepository.GetAll()
+                                 .Select(u => u.Email.Trim().ToLower())
+                                 .ToHashSet(); // Dùng HashSet để kiểm tra nhanh hơn
 
-            var emailsInFile = users.Select(u => u.Email).ToList();
+            var emailsInFile = users.Select(u => u.Email.Trim().ToLower()).ToList();
+
+            // Kiểm tra email bị trùng trong file Excel
             var duplicateEmailsInFile = emailsInFile.GroupBy(e => e)
                                                    .Where(g => g.Count() > 1)
                                                    .Select(g => g.Key)
@@ -50,11 +53,24 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
             if (duplicateEmailsInFile.Any())
             {
-                throw new InvalidOperationException($"Email bị trùng: {string.Join(", ", duplicateEmailsInFile)}.");
+                throw new InvalidOperationException($"Email bị trùng trong file: {string.Join(", ", duplicateEmailsInFile)}.");
             }
 
+            // Kiểm tra email đã tồn tại trong database trước khi thêm bất kỳ dữ liệu nào
+            var duplicateEmailsInDB = emailsInFile.Where(e => existingEmails.Contains(e)).ToList();
+            if (duplicateEmailsInDB.Any())
+            {
+                throw new InvalidOperationException($"Email đã tồn tại trong database: {string.Join(", ", duplicateEmailsInDB)}.");
+            }
+
+            var validationErrors = new List<string>();
+
             var roleIds = users.Where(u => u.RoleId.HasValue).Select(u => u.RoleId.Value).Distinct().ToList();
-            var roles = _unitOfWork.RoleRepository.GetAll().Where(r => roleIds.Contains(r.RoleId)).ToDictionary(r => r.RoleId, r => r);
+            var roles = _unitOfWork.RoleRepository.GetAll()
+                         .Where(r => roleIds.Contains(r.RoleId))
+                         .ToDictionary(r => r.RoleId, r => r);
+
+            var newUsers = new List<User>();
 
             foreach (var user in users)
             {
@@ -66,7 +82,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
                 var dto = new AccountDTO
                 {
-                    Email = user.Email,
+                    Email = user.Email.Trim().ToLower(),
                     FullName = user.FullName,
                     RoleName = role?.RoleName ?? string.Empty,
                     Status = user.Status
@@ -74,24 +90,21 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
                 var validationContext = new ValidationContext(dto);
                 var validationResults = new List<ValidationResult>();
+
                 if (!Validator.TryValidateObject(dto, validationContext, validationResults, true))
                 {
                     validationErrors.AddRange(validationResults.Select(r => $"{r.ErrorMessage} (Email: {user.Email})"));
                     continue;
                 }
 
-                if (existingEmails.Contains(user.Email))
-                {
-                    throw new InvalidOperationException($"Email đã tồn tại trong database");
-                }
-
                 if (role == null)
                 {
-                    throw new InvalidOperationException($"RoleName không phải là Student hay Staff. Vui lòng sửa lại!");
+                    validationErrors.Add($"RoleName không phải là Student hay Staff. Vui lòng sửa lại! (Email: {user.Email})");
+                    continue;
                 }
 
                 user.Status = true;
-                await _unitOfWork.UserRepository.Add(user); 
+                newUsers.Add(user);
             }
 
             if (validationErrors.Any())
@@ -99,8 +112,15 @@ namespace DxLabCoworkingSpace.Service.Sevices
                 throw new InvalidOperationException(string.Join(" ", validationErrors));
             }
 
+            // Nếu không có lỗi nào, thêm tất cả vào database cùng một lúc
+            foreach (var newUser in newUsers)
+            {
+                await _unitOfWork.UserRepository.Add(newUser);
+            }
+
             await _unitOfWork.CommitAsync();
         }
+
 
         public IEnumerable<User> GetUsersByRoleName(string roleName)
         {
