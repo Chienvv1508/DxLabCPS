@@ -118,9 +118,10 @@ namespace DxLabCoworkingSpace.Service.Sevices
             throw new NotImplementedException();
         }
 
+        // get all list theo status và role name(Student, Staff)
         IEnumerable<User> IGenericService<User>.GetAll()
         {
-            return GetAllWithInclude(u => u.Role).Where(u => u.Status);
+            return GetAllWithInclude(u => u.Role).Where(u => u.Status && u.RoleId == 2 || u.RoleId == 3);
         }
 
         public User Get(Expression<Func<User, bool>> expression)

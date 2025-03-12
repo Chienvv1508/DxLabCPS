@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
+using NBitcoin;
+using NBitcoin.Protocol;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -160,72 +162,59 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
         }
 
+        public class UpdateRoleRequest
+        {
+            public string RoleName { get; set; } = null!;
+        }
         // Update Account's Role 
         [HttpPut("{id}/role")]
-        public async Task<IActionResult> UpdateAccountRole(int id, [FromBody] AccountDTO accountDto)
+        public async Task<IActionResult> UpdateAccountRole(int id, [FromBody] UpdateRoleRequest request)
         {
             try
             {
-                if (accountDto == null)
+                if(request == null || string.IsNullOrEmpty(request.RoleName))
                 {
-                    return BadRequest(new { Message = "Dữ liệu người dùng là bắt buộc!" });
-                }
-
-                if (accountDto.UserId != id)
-                {
-                    return BadRequest(new { Message = "UserId không khớp với ID cần cập nhật!" });
+                    return BadRequest(new { Message = "RoleName là bắt buộc và không để trống!"});
                 }
 
                 var existingUser = _accountService.GetById(id);
                 if (existingUser == null)
                 {
-                    return NotFound(new { Message = $"Người dùng với ID: {id} không tìm thấy!" });
+                    return NotFound(new {Message = $"Người dùng với ID: {id} không tìm thấy!"});
                 }
 
-                if ((accountDto.Email != existingUser.Email && !string.IsNullOrEmpty(accountDto.Email)) ||
-                    (accountDto.FullName != existingUser.FullName && !string.IsNullOrEmpty(accountDto.FullName)) ||
-                    (accountDto.Status != existingUser.Status))
+                var validRole = new[] { "Student" , "Staff" };
+                if (!validRole.Contains(request.RoleName))
                 {
-                    return BadRequest(new { Message = "Chỉ có RoleName mới được cập nhật!" });
+                    return BadRequest(new { Message = "RoleName phải là 'Student' hoặc 'Staff'"});
                 }
 
-                if (!string.IsNullOrEmpty(accountDto.RoleName))
+                var role = _unitOfWork.RoleRepository.GetAll().FirstOrDefault(r => r.RoleName == request.RoleName);
+                if(role == null)
                 {
-                    var validRoles = new[] { "Student", "Staff" };
-                    if (!validRoles.Contains(accountDto.RoleName))
-                    {
-                        return BadRequest(new { Message = "RoleName phải là 'Student' hoặc 'Staff'!" });
-                    }
-
-                    var role = _unitOfWork.RoleRepository.GetAll()
-                        .FirstOrDefault(r => r.RoleName == accountDto.RoleName);
-                    if (role == null)
-                    {
-                        return BadRequest(new { Message = $"Role với tên: {accountDto.RoleName} không tìm thấy!" });
-                    }
-
-                    existingUser.RoleId = role.RoleId;
-                    existingUser.Role = role; 
-                    await _accountService.Update(existingUser); 
-
-                    var updatedUser = _accountService.GetById(id); 
-                    var updatedDto = _mapper.Map<AccountDTO>(updatedUser);
-                    return Ok(new
-                    {
-                        Message = "Role của người dùng được cập nhật!",
-                        Account = updatedDto
-                    });
+                    return BadRequest(new { Message = $"Role với tên: {request.RoleName} không tìm thấy!"});
                 }
+                existingUser.RoleId = role.RoleId;
+                existingUser.Role = role;
+                await _accountService.Update(existingUser);
 
-                return BadRequest(new { Message = "RoleName phải được nhập để cập nhật!" });
+                var updatedUser = _accountService.GetById(id);
+                var updatedDTO = _mapper.Map<AccountDTO>(updatedUser);
+                return Ok(new
+                {
+                    Message = "Role của người dùng đã được cập nhật thành công!",
+                    Account = updatedDTO
+                });
             }
+
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { Message = ex.Message });
             }
+
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = $"Lỗi khi cập nhật role của người dùng: {ex.Message}" });
+                return StatusCode(500, new { Message = $"Lỗi khi cập nhật người dùng: {ex.Message}" });
             }
         }
 
