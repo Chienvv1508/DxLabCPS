@@ -58,15 +58,15 @@ namespace DxLabCoworkingSpace.Service.Sevices
         }
 
         //Thêm nhiều slot vào database
-        public void AddMany(List<Slot> slots)
+        public async Task AddMany(List<Slot> slots)
         {
             try
             {
                 foreach (var slot in slots)
                 {
-                    _unitOfWork.SlotRepository.Add(slot);
+                    await _unitOfWork.SlotRepository.Add(slot);
                 }
-                _unitOfWork.Commit();
+                await _unitOfWork.CommitAsync();
             }
             catch (Exception ex)
             {

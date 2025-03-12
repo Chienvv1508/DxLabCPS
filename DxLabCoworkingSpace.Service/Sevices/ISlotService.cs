@@ -10,6 +10,6 @@ namespace DxLabCoworkingSpace.Service.Sevices
     public interface ISlotService : IGenericService<Slot>
     {
         List<Slot> GenerateSlots(TimeSpan startTime, TimeSpan endTime, int? breakTime = 10); // Genarate slot
-        void AddMany(List<Slot> slots); // Add many slot 
+        Task AddMany(List<Slot> slots); // Add many slot 
     }
 }
