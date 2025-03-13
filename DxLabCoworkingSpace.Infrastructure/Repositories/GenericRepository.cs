@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public class GenericRepository<T> : IGenericeRepository<T> where T : class
+    public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         protected readonly DbContext _dbContext;
         protected readonly DbSet<T> _entitySet;
@@ -18,34 +18,44 @@ namespace DxLabCoworkingSpace
             _dbContext = context;
             _entitySet = _dbContext.Set<T>();
         }
-        public void Add(T entity)
+        public async Task<T> Get(Expression<Func<T, bool>> expression)
         {
-            _dbContext.Add(entity);
+            return await _entitySet.FirstOrDefaultAsync(expression);
         }
 
-        public T Get(Expression<Func<T, bool>> expression)
+        public async Task<IEnumerable<T>> GetAll()
         {
-            return _entitySet.FirstOrDefault(expression);
+            return await _entitySet.ToListAsync();
         }
 
-        public IEnumerable<T> GetAll()
+        public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> expression)
         {
-            return _entitySet.AsEnumerable();
+            return await _entitySet.Where(expression).ToListAsync();
+        }
+        public async Task<T> GetById(int id)
+        {
+            return await _entitySet.FindAsync(id);
+        }
+        public async Task Add(T entity)
+        {
+            _entitySet.Add(entity);
+            await _dbContext.SaveChangesAsync();
         }
 
-        public IEnumerable<T> GetAll(Expression<Func<T, bool>> expression)
+        public async Task Update(T entity)
         {
-            return _entitySet.Where(expression).AsEnumerable();
+            _entitySet.Update(entity);
+            await _dbContext.SaveChangesAsync();
         }
 
-        public void Remove(T entity)
+        public async Task Delete(int id)
         {
-            _dbContext.Remove(entity);
-        }
-
-        public void Update(T entity)
-        {
-            _dbContext.Update(entity);
+            var entity = await _entitySet.FindAsync(id);
+            if (entity != null)
+            {
+                _entitySet.Remove(entity);
+                await _dbContext.SaveChangesAsync();
+            }
         }
     }
 }

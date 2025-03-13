@@ -1,5 +1,4 @@
-﻿using DXLAB_Coworking_Space_Booking_System;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace.Service.Sevices
 {
-    public interface IUserService : IGenericService<User>
+    public interface IBlogService : IGenericService<Blog>
     {
+
     }
 }

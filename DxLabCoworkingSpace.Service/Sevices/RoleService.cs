@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DXLAB_Coworking_Space_Booking_System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,35 +14,37 @@ namespace DxLabCoworkingSpace
 
         public RoleService(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork;   
         }
 
-        public void Add(Role entity)
+        async Task IGenericService<Role>.Add(Role entity)
         {
             throw new NotImplementedException();
         }
 
-        public Role Get(Expression<Func<Role, bool>> expression)
+        async Task<IEnumerable<Role>> IGenericService<Role>.GetAll()
         {
-            return _unitOfWork.RoleRepository.Get(expression);
+            return await _unitOfWork.RoleRepository.GetAll(r => r.RoleId == 2 || r.RoleId ==3);
         }
 
-        public IEnumerable<Role> GetAll()
+        async Task<Role> IGenericService<Role>.GetById(int id)
         {
-            return _unitOfWork.RoleRepository.GetAll();
+            return await _unitOfWork.RoleRepository.GetById(id);
         }
 
-        public IEnumerable<Role> GetAll(Expression<Func<Role, bool>> expression)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Remove(Role entity)
+        async Task IGenericService<Role>.Update(Role entity)
         {
             throw new NotImplementedException();
         }
-
-        public void Update(Role entity)
+        public async Task<Role> Get(Expression<Func<Role, bool>> expression)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<IEnumerable<Role>> GetAll(Expression<Func<Role, bool>> expression)
+        {
+            throw new NotImplementedException();
+        }
+        async Task IGenericService<Role>.Delete(int id)
         {
             throw new NotImplementedException();
         }

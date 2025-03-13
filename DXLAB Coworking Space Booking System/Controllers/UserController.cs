@@ -1,4 +1,5 @@
-﻿using DxLabCoworkingSpace;
+using DxLabCoworkingSpace;
+using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,35 +26,39 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
-        public IActionResult VerifyAccount([FromBody] User userinfo)
+        public async Task<IActionResult> VerifyAccount([FromBody] UserDTO userinfo)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var user = _userService.Get(x => x.Email == userinfo.Email);
-           
-                if (user == null)
+
+            var user = await _userService.Get(x => x.Email == userinfo.Email);
+
+            if (user == null)
+            {
+                user = new User
                 {
-                    user = new User
-                    {
-                        Email = userinfo.Email,
-                        WalletAddress = userinfo.WalletAddress,
-                        RoleId = 3,
-                        FullName = userinfo.FullName
-                        ,
-                        Status = true
-                    };
+                    Email = userinfo.Email,
+                    WalletAddress = userinfo.WalletAddress,
+                    RoleId = userinfo.RoleId,
+                    FullName = userinfo.FullName,
+                    Status = userinfo.Status
+                };
 
-                    _userService.Add(user);
-                }
+                await _userService.Add(user);
+            }
 
+            var userDto = new UserDTO
+            {
+                UserId = user.UserId,
+                Email = user.Email,
+                WalletAddress = user.WalletAddress,
+                RoleId = user.RoleId,
+                FullName = user.FullName,
+                Status = user.Status
+            };
 
-                var token = GenerateJwtToken(user);
-                return Ok(token);
-          
-           
-               
-            
-
+            var token = GenerateJwtToken(user);
+            return Ok(new { Token = token, User = userDto });
         }
 
         private string GenerateJwtToken(User user)
@@ -71,10 +76,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
+                expires: DateTime.UtcNow.AddMinutes(30), 
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
+

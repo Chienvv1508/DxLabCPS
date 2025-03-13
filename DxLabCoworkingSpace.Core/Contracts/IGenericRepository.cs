@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IGenericService<T> where T : class
+    public interface IGenericRepository<T> where T : class
     {
         Task<T> Get(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> GetAll();
