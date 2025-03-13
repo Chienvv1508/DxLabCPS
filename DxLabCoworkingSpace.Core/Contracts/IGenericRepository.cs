@@ -9,10 +9,10 @@ namespace DxLabCoworkingSpace
 {
     public interface IGenericRepository<T> where T : class
     {
-        T Get(Expression<Func<T, bool>> expression);
-        IEnumerable<T> GetAll();
-        IEnumerable<T> GetAll(Expression<Func<T, bool>> expression);
-        T GetById(int id);
+        Task<T> Get(Expression<Func<T, bool>> expression);
+        Task<IEnumerable<T>> GetAll();
+        Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> expression);
+        Task<T> GetById(int id);
         Task Add(T entity);
         Task Update(T entity);
         Task Delete(int id);

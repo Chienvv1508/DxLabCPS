@@ -20,26 +20,26 @@ namespace DxLabCoworkingSpace.Service.Sevices
         public async Task Add(User entity)
         {
             await _unitOfWork.UserRepository.Add(entity);
-            _unitOfWork.Commit();
+            _unitOfWork.CommitAsync();
         }
 
-        public User Get(Expression<Func<User, bool>> expression)
+        public async Task<User> Get(Expression<Func<User, bool>> expression)
         {
-            return _unitOfWork.UserRepository.Get(expression);
+            return await _unitOfWork.UserRepository.Get(expression);
         }
 
-        public IEnumerable<User> GetAll()
+        public async Task<IEnumerable<User>> GetAll()
         {
             throw new NotImplementedException();
         }
 
-        public IEnumerable<User> GetAll(Expression<Func<User, bool>> expression)
+        public async Task<IEnumerable<User>> GetAll(Expression<Func<User, bool>> expression)
         {
             throw new NotImplementedException();
         }
-        User IGenericService<User>.GetById(int id)
+         async Task<User> IGenericService<User>.GetById(int id)
         {
-            return _unitOfWork.UserRepository.GetById(id);
+            return await _unitOfWork.UserRepository.GetById(id);
         }
 
         public async Task Update(User entity)

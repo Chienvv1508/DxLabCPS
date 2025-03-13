@@ -26,12 +26,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
-        public IActionResult VerifyAccount([FromBody] UserDTO userinfo)
+        public async Task<IActionResult> VerifyAccount([FromBody] UserDTO userinfo)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = _userService.Get(x => x.Email == userinfo.Email);
+            var user = await _userService.Get(x => x.Email == userinfo.Email);
 
             if (user == null)
             {
@@ -44,8 +44,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     Status = userinfo.Status
                 };
 
-                    _userService.Add(user);
-                }
+                await _userService.Add(user);
+            }
 
             var userDto = new UserDTO
             {

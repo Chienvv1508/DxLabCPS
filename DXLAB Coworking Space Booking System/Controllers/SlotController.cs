@@ -26,7 +26,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
         // API Generate slot
         [HttpPost("Generate")]
-        public IActionResult GenerateSlot([FromBody] SlotGenerationRequest request)
+        public async Task<IActionResult> GenerateSlot([FromBody] SlotGenerationRequest request)
         {
             try
             {
@@ -48,8 +48,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 int breakTime = request.BreakTime ?? 10;
 
-                var slots = _slotService.GenerateSlots(startTime, endTime, breakTime);
-                _slotService.AddMany(slots);
+                var slots = await _slotService.GenerateSlots(startTime, endTime, breakTime);
+                await _slotService.AddMany(slots);
 
                 return Ok(new
                 {
@@ -68,11 +68,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
         // API Lấy tất cả slot
         [HttpGet]
-        public IActionResult GetAllSlots()
+        public async Task<IActionResult> GetAllSlots()
         {
             try
             {
-                var slots = _slotService.GetAll();
+                var slots = await _slotService.GetAll();
                 var slotDTOs = _mapper.Map<List<SlotDTO>>(slots);
                 return Ok(slotDTOs);
             }
@@ -84,11 +84,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // API Lấy slot theo ID
         [HttpGet("{id}")]
-        public IActionResult GetSlotById(int id)
+        public async Task<IActionResult> GetSlotById(int id)
         {
             try
             {
-                var slot = _slotService.GetById(id);
+                var slot = await _slotService.GetById(id);
                 if (slot == null)
                 {
                     return NotFound(new { Message = $"Slot với id: {id} không tìm thấy!" });

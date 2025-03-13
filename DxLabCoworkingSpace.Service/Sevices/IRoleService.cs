@@ -9,5 +9,6 @@ namespace DxLabCoworkingSpace
 {
     public interface IRoleSevice : IGenericService<Role>
     {
+
     }
 }

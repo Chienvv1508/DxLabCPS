@@ -21,18 +21,22 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Get All Student and Staff Role
         [HttpGet("GetRoleByAdmin")]
-        public IActionResult GetAllRole()
+        public async Task<IActionResult> GetAllRole()
         {
-            var roles = _roleSevice.GetAll();
+            var roles = await _roleSevice.GetAll();
+            if (roles == null || !roles.Any())
+            {
+                return NotFound("Không tìm thấy role nào!");
+            }
             var roleDTOs = _mapper.Map<List<RoleDTO>>(roles);
             return Ok(roleDTOs);
         }
 
         //Get Role By Id
         [HttpGet("{id}")]
-        public IActionResult GetRoleById(int id)
+        public async Task<IActionResult> GetRoleById(int id)
         {
-            var role = _roleSevice.GetById(id);
+            var role = await _roleSevice.GetById(id);
             if (role == null)
             {
                 return NotFound($"Role với id: {id} không tìm thấy!");

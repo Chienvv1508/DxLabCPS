@@ -17,7 +17,6 @@ namespace  DxLabCoworkingSpace
         public string BlogContent { get; set; } = null!;
         public DateTime BlogCreatedDate { get; set; }
         public int Status { get; set; }
-
         public virtual User? User { get; set; }
         public virtual ICollection<Image> Images { get; set; }
     }

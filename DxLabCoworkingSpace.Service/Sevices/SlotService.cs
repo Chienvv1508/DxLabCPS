@@ -15,7 +15,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
             _unitOfWork = unitOfWork;
         }
         //Generate slot
-        public List<Slot> GenerateSlots(TimeSpan startTime, TimeSpan endTime, int? breakTime = 10)
+        public async Task<List<Slot>> GenerateSlots(TimeSpan startTime, TimeSpan endTime, int? breakTime = 10)
         {
             List<Slot> slots = new List<Slot>();
             TimeSpan currentStart = startTime;
@@ -23,7 +23,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
             int slotDuration = 120;
 
             // Lấy danh sách slot đã có từ database
-            var existingSlots = _unitOfWork.SlotRepository.GetAll().ToList();
+            var existingSlots = (await _unitOfWork.SlotRepository.GetAll()).ToList();
 
             // Kiểm tra trước toàn bộ khoảng thời gian để phát hiện chồng chéo
             while (currentStart < endTime)
@@ -58,15 +58,15 @@ namespace DxLabCoworkingSpace.Service.Sevices
         }
 
         //Thêm nhiều slot vào database
-        public void AddMany(List<Slot> slots)
+        public async Task AddMany(List<Slot> slots)
         {
             try
             {
                 foreach (var slot in slots)
                 {
-                    _unitOfWork.SlotRepository.Add(slot);
+                    await _unitOfWork.SlotRepository.Add(slot);
                 }
-                _unitOfWork.Commit();
+                await _unitOfWork.CommitAsync();
             }
             catch (Exception ex)
             {
@@ -76,7 +76,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
         async Task IGenericService<Slot>.Add(Slot entity)
         {
-            var existingSlots = _unitOfWork.SlotRepository.GetAll();
+            var existingSlots = await _unitOfWork.SlotRepository.GetAll();
             if (existingSlots.Any(s => s.StartTime < entity.EndTime && s.EndTime > entity.StartTime))
             {
                 throw new InvalidOperationException("Slot mới bị chèn vào slot đã tồn tại!");
@@ -85,22 +85,22 @@ namespace DxLabCoworkingSpace.Service.Sevices
             await _unitOfWork.SlotRepository.Add(entity);
             await _unitOfWork.CommitAsync();
         }
-        IEnumerable<Slot> IGenericService<Slot>.GetAll()
+        async Task<IEnumerable<Slot>> IGenericService<Slot>.GetAll()
         {
-            var a = _unitOfWork.SlotRepository.GetAll();
+            var a = await _unitOfWork.SlotRepository.GetAll();
             return a;
         }
-        public Slot Get(Expression<Func<Slot, bool>> expression)
+        public async Task<Slot> Get(Expression<Func<Slot, bool>> expression)
         {
             throw new NotImplementedException();
         }
-        public IEnumerable<Slot> GetAll(Expression<Func<Slot, bool>> expression)
+        public async Task<IEnumerable<Slot>> GetAll(Expression<Func<Slot, bool>> expression)
         {
             throw new NotImplementedException();
         }
-        Slot IGenericService<Slot>.GetById(int id)
+        async Task<Slot> IGenericService<Slot>.GetById(int id)
         {
-            return _unitOfWork.SlotRepository.GetById(id);
+            return await _unitOfWork.SlotRepository.GetById(id);
         }
         async Task IGenericService<Slot>.Update(Slot entity)
         {

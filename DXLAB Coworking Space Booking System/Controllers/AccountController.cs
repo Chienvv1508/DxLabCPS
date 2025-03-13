@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
+using NBitcoin;
+using NBitcoin.Protocol;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -55,7 +57,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         for (int row = 2; row <= rowCount; row++)
                         {
                             var roleName = worksheet.Cells[row, 3].Value?.ToString();
-                            var role = _unitOfWork.RoleRepository.GetAll()
+                            var role = (await _unitOfWork.RoleRepository.GetAll())
                                 .FirstOrDefault(r => r.RoleName == roleName);
 
                             if (string.IsNullOrEmpty(roleName) || role == null)
@@ -65,13 +67,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                             users.Add(new User
                             {
-                                Email = worksheet.Cells[row, 1].Value?.ToString(),
-                                FullName = worksheet.Cells[row, 2].Value?.ToString(),
+                                Email = worksheet.Cells[row, 1].Value?.ToString() ?? "",
+                                FullName = worksheet.Cells[row, 2].Value?.ToString() ?? "",
                                 RoleId = role.RoleId,
-                                Avatar = worksheet.Cells[row, 4].Value?.ToString(),
-                                WalletAddress = worksheet.Cells[row, 5].Value?.ToString(),
-                                Status = bool.TryParse(worksheet.Cells[row, 6].Value?.ToString(), out bool status) ? status : true,
-                                AccessToken = Guid.NewGuid().ToString()
+                                Status = bool.TryParse(worksheet.Cells[row, 4   ].Value?.ToString(), out bool status) ? status : true,
                             });
                         }
                     }
@@ -89,6 +88,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 return BadRequest(new { Message = ex.Message });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { Message = ex.Message }); // Từ chối nếu cố thêm Admin
+            }
             catch (InvalidOperationException ex)
             {
                 return Conflict(new { Message = ex.Message });
@@ -101,11 +104,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Get All Account
         [HttpGet]
-        public IActionResult GetAllAccounts()
+        public async Task<IActionResult> GetAllAccounts()
         {
             try
             {
-                var users = _accountService.GetAll().ToList();
+                var users = (await _accountService.GetAll()).ToList();
                 var accountDTOs = _mapper.Map<List<AccountDTO>>(users);
                 return Ok(new
                 {
@@ -121,21 +124,26 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Get Account By UserId
         [HttpGet("{id}")]
-        public IActionResult GetAccountById(int id)
+        public async Task<IActionResult> GetAccountById(int id)
         {
             try
             {
-                var user = _accountService.GetById(id);
+                var user = await _accountService.GetById(id);
                 if (user == null)
                 {
                     return NotFound(new { Message = $"Người dùng với ID: {id} không tìm thấy" });
                 }
+
                 var accountDto = _mapper.Map<AccountDTO>(user);
                 return Ok(new
                 {
                     Message = "Tài khoản được lấy thành công!",
                     Account = accountDto
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { Message = ex.Message }); // Từ chối nếu cố thêm Admin
             }
             catch (Exception ex)
             {
@@ -145,11 +153,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Get All Account By Role Name
         [HttpGet("role/{roleName}")]
-        public IActionResult GetUsersByRoleName(string roleName)
+        public async Task<IActionResult> GetUsersByRoleName(string roleName)
         {
             try
             {
-                var users = _accountService.GetUsersByRoleName(roleName).ToList();
+                var users = (await _accountService.GetUsersByRoleName(roleName)).ToList();
                 var accountDTOs = _mapper.Map<List<AccountDTO>>(users);
                 return Ok(new
                 {
@@ -157,72 +165,67 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     Accounts = accountDTOs
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { Message = ex.Message }); // Từ chối nếu cố thêm Admin
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message }); // Role không tồn tại hoặc không hợp lệ
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { Message = $"Lỗi khi truy xuất tài khoản: {ex.Message}" });
             }
         }
 
+        public class UpdateRoleRequest
+        {
+            public string RoleName { get; set; } = null!;
+        }
         // Update Account's Role 
         [HttpPut("{id}/role")]
-        public async Task<IActionResult> UpdateAccountRole(int id, [FromBody] AccountDTO accountDto)
+        public async Task<IActionResult> UpdateAccountRole(int id, [FromBody] UpdateRoleRequest request)
         {
             try
             {
-                if (accountDto == null)
+                if(request == null || string.IsNullOrEmpty(request.RoleName))
                 {
-                    return BadRequest(new { Message = "Dữ liệu người dùng là bắt buộc!" });
+                    return BadRequest(new { Message = "RoleName là bắt buộc và không để trống!"});
                 }
 
-                if (accountDto.UserId != id)
-                {
-                    return BadRequest(new { Message = "UserId không khớp với ID cần cập nhật!" });
-                }
-
-                var existingUser = _accountService.GetById(id);
+                var existingUser = await _accountService.GetById(id);
                 if (existingUser == null)
                 {
-                    return NotFound(new { Message = $"Người dùng với ID: {id} không tìm thấy!" });
+                    return NotFound(new {Message = $"Người dùng với ID: {id} không tìm thấy!"});
                 }
 
-                if ((accountDto.Email != existingUser.Email && !string.IsNullOrEmpty(accountDto.Email)) ||
-                    (accountDto.FullName != existingUser.FullName && !string.IsNullOrEmpty(accountDto.FullName)) ||
-                    (accountDto.Avatar != existingUser.Avatar && !string.IsNullOrEmpty(accountDto.Avatar)) ||
-                    (accountDto.WalletAddress != existingUser.WalletAddress && !string.IsNullOrEmpty(accountDto.WalletAddress)) ||
-                    (accountDto.Status != existingUser.Status))
+                var validRole = new[] { "Student" , "Staff" };
+                if (!validRole.Contains(request.RoleName))
                 {
-                    return BadRequest(new { Message = "Chỉ có RoleName mới được cập nhật!" });
+                    return BadRequest(new { Message = "RoleName phải là 'Student' hoặc 'Staff'"});
                 }
 
-                if (!string.IsNullOrEmpty(accountDto.RoleName))
+                var role = (await _unitOfWork.RoleRepository.GetAll()).FirstOrDefault(r => r.RoleName == request.RoleName);
+                if(role == null)
                 {
-                    var validRoles = new[] { "Student", "Staff" };
-                    if (!validRoles.Contains(accountDto.RoleName))
-                    {
-                        return BadRequest(new { Message = "RoleName phải là 'Student' hoặc 'Staff'!" });
-                    }
-
-                    var role = _unitOfWork.RoleRepository.GetAll()
-                        .FirstOrDefault(r => r.RoleName == accountDto.RoleName);
-                    if (role == null)
-                    {
-                        return BadRequest(new { Message = $"Role với tên: {accountDto.RoleName} không tìm thấy!" });
-                    }
-
-                    existingUser.RoleId = role.RoleId;
-                    existingUser.Role = role; 
-                    await _accountService.Update(existingUser); 
-
-                    var updatedUser = _accountService.GetById(id); 
-                    var updatedDto = _mapper.Map<AccountDTO>(updatedUser);
-                    return Ok(new
-                    {
-                        Message = "Role của người dùng được cập nhật!",
-                        Account = updatedDto
-                    });
+                    return BadRequest(new { Message = $"Role với tên: {request.RoleName} không tìm thấy!"});
                 }
+                existingUser.RoleId = role.RoleId;
+                existingUser.Role = role;
+                await _accountService.Update(existingUser);
 
-                return BadRequest(new { Message = "RoleName phải được nhập để cập nhật!" });
+                var updatedUser = await _accountService.GetById(id);
+                var updatedDTO = _mapper.Map<AccountDTO>(updatedUser);
+                return Ok(new
+                {
+                    Message = "Role của người dùng đã được cập nhật thành công!",
+                    Account = updatedDTO
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { Message = ex.Message }); // Từ chối nếu user là Admin
             }
             catch (InvalidOperationException ex)
             {
@@ -230,7 +233,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = $"Lỗi khi cập nhật role của người dùng: {ex.Message}" });
+                return StatusCode(500, new { Message = $"Lỗi khi cập nhật người dùng: {ex.Message}" });
             }
         }
 
@@ -242,6 +245,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 await _accountService.SoftDelete(id); 
                 return Ok(new { Message = $"Tài khoản với ID: {id} đã được lưu vào Bin Storage" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { Message = ex.Message }); // Từ chối nếu là Admin
             }
             catch (InvalidOperationException ex)
             {

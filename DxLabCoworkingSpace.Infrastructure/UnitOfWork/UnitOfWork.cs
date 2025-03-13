@@ -15,6 +15,7 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<Role> _roleRepository;
         private IGenericRepository<Slot> _slotRepository;
         private IGenericRepository<User> _userRepository;
+        private IGenericRepository<Blog> _blogRepository;
         public UnitOfWork(DxLabCoworkingSpaceContext dbContext) 
         {
             _dbContext = dbContext;
@@ -22,22 +23,25 @@ namespace DxLabCoworkingSpace
         public IGenericRepository<Role> RoleRepository => _roleRepository ?? new GenericRepository<Role>(_dbContext);
         public IGenericRepository<Slot> SlotRepository => _slotRepository ?? new GenericRepository<Slot>(_dbContext);
         public IGenericRepository<User> UserRepository => _userRepository ?? new GenericRepository<User>(_dbContext);
+        public IGenericRepository<Blog> BlogRepository => _blogRepository ?? new GenericRepository<Blog>(_dbContext);
         public DbContext Context => _dbContext;
-        public void Commit()
-        {
-            _dbContext.SaveChanges();
-        }
 
         public async Task CommitAsync()
         {
-            await _dbContext.SaveChangesAsync();
+            using (var transaction = await _dbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    await _dbContext.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw; // Ném lại exception để controller xử lý
+                }
+            }
         }
-
-        public void Rollback()
-        {                                               
-            _dbContext.Dispose();
-        }
-
         public async Task RollbackAsync()
         {
             await _dbContext.DisposeAsync();
