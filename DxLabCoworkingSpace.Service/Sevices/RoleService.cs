@@ -22,25 +22,25 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        IEnumerable<Role> IGenericService<Role>.GetAll()
+        async Task<IEnumerable<Role>> IGenericService<Role>.GetAll()
         {
-            return _unitOfWork.RoleRepository.GetAll(r => r.RoleId == 2 || r.RoleId ==3);
+            return await _unitOfWork.RoleRepository.GetAll(r => r.RoleId == 2 || r.RoleId ==3);
         }
 
-        Role IGenericService<Role>.GetById(int id)
+        async Task<Role> IGenericService<Role>.GetById(int id)
         {
-            return _unitOfWork.RoleRepository.GetById(id);
+            return await _unitOfWork.RoleRepository.GetById(id);
         }
 
         async Task IGenericService<Role>.Update(Role entity)
         {
             throw new NotImplementedException();
         }
-        public Role Get(Expression<Func<Role, bool>> expression)
+        public async Task<Role> Get(Expression<Func<Role, bool>> expression)
         {
             throw new NotImplementedException();
         }
-        public IEnumerable<Role> GetAll(Expression<Func<Role, bool>> expression)
+        public async Task<IEnumerable<Role>> GetAll(Expression<Func<Role, bool>> expression)
         {
             throw new NotImplementedException();
         }

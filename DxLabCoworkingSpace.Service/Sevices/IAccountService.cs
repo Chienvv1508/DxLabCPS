@@ -10,19 +10,19 @@ namespace DxLabCoworkingSpace.Service.Sevices
 {
     public interface IAccountService : IGenericService<User>
     {
-        IEnumerable<User> GetUsersByRoleName(string roleName);
+        Task<IEnumerable<User>> GetUsersByRoleName(string roleName);
         Task AddFromExcel(List<User> users);
         Task SoftDelete(int id);
-        IEnumerable<User> GetDeletedAccounts();
+        Task<IEnumerable<User>> GetDeletedAccounts();
         Task Restore(int id);
 
         // Phương thức hỗ trợ eager loading
-        IEnumerable<User> GetAllWithInclude(params Expression<Func<User, object>>[] includes);
+        Task<IEnumerable<User>> GetAllWithInclude(params Expression<Func<User, object>>[] includes);
 
         // Mở rộng Get để hỗ trợ eager loading
-        User Get(Expression<Func<User, bool>> expression, params Expression<Func<User, object>>[] includes);
+        Task<User> Get(Expression<Func<User, bool>> expression, params Expression<Func<User, object>>[] includes);
 
         // Phương thức để lấy IQueryable cho eager loading
-        IQueryable<User> GetAllQueryable();
+        Task<IQueryable<User>> GetAllQueryable();
     }
 }

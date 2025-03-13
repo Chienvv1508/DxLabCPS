@@ -13,9 +13,8 @@ namespace DxLabCoworkingSpace
         IGenericRepository<Role> RoleRepository { get; }
         IGenericRepository<Slot> SlotRepository { get; }
         IGenericRepository<User> UserRepository { get; }
+        IGenericRepository<Blog> BlogRepository { get; }
         DbContext Context { get; }
-        void Commit();
-        void Rollback();
         Task CommitAsync();
         Task RollbackAsync();
     }

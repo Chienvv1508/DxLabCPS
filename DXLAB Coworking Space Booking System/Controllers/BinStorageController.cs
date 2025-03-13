@@ -23,11 +23,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Get All Deleted Account
         [HttpGet]
-        public IActionResult GetDeletedAccounts()
+        public async Task<IActionResult> GetDeletedAccounts()
         {
             try
             {
-                var deletedUsers = _accountService.GetDeletedAccounts();
+                var deletedUsers = await _accountService.GetDeletedAccounts();
                 var deletedAccountDtos = _mapper.Map<List<AccountDTO>>(deletedUsers);
                 return Ok(new
                 {
@@ -68,6 +68,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 await _accountService.Delete(id); 
                 return Ok(new { Message = $"Tài khoản với ID: {id} đã được xóa vĩnh viễn!" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { Message = ex.Message }); // Từ chối nếu là Admin
             }
             catch (InvalidOperationException ex)
             {
