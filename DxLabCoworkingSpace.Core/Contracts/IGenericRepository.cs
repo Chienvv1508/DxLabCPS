@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,6 +13,9 @@ namespace DxLabCoworkingSpace
         Task<T> Get(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> GetAll();
         Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> expression);
+        Task<IEnumerable<T>> GetAllWithInclude(params Expression<Func<T, object>>[] includes);
+        Task<T> GetWithInclude(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes);
+
         Task<T> GetById(int id);
         Task Add(T entity);
         Task Update(T entity);

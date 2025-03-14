@@ -16,6 +16,7 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<Slot> _slotRepository;
         private IGenericRepository<User> _userRepository;
         private IGenericRepository<Blog> _blogRepository;
+        private IGenericRepository<Room> _roomRepository;
         public UnitOfWork(DxLabCoworkingSpaceContext dbContext) 
         {
             _dbContext = dbContext;
@@ -24,23 +25,26 @@ namespace DxLabCoworkingSpace
         public IGenericRepository<Slot> SlotRepository => _slotRepository ?? new GenericRepository<Slot>(_dbContext);
         public IGenericRepository<User> UserRepository => _userRepository ?? new GenericRepository<User>(_dbContext);
         public IGenericRepository<Blog> BlogRepository => _blogRepository ?? new GenericRepository<Blog>(_dbContext);
+        public IGenericRepository<Room> RoomRepository => _roomRepository ?? new GenericRepository<Room>(_dbContext);
         public DbContext Context => _dbContext;
 
         public async Task CommitAsync()
         {
-            using (var transaction = await _dbContext.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    await _dbContext.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw; // Ném lại exception để controller xử lý
-                }
-            }
+
+            await _dbContext.SaveChangesAsync();
+            //using (var transaction = await _dbContext.Database.BeginTransactionAsync())
+            //{
+            //    try
+            //    {
+            //        await _dbContext.SaveChangesAsync();
+            //        await transaction.CommitAsync();
+            //    }
+            //    catch
+            //    {
+            //        await transaction.RollbackAsync();
+            //        throw; // Ném lại exception để controller xử lý
+            //    }
+            //}
         }
         public async Task RollbackAsync()
         {

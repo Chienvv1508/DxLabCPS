@@ -46,6 +46,15 @@ namespace DXLAB_Coworking_Space_Booking_System
                         BlogId = src.BlogId
                     }).ToList()
                     : new List<Image>()));
+
+
+            CreateMap<RoomDTO, Room>()
+           .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
+               src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null));
+
+            CreateMap<Room, RoomDTO>()
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
+                    src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
         }
     }
 }

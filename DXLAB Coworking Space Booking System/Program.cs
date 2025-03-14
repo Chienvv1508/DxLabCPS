@@ -49,7 +49,9 @@ builder.Services.AddScoped<IRoleSevice, RoleService>();
 builder.Services.AddScoped<ISlotService, SlotService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
+
 
 // ✅ Cập nhật CORS
 builder.Services.AddCors(options =>
