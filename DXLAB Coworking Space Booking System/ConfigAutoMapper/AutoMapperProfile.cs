@@ -46,6 +46,10 @@ namespace DXLAB_Coworking_Space_Booking_System
                         BlogId = src.BlogId
                     }).ToList()
                     : new List<Image>()));
+
+            // Mapping cho Facilities
+            CreateMap<Facility, FacilitiesDTO>().ReverseMap();
+
         }
     }
 }

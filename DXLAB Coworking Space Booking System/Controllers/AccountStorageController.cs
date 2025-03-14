@@ -10,12 +10,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class BinStorageController : ControllerBase
+    public class AccountStorageController : ControllerBase
     {
         private readonly IAccountService _accountService;
         private readonly IMapper _mapper;
 
-        public BinStorageController(IAccountService accountService, IMapper mapper)
+        public AccountStorageController(IAccountService accountService, IMapper mapper)
         {
             _accountService = accountService;
             _mapper = mapper;

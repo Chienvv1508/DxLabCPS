@@ -70,14 +70,14 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
             if (duplicateEmailsInFile.Any())
             {
-                throw new InvalidOperationException($"Email bị trùng trong file: {string.Join(", ", duplicateEmailsInFile)}.");
+                throw new InvalidOperationException($"Email bị trùng trong file!");
             }
 
             // Kiểm tra email đã tồn tại trong database trước khi thêm bất kỳ dữ liệu nào
             var duplicateEmailsInDB = emailsInFile.Where(e => existingEmails.Contains(e)).ToList();
             if (duplicateEmailsInDB.Any())
             {
-                throw new InvalidOperationException($"Email đã tồn tại trong database: {string.Join(", ", duplicateEmailsInDB)}.");
+                throw new InvalidOperationException($"Email đã tồn tại trong database!");
             }
 
             var validationErrors = new List<string>();
