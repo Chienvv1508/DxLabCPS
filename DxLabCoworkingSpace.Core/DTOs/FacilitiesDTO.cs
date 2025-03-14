@@ -10,6 +10,7 @@ namespace DxLabCoworkingSpace.Core.DTOs
     public class FacilitiesDTO
     {
         public int FacilityId { get; set; }
+        [StringLength(50, ErrorMessage ="BatchNumber không quá 50 ký tự.")]
         public string BatchNumber { get; set; } = null!;
         public string? FacilityDescription { get; set; }
 

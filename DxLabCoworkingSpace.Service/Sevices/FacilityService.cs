@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DxLabCoworkingSpace.Core.DTOs;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -17,14 +18,96 @@ namespace DxLabCoworkingSpace.Service.Sevices
             _unitOfWork = unitOfWork;
         }
 
+        // Import Facility Form Excel File
+        // Import Facility From Excel File
         public async Task AddFacilityFromExcel(List<Facility> facilities)
         {
+            if (facilities == null || !facilities.Any())
+            {
+                throw new ArgumentException("Danh sách facility không được rỗng hoặc null");
+            }
 
-            throw new NotImplementedException();
+            var existingBatchNumbers = (await _unitOfWork.FacilityRepository.GetAll())
+                .Select(f => f.BatchNumber.Trim().ToLower())
+                .ToHashSet();
+
+            var batchNumbersInFile = facilities.Select(f => f.BatchNumber.Trim().ToLower()).ToList();
+
+            var duplicateBatchNumbersInFile = batchNumbersInFile
+                .GroupBy(b => b)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicateBatchNumbersInFile.Any())
+            {
+                throw new InvalidOperationException($"BatchNumber bị trùng trong file: {string.Join(", ", duplicateBatchNumbersInFile)}");
+            }
+
+            var duplicateBatchNumbersInDB = batchNumbersInFile
+                .Where(b => existingBatchNumbers.Contains(b))
+                .ToList();
+
+            if (duplicateBatchNumbersInDB.Any())
+            {
+                throw new InvalidOperationException($"BatchNumber đã tồn tại trong database: {string.Join(", ", duplicateBatchNumbersInDB)}");
+            }
+
+            var validationErrors = new List<string>();
+            var validFacilities = new List<Facility>();
+
+            for (int i = 0; i < facilities.Count; i++)
+            {
+                var facility = facilities[i];
+                var row = i + 2; // Dòng 2 tương ứng với index 0
+
+                var dto = new FacilitiesDTO
+                {
+                    BatchNumber = facility.BatchNumber,
+                    FacilityDescription = facility.FacilityDescription,
+                    Cost = facility.Cost,
+                    ExpiredTime = facility.ExpiredTime,
+                    Quantity = facility.Quantity,
+                    ImportDate = facility.ImportDate
+                };
+
+                var validationContext = new ValidationContext(dto);
+                var validationResults = new List<ValidationResult>();
+
+                if (!Validator.TryValidateObject(dto, validationContext, validationResults, true))
+                {
+                    validationErrors.AddRange(validationResults.Select(r => $"{r.ErrorMessage} (Dòng {row}, BatchNumber: {facility.BatchNumber})"));
+                    continue;
+                }
+
+                if (facility.ExpiredTime <= facility.ImportDate)
+                {
+                    validationErrors.Add($"ExpiredTime phải lớn hơn ImportDate (Dòng {row}, BatchNumber: {facility.BatchNumber})");
+                    continue;
+                }
+
+                validFacilities.Add(facility);
+            }
+
+            if (validationErrors.Any())
+            {
+                throw new InvalidOperationException(string.Join(" ", validationErrors));
+            }
+
+            foreach (var facility in validFacilities)
+            {
+                await _unitOfWork.FacilityRepository.Add(facility);
+            }
+            await _unitOfWork.CommitAsync();
         }
 
+        // Create New Facility
         public async Task Add(Facility entity)
         {
+            if (entity.ExpiredTime <= entity.ImportDate)
+            {
+                throw new ArgumentException("Ngày hết hạn phải lớn hơn ngày nhập");
+            }
             var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber);
             if (existingFacility != null)
             {
