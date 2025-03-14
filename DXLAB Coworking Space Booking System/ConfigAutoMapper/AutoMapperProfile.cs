@@ -27,6 +27,9 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(dest => dest.RoleId, opt => opt.Ignore())
                 .ForMember(dest => dest.Role, opt => opt.Ignore());
 
+            // Mapping cho Facilities
+            CreateMap<Facility, FacilitiesDTO>().ReverseMap();
+
             // Mapping cho Blog và BlogDTO
             CreateMap<Blog, BlogDTO>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (BlogDTO.BlogStatus)src.Status)) // int -> enum
@@ -46,10 +49,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                         BlogId = src.BlogId
                     }).ToList()
                     : new List<Image>()));
-
-            // Mapping cho Facilities
-            CreateMap<Facility, FacilitiesDTO>().ReverseMap();
-
         }
     }
 }

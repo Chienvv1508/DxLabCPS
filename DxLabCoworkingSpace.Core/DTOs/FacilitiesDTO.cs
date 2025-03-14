@@ -12,11 +12,12 @@ namespace DxLabCoworkingSpace.Core.DTOs
         public int FacilityId { get; set; }
         public string BatchNumber { get; set; } = null!;
         public string? FacilityDescription { get; set; }
-        [MinLength(0, ErrorMessage ="Cost phải lớn hơn 0")]
+
+        [Range(0, double.MaxValue, ErrorMessage = "Cost phải lớn hơn hoặc bằng 0")]
         public decimal Cost { get; set; }
         public DateTime ExpiredTime { get; set; }
 
-        [MinLength(0, ErrorMessage ="Quantity phải lớn hơn 0")]
+        [Range(0, int.MaxValue, ErrorMessage = "Quantity phải lớn hơn hoặc bằng 0")]
         public int Quantity { get; set; }
         public DateTime ImportDate { get; set; }
     }
