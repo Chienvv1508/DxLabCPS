@@ -31,20 +31,20 @@ namespace DxLabCoworkingSpace
         public async Task CommitAsync()
         {
 
-            await _dbContext.SaveChangesAsync();
-            //using (var transaction = await _dbContext.Database.BeginTransactionAsync())
-            //{
-            //    try
-            //    {
-            //        await _dbContext.SaveChangesAsync();
-            //        await transaction.CommitAsync();
-            //    }
-            //    catch
-            //    {
-            //        await transaction.RollbackAsync();
-            //        throw; // Ném lại exception để controller xử lý
-            //    }
-            //}
+            //await _dbContext.SaveChangesAsync();
+            using (var transaction = await _dbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    await _dbContext.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw; // Ném lại exception để controller xử lý
+                }
+            }
         }
         public async Task RollbackAsync()
         {

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NBitcoin.Secp256k1;
 using Nethereum.Contracts.Standards.ERC20.TokenList;
+using Thirdweb;
 
 
 
@@ -20,6 +21,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         public RoomController(IRoomService roomService, IMapper mapper)
         {
+
             _roomService = roomService;
             _mapper = mapper;
         }
@@ -27,25 +29,42 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDto)
         {
+           
+
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                var response = new ResponseDTO<object>(400, "Lỗi: " + string.Join("; ", errors), null);
+                return BadRequest(response);
+            }
+
+            var existedRoom =  await _roomService.Get(x => x.RoomName == roomDto.RoomName);
+           
+            if(existedRoom != null)
+            {
+                var response = new ResponseDTO<object>(400, "Tên phòng đã tồn tại!", null);
+                return BadRequest(response);
             }
 
             try
             {
                 var room = _mapper.Map<Room>(roomDto);
                 await _roomService.Add(room);
-
-                return Ok(roomDto);
+                var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDto);
+                return CreatedAtAction(nameof(GetRoomById), new { id = room.RoomId }, response);
             }
             catch (DbUpdateException ex)  // Lỗi liên quan đến database
             {
-                return StatusCode(500, new { message = "Lỗi cập nhật cơ sở dữ liệu.", details = ex.Message });
+                var response = new ResponseDTO<object>(500, "Lỗi cập nhật cơ sở dữ liệu.", ex.Message);
+                return StatusCode(500, response);
             }
             catch (Exception ex)  // Các lỗi khác
             {
-                return StatusCode(500, new { message = "Đã xảy ra lỗi khi tạo phòng.", details = ex.Message });
+                var response = new ResponseDTO<object>(500, "Đã xảy ra lỗi khi tạo phòng.", ex.Message);
+                return StatusCode(500, response);
             }
         }
 
