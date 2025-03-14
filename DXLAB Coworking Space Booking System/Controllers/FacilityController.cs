@@ -58,36 +58,36 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             // Debug: In giá trị thô để kiểm tra
                             if (string.IsNullOrEmpty(expiredTimeText))
                             {
-                                return BadRequest(new { Message = $"ExpiredTime trống tại dòng {row}!" });
+                                return BadRequest(new { Message = "ExpiredTime không được để trống!" });
                             }
                             if (string.IsNullOrEmpty(importDateText))
                             {
-                                return BadRequest(new { Message = $"ImportDate trống tại dòng {row}!" });
+                                return BadRequest(new { Message = "ImportDate không được để trống!" });
                             }
 
                             // Parse ExpiredTime
                             if (!DateTime.TryParseExact(expiredTimeText, "yyyy/MM/dd",
                                 CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime expired))
                             {
-                                return BadRequest(new { Message = $"ExpiredTime không hợp lệ tại dòng {row}, giá trị thô: '{expiredTimeText}', phải có định dạng yyyy/MM/dd (ví dụ: 2026/04/30)!" });
+                                return BadRequest(new { Message = "ExpiredTime phải có định dạng yyyy/MM/dd!" });
                             }
 
                             // Parse ImportDate
                             if (!DateTime.TryParseExact(importDateText, "yyyy/MM/dd",
                                 CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime import))
                             {
-                                return BadRequest(new { Message = $"ImportDate không hợp lệ tại dòng {row}, giá trị thô: '{importDateText}', phải có định dạng yyyy/MM/dd (ví dụ: 2025/04/30)!" });
+                                return BadRequest(new { Message = "ImportDate phải có định dạng yyyy/MM/dd!" });
                             }
 
                             // Parse Cost và Quantity
                             if (!decimal.TryParse(worksheet.Cells[row, 3].Value?.ToString(), out decimal cost))
                             {
-                                return BadRequest(new { Message = $"Cost không hợp lệ tại dòng {row}, phải là số!" });
+                                return BadRequest(new { Message = "Cost không hợp lệ, phải là số!" });
                             }
 
                             if (!int.TryParse(worksheet.Cells[row, 5].Value?.ToString(), out int quantity))
                             {
-                                return BadRequest(new { Message = $"Quantity không hợp lệ tại dòng {row}, phải là số nguyên!" });
+                                return BadRequest(new { Message = "Quantity không hợp lệ, phải là số nguyên!" });
                             }
 
                             facilities.Add(new Facility

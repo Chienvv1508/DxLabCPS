@@ -41,7 +41,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
             if (duplicateBatchNumbersInFile.Any())
             {
-                throw new InvalidOperationException($"BatchNumber bị trùng trong file: {string.Join(", ", duplicateBatchNumbersInFile)}");
+                throw new InvalidOperationException("BatchNumber bị trùng trong file!");
             }
 
             var duplicateBatchNumbersInDB = batchNumbersInFile
@@ -50,7 +50,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
             if (duplicateBatchNumbersInDB.Any())
             {
-                throw new InvalidOperationException($"BatchNumber đã tồn tại trong database: {string.Join(", ", duplicateBatchNumbersInDB)}");
+                throw new InvalidOperationException("BatchNumber đã tồn tại trong database!");
             }
 
             var validationErrors = new List<string>();
@@ -76,13 +76,13 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
                 if (!Validator.TryValidateObject(dto, validationContext, validationResults, true))
                 {
-                    validationErrors.AddRange(validationResults.Select(r => $"{r.ErrorMessage} (Dòng {row}, BatchNumber: {facility.BatchNumber})"));
+                    validationErrors.AddRange(validationResults.Select(r => $"{r.ErrorMessage}"));
                     continue;
                 }
 
                 if (facility.ExpiredTime <= facility.ImportDate)
                 {
-                    validationErrors.Add($"ExpiredTime phải lớn hơn ImportDate (Dòng {row}, BatchNumber: {facility.BatchNumber})");
+                    validationErrors.Add("ExpiredTime phải lớn hơn ImportDate!");
                     continue;
                 }
 
