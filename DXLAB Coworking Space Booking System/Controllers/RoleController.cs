@@ -21,7 +21,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Get All Student and Staff Role
         [HttpGet("GetRoleByAdmin")]
-        public async Task<IActionResult> GetAllRole()
+        public async Task<IActionResult> GetRoleByAdmin()
         {
             var roles = await _roleSevice.GetAll();
             if (roles == null || !roles.Any())

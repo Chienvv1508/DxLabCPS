@@ -17,16 +17,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _slotService = slotService;
             _mapper = mapper;
         }
-
-        public class SlotGenerationRequest
-        {
-            public string? StartTime { get; set; } 
-            public string? EndTime { get; set; } 
-            public int? BreakTime { get; set; }
-        }
         // API Generate slot
-        [HttpPost("Generate")]
-        public async Task<IActionResult> GenerateSlot([FromBody] SlotGenerationRequest request)
+        [HttpPost("Create")]
+        public async Task<IActionResult> CreateSlots([FromBody] SlotGenerationRequest request)
         {
             try
             {
@@ -48,7 +41,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 int breakTime = request.BreakTime ?? 10;
 
-                var slots = await _slotService.GenerateSlots(startTime, endTime, breakTime);
+                var slots = await _slotService.CreateSlots(startTime, endTime, breakTime);
                 await _slotService.AddMany(slots);
 
                 return Ok(new
