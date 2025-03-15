@@ -1,4 +1,4 @@
-using DxLabCoworkingSpace;
+﻿using DxLabCoworkingSpace;
 using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -29,36 +29,46 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         public async Task<IActionResult> VerifyAccount([FromBody] UserDTO userinfo)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var user = await _userService.Get(x => x.Email == userinfo.Email);
-
-            if (user == null)
             {
-                user = new User
-                {
-                    Email = userinfo.Email,
-                    WalletAddress = userinfo.WalletAddress,
-                    RoleId = userinfo.RoleId,
-                    FullName = userinfo.FullName,
-                    Status = userinfo.Status
-                };
-
-                await _userService.Add(user);
+                return BadRequest(new ResponseDTO<object>("Dữ liệu không hợp lệ!", ModelState));
             }
 
-            var userDto = new UserDTO
+            try
             {
-                UserId = user.UserId,
-                Email = user.Email,
-                WalletAddress = user.WalletAddress,
-                RoleId = user.RoleId,
-                FullName = user.FullName,
-                Status = user.Status
-            };
+                var user = await _userService.Get(x => x.Email == userinfo.Email);
 
-            var token = GenerateJwtToken(user);
-            return Ok(new { Token = token, User = userDto });
+                if (user == null)
+                {
+                    user = new User
+                    {
+                        Email = userinfo.Email,
+                        WalletAddress = userinfo.WalletAddress,
+                        RoleId = userinfo.RoleId,
+                        FullName = userinfo.FullName,
+                        Status = userinfo.Status
+                    };
+
+                    await _userService.Add(user);
+                }
+
+                var userDto = new UserDTO
+                {
+                    UserId = user.UserId,
+                    Email = user.Email,
+                    WalletAddress = user.WalletAddress,
+                    RoleId = user.RoleId,
+                    FullName = user.FullName,
+                    Status = user.Status
+                };
+
+                var token = GenerateJwtToken(user);
+                var responseData = new { Token = token, User = userDto };
+                return Ok(new ResponseDTO<object>("Người dùng đã được tạo hoặc xác thực thành công!", responseData));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi xử lý người dùng: {ex.Message}", null));
+            }
         }
 
         private string GenerateJwtToken(User user)

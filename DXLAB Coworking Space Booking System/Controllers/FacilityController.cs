@@ -33,11 +33,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 if (file == null || file.Length == 0)
                 {
-                    return BadRequest(new { Message = "Không có file nào được tải lên!" });
+                    return BadRequest(new ResponseDTO<object>("Không có file nào được tải lên!", null));
                 }
                 if (!file.FileName.EndsWith(".xlsx"))
                 {
-                    return BadRequest(new { Message = "Chỉ hỗ trợ file Excel (.xlsx)!" });
+                    return BadRequest(new ResponseDTO<object>("Chỉ hỗ trợ file Excel (.xlsx)!", null));
                 }
 
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -55,39 +55,35 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             string expiredTimeText = worksheet.Cells[row, 4].Text?.Trim() ?? "";
                             string importDateText = worksheet.Cells[row, 6].Text?.Trim() ?? "";
 
-                            // Debug: In giá trị thô để kiểm tra
                             if (string.IsNullOrEmpty(expiredTimeText))
                             {
-                                return BadRequest(new { Message = "ExpiredTime không được để trống!" });
+                                return BadRequest(new ResponseDTO<object>("ExpiredTime không được để trống!", null));
                             }
                             if (string.IsNullOrEmpty(importDateText))
                             {
-                                return BadRequest(new { Message = "ImportDate không được để trống!" });
+                                return BadRequest(new ResponseDTO<object>("ImportDate không được để trống!", null));
                             }
 
-                            // Parse ExpiredTime
                             if (!DateTime.TryParseExact(expiredTimeText, "yyyy/MM/dd",
                                 CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime expired))
                             {
-                                return BadRequest(new { Message = "ExpiredTime phải có định dạng yyyy/MM/dd!" });
+                                return BadRequest(new ResponseDTO<object>("ExpiredTime phải có định dạng yyyy/MM/dd!", null));
                             }
 
-                            // Parse ImportDate
                             if (!DateTime.TryParseExact(importDateText, "yyyy/MM/dd",
                                 CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime import))
                             {
-                                return BadRequest(new { Message = "ImportDate phải có định dạng yyyy/MM/dd!" });
+                                return BadRequest(new ResponseDTO<object>("ImportDate phải có định dạng yyyy/MM/dd!", null));
                             }
 
-                            // Parse Cost và Quantity
                             if (!decimal.TryParse(worksheet.Cells[row, 3].Value?.ToString(), out decimal cost))
                             {
-                                return BadRequest(new { Message = "Cost không hợp lệ!" });
+                                return BadRequest(new ResponseDTO<object>("Cost không hợp lệ!", null));
                             }
 
                             if (!int.TryParse(worksheet.Cells[row, 5].Value?.ToString(), out int quantity))
                             {
-                                return BadRequest(new { Message = "Quantity không hợp lệ!" });
+                                return BadRequest(new ResponseDTO<object>("Quantity không hợp lệ!", null));
                             }
 
                             facilities.Add(new Facility
@@ -104,26 +100,23 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 await _facilityService.AddFacilityFromExcel(facilities);
-                var facilityDtos = _mapper.Map<List<FacilitiesDTO>>(facilities);
-                return Created("", new
-                {
-                    Message = $"{facilities.Count} facility đã được thêm thành công!",
-                    Facilities = facilityDtos
-                });
+                var facilityDtos = _mapper.Map<IEnumerable<FacilitiesDTO>>(facilities);
+                return Created("", new ResponseDTO<IEnumerable<FacilitiesDTO>>($"{facilities.Count} facility đã được thêm thành công!", facilityDtos));
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new ResponseDTO<object>(ex.Message, null));
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(new { Message = ex.Message });
+                return Conflict(new ResponseDTO<object>(ex.Message, null));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = $"Lỗi xử lý file Excel: {ex.Message}" });
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi xử lý file Excel: {ex.Message}", null));
             }
         }
+
         // Add New Facility
         [HttpPost("createfacility")]
         public async Task<IActionResult> CreateFacility([FromBody] FacilitiesDTO facilityDto)
@@ -132,25 +125,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(new { Message = "Dữ liệu không hợp lệ!", Errors = ModelState });
+                    return BadRequest(new ResponseDTO<object>("Dữ liệu không hợp lệ!", ModelState));
                 }
 
                 var facility = _mapper.Map<Facility>(facilityDto);
                 await _facilityService.Add(facility);
                 var resultDto = _mapper.Map<FacilitiesDTO>(facility);
-                return Created("", new
-                {
-                    Message = "Facility đã được thêm thành công!",
-                    Facility = resultDto
-                });
+                return Created("", new ResponseDTO<FacilitiesDTO>("Facility đã được thêm thành công!", resultDto));
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(new { Message = ex.Message }); 
+                return Conflict(new ResponseDTO<object>(ex.Message, null));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = $"Lỗi khi thêm facility: {ex.Message}" });
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi thêm facility: {ex.Message}", null));
             }
         }
 
@@ -162,15 +151,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var facilities = await _facilityService.GetAll();
                 var facilityDtos = _mapper.Map<IEnumerable<FacilitiesDTO>>(facilities);
-                return Ok(new
-                {
-                    Message = "Danh sách facility được lấy thành công!",
-                    Facilities = facilityDtos
-                });
+                return Ok(new ResponseDTO<IEnumerable<FacilitiesDTO>>("Danh sách facility được lấy thành công!", facilityDtos));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = $"Lỗi khi lấy danh sách facility: {ex.Message}" });
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy danh sách facility: {ex.Message}", null));
             }
         }
     }
