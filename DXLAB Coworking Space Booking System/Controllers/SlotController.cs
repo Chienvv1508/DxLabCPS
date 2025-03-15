@@ -21,6 +21,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPost("Create")]
         public async Task<IActionResult> CreateSlots([FromBody] SlotGenerationRequest request)
         {
+            //if (!ModelState.IsValid)
+            //{
+            //    return BadRequest(new ResponseDTO<object>("Dữ liệu đầu vào không hợp lệ!", ModelState));
+            //}
+            //TimeSpan startTime = TimeSpan.Parse(request.StartTime); // Hỗ trợ HH:mm:ss
+            //TimeSpan endTime = TimeSpan.Parse(request.EndTime);
+
             if (request == null)
             {
                 return BadRequest(new ResponseDTO<object>("Nội dung yêu cầu là bắt buộc!", null));
@@ -30,7 +37,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
             {
                 return BadRequest(new ResponseDTO<object>("Định dạng thời gian không hợp lệ!", null));
-                ;
             }
 
             if (startTime >= endTime)
