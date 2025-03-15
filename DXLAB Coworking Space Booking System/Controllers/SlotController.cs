@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/slot")]
     [ApiController]
     public class SlotController : ControllerBase
     {
@@ -18,7 +18,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _mapper = mapper;
         }
         // API Generate slot
-        [HttpPost("Create")]
+        [HttpPost("create")]
         public async Task<IActionResult> CreateSlots([FromBody] SlotGenerationRequest request)
         {
             try

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/role")]
     [ApiController]
     public class RoleController : ControllerBase
     {
@@ -20,7 +20,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Get All Student and Staff Role
-        [HttpGet("GetRoleByAdmin")]
+        [HttpGet("rolebyadmin")]
         public async Task<IActionResult> GetRoleByAdmin()
         {
             var roles = await _roleSevice.GetAll();

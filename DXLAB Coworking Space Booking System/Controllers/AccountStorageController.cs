@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/accountstorage")]
     [ApiController]
     public class AccountStorageController : ControllerBase
     {
@@ -42,7 +42,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Restore Soft Deleted Account
-        [HttpPatch("{id}/restore")]
+        [HttpPatch("restore/{id}")]
         public async Task<IActionResult> RestoreAccount(int id)
         {
             try
@@ -61,7 +61,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Hard Delete
-        [HttpDelete("{id}")]
+        [HttpDelete("hard-delete/{id}")]
         public async Task<IActionResult> HardDeleteAccount(int id)
         {
             try

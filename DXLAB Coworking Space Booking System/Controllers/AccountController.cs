@@ -14,7 +14,7 @@ using NBitcoin.Protocol;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/account")]
     [ApiController]
     public class AccountController : ControllerBase
     {
@@ -30,7 +30,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Add Account For Excel File
-        [HttpPost("AddFromExcel")]
+        [HttpPost("importexcel")]
         public async Task<IActionResult> AddFromExcel(IFormFile file)
         {
             try
@@ -152,7 +152,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Get All Account By Role Name
-        [HttpGet("role/{roleName}")]
+        [HttpGet("{rolename}")]
         public async Task<IActionResult> GetUsersByRoleName(string roleName)
         {
             try
@@ -180,7 +180,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Update Account's Role 
-        [HttpPut("{id}/role")]
+        [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateAccountRole(int id, [FromBody] UpdateRoleRequest request)
         {
             try
@@ -234,7 +234,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Soft Delete
-        [HttpPatch("{id}/soft-delete")]
+        [HttpPatch("soft-delete/{id}")]
         public async Task<IActionResult> SoftDeleteAccount(int id)
         {
             try
