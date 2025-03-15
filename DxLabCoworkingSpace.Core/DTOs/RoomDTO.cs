@@ -13,7 +13,8 @@ namespace DxLabCoworkingSpace
         {
            
         }
-
+        
+        public int RoomId { get; set; }
         [Required(ErrorMessage = "Tên phòng là bắt buộc.")]
         [RegularExpression(@"^(AL|BE|DE)\d{3}$", ErrorMessage = "Tên phòng phải có định dạng ALxxx, BExxx, hoặc DExxx.")]
         public string RoomName { get; set; } = null!;

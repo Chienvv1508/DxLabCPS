@@ -53,6 +53,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var room = _mapper.Map<Room>(roomDto);
                 await _roomService.Add(room);
+                roomDto = _mapper.Map<RoomDTO>(room);
+
                 var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDto);
                 return CreatedAtAction(nameof(GetRoomById), new { id = room.RoomId }, response);
             }
