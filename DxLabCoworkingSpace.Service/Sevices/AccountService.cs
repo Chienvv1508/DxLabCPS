@@ -110,13 +110,13 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
                 if (!Validator.TryValidateObject(dto, validationContext, validationResults, true))
                 {
-                    validationErrors.AddRange(validationResults.Select(r => $"{r.ErrorMessage}"));
+                    validationErrors.AddRange(validationResults.Select(r => $"{r.ErrorMessage} (Email: {user.Email})"));
                     continue;
                 }
 
                 if (role == null)
                 {
-                    validationErrors.Add("RoleName không phải là Student hay Staff. Vui lòng sửa lại!");
+                    validationErrors.Add($"RoleName không phải là Student hay Staff. Vui lòng sửa lại! (Email: {user.Email})");
                     continue;
                 }
 
