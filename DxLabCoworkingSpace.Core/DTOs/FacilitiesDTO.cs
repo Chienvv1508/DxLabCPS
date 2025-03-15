@@ -9,7 +9,10 @@ namespace DxLabCoworkingSpace.Core.DTOs
 {
     public class FacilitiesDTO
     {
+        [Required(ErrorMessage = "FacilityId không được để trống!")]
         public int FacilityId { get; set; }
+
+        [Required(ErrorMessage = "BatchNumber không được để trống!")]
         [StringLength(50, ErrorMessage ="BatchNumber không quá 50 ký tự.")]
         public string BatchNumber { get; set; } = null!;
         public string? FacilityDescription { get; set; }

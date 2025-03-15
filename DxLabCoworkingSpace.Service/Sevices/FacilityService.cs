@@ -118,9 +118,11 @@ namespace DxLabCoworkingSpace.Service.Sevices
             await _unitOfWork.CommitAsync();
         }
 
+        // Triển khai Get để tìm Facility theo biểu thức LINQ
         public async Task<Facility> Get(Expression<Func<Facility, bool>> expression)
         {
-            throw new NotImplementedException();
+            var facility = await _unitOfWork.FacilityRepository.Get(expression);
+            return facility; // Trả về null nếu không tìm thấy
         }
 
         public async Task<IEnumerable<Facility>> GetAll()

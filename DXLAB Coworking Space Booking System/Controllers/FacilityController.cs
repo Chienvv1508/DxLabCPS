@@ -7,6 +7,7 @@ using DxLabCoworkingSpace.Core.DTOs;
 using OfficeOpenXml;
 using System.Globalization;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Data.SqlClient.DataClassification;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -116,7 +117,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return StatusCode(500, new ResponseDTO<object>($"Lỗi xử lý file Excel: {ex.Message}", null));
             }
         }
-
+       
         // Add New Facility
         [HttpPost("createfacility")]
         public async Task<IActionResult> CreateFacility([FromBody] FacilitiesDTO facilityDto)
@@ -156,6 +157,31 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy danh sách facility: {ex.Message}", null));
+            }
+        }
+
+        [HttpGet("{facilityid}/{batchnumber}")]
+        public async Task<IActionResult> GetAnFacility(int facilityid, string batchnumber)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ResponseDTO<object>("Dữ liệu không hợp lệ!", ModelState));
+                }
+
+                var facility = await _facilityService.Get(f => f.FacilityId == facilityid && f.BatchNumber == batchnumber);
+                if (facility == null)
+                {
+                    return NotFound(new ResponseDTO<object>("Không tìm thấy facility với FacilityId và BatchNumber đã cung cấp!", null));
+                }
+
+                var facilityDto = _mapper.Map<FacilitiesDTO>(facility);
+                return Ok(new ResponseDTO<FacilitiesDTO>("Facility được lấy thành công!", facilityDto));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy facility: {ex.Message}", null));
             }
         }
     }
