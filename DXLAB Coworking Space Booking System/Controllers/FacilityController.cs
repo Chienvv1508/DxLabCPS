@@ -82,12 +82,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             // Parse Cost và Quantity
                             if (!decimal.TryParse(worksheet.Cells[row, 3].Value?.ToString(), out decimal cost))
                             {
-                                return BadRequest(new { Message = "Cost không hợp lệ, phải là số!" });
+                                return BadRequest(new { Message = "Cost không hợp lệ!" });
                             }
 
                             if (!int.TryParse(worksheet.Cells[row, 5].Value?.ToString(), out int quantity))
                             {
-                                return BadRequest(new { Message = "Quantity không hợp lệ, phải là số nguyên!" });
+                                return BadRequest(new { Message = "Quantity không hợp lệ!" });
                             }
 
                             facilities.Add(new Facility

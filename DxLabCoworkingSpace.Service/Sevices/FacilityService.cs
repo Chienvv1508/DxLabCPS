@@ -83,7 +83,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
                 if (facility.ExpiredTime <= facility.ImportDate)
                 {
                     validationErrors.Add("ExpiredTime phải lớn hơn ImportDate!");
-                    continue;
+                    break;
                 }
 
                 validFacilities.Add(facility);
