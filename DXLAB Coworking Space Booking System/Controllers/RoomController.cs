@@ -90,7 +90,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             var rooms = await _roomService.GetAll();
             var roomDtos = _mapper.Map<IEnumerable<RoomDTO>>(rooms);
-            return Ok(roomDtos);
+            var response = new ResponseDTO<object>(200, "Lấy thành công", roomDtos);
+            return Ok(response);
         }
 
         
@@ -100,10 +101,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             var room = await _roomService.Get(x => x.RoomId == id);
             if (room == null)
             {
-                return NotFound(new { message = "Room not found" });
+                var responseNotFound = new ResponseDTO<object>(404, "Mã Room không tồn tại", null);
+                return NotFound(responseNotFound);
             }
             var roomDto = _mapper.Map<RoomDTO>(room);
-            return Ok(roomDto);
+            var response = new ResponseDTO<object>(200, "Lấy thành công", roomDto);
+            return Ok(response);
         }
     }
 }
