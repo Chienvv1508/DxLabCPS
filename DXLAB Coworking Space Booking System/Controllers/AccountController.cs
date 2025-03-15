@@ -140,26 +140,26 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Get All Account By Role Name
-        [HttpGet("role/{roleName}")]
+        [HttpGet("{rolename}")]
         public async Task<IActionResult> GetUsersByRoleName(string roleName)
         {
             try
             {
                 var users = (await _accountService.GetUsersByRoleName(roleName)).ToList();
-                var accountDTOs = _mapper.Map<IEnumerable<AccountDTO>>(users);
-                return Ok(new ResponseDTO<IEnumerable<AccountDTO>>($"Người dùng với RoleName: {roleName} được lấy thành công!", accountDTOs));
+                var accountDtos = _mapper.Map<IEnumerable<AccountDTO>>(users);
+                return Ok(new ResponseDTO<IEnumerable<AccountDTO>>($"Người dùng với RoleName: {roleName} được lấy thành công!", accountDtos));
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, new ResponseDTO<object>(ex.Message, null));
+                return StatusCode(403, new ResponseDTO<object>(ex.Message, null)); // Từ chối nếu cố thêm Admin
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new ResponseDTO<object>(ex.Message, null));
+                return BadRequest(new ResponseDTO<object>(ex.Message, null)); // Role không tồn tại hoặc không hợp lệ
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi cập nhật người dùng: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi truy xuất tài khoản: {ex.Message}", null));
             }
         }
 
@@ -173,25 +173,40 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                if (!ModelState.IsValid)
+                if (request == null || string.IsNullOrEmpty(request.RoleName))
                 {
-                    return BadRequest(new ResponseDTO<object>("Dữ liệu không hợp lệ", ModelState));
+                    return BadRequest(new ResponseDTO<object>("RoleName là bắt buộc và không để trống!", null));
                 }
 
-                var userToUpdate = new User
+                var existingUser = await _accountService.GetById(id);
+                if (existingUser == null)
                 {
-                    UserId = id,
-                    Role = new Role { RoleName = request.RoleName }
-                };
+                    return NotFound(new ResponseDTO<object>($"Người dùng với ID: {id} không tìm thấy!", null));
+                }
 
-                await _accountService.Update(userToUpdate);
+                var validRole = new[] { "Student", "Staff" };
+                if (!validRole.Contains(request.RoleName))
+                {
+                    return BadRequest(new ResponseDTO<object>("RoleName phải là 'Student' hoặc 'Staff'!", null));
+                }
+
+                var role = (await _unitOfWork.RoleRepository.GetAll()).FirstOrDefault(r => r.RoleName == request.RoleName);
+                if (role == null)
+                {
+                    return BadRequest(new ResponseDTO<object>($"Role với tên: {request.RoleName} không tìm thấy!", null));
+                }
+
+                existingUser.RoleId = role.RoleId;
+                existingUser.Role = role;
+                await _accountService.Update(existingUser);
+
                 var updatedUser = await _accountService.GetById(id);
                 var updatedDto = _mapper.Map<AccountDTO>(updatedUser);
                 return Ok(new ResponseDTO<AccountDTO>("Role của người dùng đã được cập nhật thành công!", updatedDto));
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, new ResponseDTO<object>(ex.Message, null));
+                return StatusCode(403, new ResponseDTO<object>(ex.Message, null)); // Từ chối nếu user là Admin
             }
             catch (InvalidOperationException ex)
             {

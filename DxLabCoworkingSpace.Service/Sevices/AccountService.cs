@@ -139,6 +139,8 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
             await _unitOfWork.CommitAsync();
         }
+
+
         public async Task<IEnumerable<User>> GetUsersByRoleName(string roleName)
         {
             var role = (await _unitOfWork.RoleRepository.GetAll()).FirstOrDefault(r => r.RoleName == roleName);
@@ -213,50 +215,52 @@ namespace DxLabCoworkingSpace.Service.Sevices
             }
             RestrictAdminAccess(existingUser);
 
-            // Kiểm tra RoleName từ entity.Role (nếu có)
-            if (entity.Role != null && !string.IsNullOrEmpty(entity.Role.RoleName))
+            if (existingUser.Email != entity.Email || existingUser.FullName != entity.FullName ||
+                existingUser.Avatar != entity.Avatar || existingUser.WalletAddress != entity.WalletAddress ||
+                existingUser.Status != entity.Status || existingUser.AccessToken != entity.AccessToken)
             {
-                var validRoles = new[] { "Student", "Staff" };
-                if (!validRoles.Contains(entity.Role.RoleName))
-                {
-                    throw new InvalidOperationException("RoleName phải là 'Student' hoặc 'Staff'!");
-                }
+                throw new InvalidOperationException("Chỉ có Role mới thay đổi được. Những trường khác không thay đổi được!");
+            }
 
+            if (!string.IsNullOrEmpty(entity.Role?.RoleName))
+            {
                 var role = (await _unitOfWork.RoleRepository.GetAll()).FirstOrDefault(r => r.RoleName == entity.Role.RoleName);
+                if (role != null)
+                {
+                    RestrictAdminRole(role); // Từ chối nếu cập nhật thành Admin
+                    if (role.RoleId!=2 && role.RoleId!=3)
+                    {
+                        throw new InvalidOperationException("Chỉ có thể cập nhật Role thành Student hoặc Staff!");
+                    }
+                    existingUser.RoleId = role.RoleId;
+                    existingUser.Role = role; // Cập nhật Role để giữ RoleName mới
+                }
+                else if (entity.RoleId.HasValue)
+                {
+                    role = await _unitOfWork.RoleRepository.GetById(entity.RoleId.Value);
+                    if (role != null)
+                    {
+                        RestrictAdminRole(role); // Từ chối nếu cập nhật thành Admin
+                        if (role.RoleId != 2 && role.RoleId != 3)
+                        {
+                            throw new InvalidOperationException("Chỉ có thể cập nhật Role thành Student hoặc Staff!");
+                        }
+                        existingUser.RoleId = role.RoleId;
+                        existingUser.Role = role;
+                    }
+                }
                 if (role == null)
                 {
-                    throw new InvalidOperationException($"Role với tên {entity.Role.RoleName} không tìm thấy!");
+                    throw new InvalidOperationException($"Role với tên {entity.Role?.RoleName} hoặc ID {entity.RoleId} không tìm thấy!");
                 }
-
-                RestrictAdminRole(role); // Từ chối nếu cập nhật thành Admin
-                existingUser.RoleId = role.RoleId;
-                existingUser.Role = role; // Cập nhật Role
-            }
-            else if (entity.RoleId.HasValue) // Kiểm tra RoleId nếu không có RoleName
-            {
-                var role = await _unitOfWork.RoleRepository.GetById(entity.RoleId.Value);
-                if (role == null)
-                {
-                    throw new InvalidOperationException($"Role với ID {entity.RoleId} không tìm thấy!");
-                }
-
-                RestrictAdminRole(role); // Từ chối nếu cập nhật thành Admin
-                if (role.RoleId != 2 && role.RoleId != 3) // 2 và 3 là Student/Staff
-                {
-                    throw new InvalidOperationException("Chỉ có thể cập nhật Role thành Student hoặc Staff!");
-                }
-                existingUser.RoleId = role.RoleId;
-                existingUser.Role = role;
-            }
-            else
-            {
-                throw new InvalidOperationException("RoleName hoặc RoleId là bắt buộc để cập nhật role!");
             }
 
             await _unitOfWork.UserRepository.Update(existingUser);
             _unitOfWork.Context.Entry(existingUser).State = EntityState.Modified;
-            await _unitOfWork.CommitAsync();
+            await _unitOfWork.CommitAsync(); 
         }
+
+
         async Task IGenericService<User>.Delete(int id)
         {
             var user = await Get(u => u.UserId == id, u => u.Role);
