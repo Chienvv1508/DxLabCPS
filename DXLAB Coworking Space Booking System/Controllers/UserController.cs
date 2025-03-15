@@ -10,7 +10,7 @@ using System.Text;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/user")]
+    [Route("api/[controller]")]
     [ApiController]
 
     
@@ -25,7 +25,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _userService = userService;
         }
 
-        [HttpPost("createuser")]
+        [HttpPost]
         public async Task<IActionResult> VerifyAccount([FromBody] UserDTO userinfo)
         {
             if (!ModelState.IsValid)

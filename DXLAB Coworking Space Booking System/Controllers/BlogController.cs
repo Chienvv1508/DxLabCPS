@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/blog")]
+    [Route("api/[controller]")]
     [ApiController]
     public class BlogController : ControllerBase
     {

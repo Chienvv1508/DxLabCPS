@@ -10,7 +10,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/facility")]
+    [Route("api/[controller]")]
     [ApiController]
     public class FacilityController : ControllerBase
     {
@@ -26,7 +26,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Add Facility From Excel File
-        [HttpPost("importexcel")]
+        [HttpPost("AddFacilityFromExcel")]
         public async Task<IActionResult> AddFacilityFromExcel(IFormFile file)
         {
             try
@@ -118,7 +118,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Add New Facility
-        [HttpPost("createfacility")]
+        [HttpPost("AddNewFacility")]
         public async Task<IActionResult> CreateFacility([FromBody] FacilitiesDTO facilityDto)
         {
             try
@@ -144,7 +144,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Get All Account
-        [HttpGet]
+        [HttpGet("GetAllFacilities")]
         public async Task<IActionResult> GetAllFacilities()
         {
             try
