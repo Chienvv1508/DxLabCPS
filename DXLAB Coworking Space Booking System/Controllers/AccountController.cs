@@ -179,10 +179,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
         }
 
-        public class UpdateRoleRequest
-        {
-            public string RoleName { get; set; } = null!;
-        }
         // Update Account's Role 
         [HttpPut("{id}/role")]
         public async Task<IActionResult> UpdateAccountRole(int id, [FromBody] UpdateRoleRequest request)
