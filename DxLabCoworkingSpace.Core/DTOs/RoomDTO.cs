@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
@@ -13,7 +14,7 @@ namespace DxLabCoworkingSpace
         {
            
         }
-        
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int RoomId { get; set; }
         [Required(ErrorMessage = "Tên phòng là bắt buộc.")]
         [RegularExpression(@"^(AL|BE|DE)\d{3}$", ErrorMessage = "Tên phòng phải có định dạng ALxxx, BExxx, hoặc DExxx.")]

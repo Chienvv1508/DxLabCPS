@@ -29,7 +29,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDto)
         {
-           
+            
 
             if (!ModelState.IsValid)
             {
@@ -75,16 +75,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (patchDoc == null)
             {
-                return BadRequest(new { message = "Chưa có dữ liệu update" });
+                var response = new ResponseDTO<object>(404, "Bạn chưa truyền dữ liệu vào", null);
+                return BadRequest(response);
             }
 
             var result = await _roomService.PatchRoomAsync(id, patchDoc);
             if (!result)
             {
-                return NotFound(new { message = "Cập nhập dữ liệu lỗi" });
+                var response = new ResponseDTO<object>(404, "Không tìm thấy room", null);
+                return NotFound(response);
             }
-
-            return Ok(new { message = "Cập nhập dữ liệu thành công" });
+            var response1 = new ResponseDTO<object>(200, "Cập nhập dữ liệu thành công", null);
+            return Ok(response1);
         }
 
         [HttpGet]
