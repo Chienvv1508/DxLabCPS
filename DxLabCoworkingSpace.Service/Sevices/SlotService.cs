@@ -109,6 +109,14 @@ namespace DxLabCoworkingSpace.Service.Sevices
         {
             return await _unitOfWork.SlotRepository.GetById(id);
         }
+        public async Task<IEnumerable<Slot>> GetAllWithInclude(params Expression<Func<Slot, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<Slot> GetWithInclude(Expression<Func<Slot, bool>> expression, params Expression<Func<Slot, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
         async Task IGenericService<Slot>.Update(Slot entity)
         {
             throw new NotImplementedException();

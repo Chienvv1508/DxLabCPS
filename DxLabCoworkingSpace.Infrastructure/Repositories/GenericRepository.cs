@@ -36,6 +36,24 @@ namespace DxLabCoworkingSpace
         {
             return await _entitySet.FindAsync(id);
         }
+        public async Task<IEnumerable<T>> GetAllWithInclude(params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = _entitySet;
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+            return await query.ToListAsync();
+        }
+        public async Task<T> GetWithInclude(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = _entitySet;
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+            return await query.FirstOrDefaultAsync(expression);
+        }
         public async Task Add(T entity)
         {
             _entitySet.Add(entity);

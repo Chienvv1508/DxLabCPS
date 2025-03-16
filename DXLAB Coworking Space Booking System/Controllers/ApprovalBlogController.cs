@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DxLabCoworkingSpace;
 using DxLabCoworkingSpace.Core.DTOs;
 using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Authorization;
@@ -24,18 +25,64 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetPendingBlogs()
         {
-            var blogs = await _blogService.GetAllWithUser(b => b.Status == (int)BlogDTO.BlogStatus.Pending);
-            var blogDtos = _mapper.Map<IEnumerable<BlogDTO>>(blogs);
-            return Ok(blogDtos);
+            try
+            {
+                var blogs = await _blogService.GetAllWithUser(b => b.Status == (int)BlogDTO.BlogStatus.Pending);
+                var blogList = blogs.ToList();
+
+                // Đảm bảo load Images từ DB nếu cần
+                foreach (var blog in blogList)
+                {
+                    if (blog.Images == null || !blog.Images.Any())
+                    {
+                        blog.Images = (await _blogService.GetById(blog.BlogId)).Images;
+                    }
+                }
+
+                var blogDtos = _mapper.Map<IEnumerable<BlogDTO>>(blogList);
+                if (blogDtos == null || !blogDtos.Any())
+                {
+                    return NotFound(new ResponseDTO<object>("Không tìm thấy blog nào đang chờ duyệt!", null));
+                }
+
+                return Ok(new ResponseDTO<IEnumerable<BlogDTO>>("Danh sách blog đang chờ duyệt đã được lấy thành công!", blogDtos));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy danh sách blog: {ex.Message}", null));
+            }
         }
 
         [HttpGet("approved")]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetApprovedBlogs()
         {
-            var blogs = await _blogService.GetAllWithUser(b => b.Status == (int)BlogDTO.BlogStatus.Approve);
-            var blogDtos = _mapper.Map<IEnumerable<BlogDTO>>(blogs);
-            return Ok(blogDtos);
+            try
+            {
+                var blogs = await _blogService.GetAllWithUser(b => b.Status == (int)BlogDTO.BlogStatus.Approve);
+                var blogList = blogs.ToList();
+
+                // Đảm bảo load Images từ DB nếu cần
+                foreach (var blog in blogList)
+                {
+                    if (blog.Images == null || !blog.Images.Any())
+                    {
+                        blog.Images = (await _blogService.GetById(blog.BlogId)).Images;
+                    }
+                }
+
+                var blogDtos = _mapper.Map<IEnumerable<BlogDTO>>(blogList);
+                if (blogDtos == null || !blogDtos.Any())
+                {
+                    return NotFound(new ResponseDTO<object>("Không tìm thấy blog nào đã được duyệt!", null));
+                }
+
+                return Ok(new ResponseDTO<IEnumerable<BlogDTO>>("Danh sách blog đã được duyệt đã được lấy thành công!", blogDtos));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy danh sách blog: {ex.Message}", null));
+            }
         }
 
         [HttpPut("approve/{id}")]
@@ -46,11 +93,23 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 await _blogService.ApproveBlog(id);
                 var blog = await _blogService.GetByIdWithUser(id);
-                return Ok(_mapper.Map<BlogDTO>(blog));
+                if (blog == null)
+                {
+                    return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
+                }
+
+                // Đảm bảo load Images từ DB nếu cần
+                if (blog.Images == null || !blog.Images.Any())
+                {
+                    blog.Images = (await _blogService.GetById(id)).Images;
+                }
+
+                var blogDto = _mapper.Map<BlogDTO>(blog);
+                return Ok(new ResponseDTO<BlogDTO>("Blog đã được duyệt thành công!", blogDto));
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new ResponseDTO<object>($"Lỗi khi duyệt blog: {ex.Message}", null));
             }
         }
 
@@ -62,11 +121,23 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 await _blogService.CancelBlog(id);
                 var blog = await _blogService.GetByIdWithUser(id);
-                return Ok(_mapper.Map<BlogDTO>(blog));
+                if (blog == null)
+                {
+                    return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
+                }
+
+                // Đảm bảo load Images từ DB nếu cần
+                if (blog.Images == null || !blog.Images.Any())
+                {
+                    blog.Images = (await _blogService.GetById(id)).Images;
+                }
+
+                var blogDto = _mapper.Map<BlogDTO>(blog);
+                return Ok(new ResponseDTO<BlogDTO>("Blog đã được hủy thành công!", blogDto));
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new ResponseDTO<object>($"Lỗi khi hủy blog: {ex.Message}", null));
             }
         }
 
@@ -74,9 +145,27 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetById(int id)
         {
-            var blog = await _blogService.GetByIdWithUser(id);
-            if (blog == null) return NotFound("Không tìm thấy blog");
-            return Ok(_mapper.Map<BlogDTO>(blog));
+            try
+            {
+                var blog = await _blogService.GetByIdWithUser(id);
+                if (blog == null)
+                {
+                    return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
+                }
+
+                // Đảm bảo load Images từ DB nếu cần
+                if (blog.Images == null || !blog.Images.Any())
+                {
+                    blog.Images = (await _blogService.GetById(id)).Images;
+                }
+
+                var blogDto = _mapper.Map<BlogDTO>(blog);
+                return Ok(new ResponseDTO<BlogDTO>("Lấy thông tin blog thành công!", blogDto));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy blog: {ex.Message}", null));
+            }
         }
     }
 }

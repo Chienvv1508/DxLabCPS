@@ -138,7 +138,14 @@ namespace DxLabCoworkingSpace.Service.Sevices
         {
             return await _unitOfWork.FacilityRepository.GetById(id);
         }
-
+        public async Task<IEnumerable<Facility>> GetAllWithInclude(params Expression<Func<Facility, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<Facility> GetWithInclude(Expression<Func<Facility, bool>> expression, params Expression<Func<Facility, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
         public async Task Update(Facility entity)
         {
             throw new NotImplementedException();

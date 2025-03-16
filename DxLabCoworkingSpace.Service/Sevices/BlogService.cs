@@ -47,7 +47,14 @@ namespace DxLabCoworkingSpace.Service.Sevices
         {
             return await _unitOfWork.BlogRepository.GetById(id);
         }
-
+        public async Task<IEnumerable<Blog>> GetAllWithInclude(params Expression<Func<Blog, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<Blog> GetWithInclude(Expression<Func<Blog, bool>> expression, params Expression<Func<Blog, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
         public async Task Update(Blog entity)
         {
             await _unitOfWork.BlogRepository.Update(entity);
