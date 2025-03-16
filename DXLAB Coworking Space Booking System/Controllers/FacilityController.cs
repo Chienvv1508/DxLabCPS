@@ -160,6 +160,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
         }
 
+        //Get An Facility
         [HttpGet("{facilityid}/{batchnumber}")]
         public async Task<IActionResult> GetAnFacility(int facilityid, string batchnumber)
         {
@@ -184,5 +185,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy facility: {ex.Message}", null));
             }
         }
+
+        //Update Facility
+
     }
 }
