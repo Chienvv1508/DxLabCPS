@@ -55,6 +55,14 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<Room, RoomDTO>()
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
                     src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
+
+            CreateMap<AreaTypeDTO, AreaType>()
+            .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
+             src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null));
+
+            CreateMap<AreaType, AreaTypeDTO>()
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
+                    src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
         }
     }
 }

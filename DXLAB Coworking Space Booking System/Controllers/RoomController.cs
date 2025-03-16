@@ -29,17 +29,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDto)
         {
-            
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-                var response = new ResponseDTO<object>(400, "Lỗi: " + string.Join("; ", errors), null);
-                return BadRequest(response);
-            }
 
             var existedRoom =  await _roomService.Get(x => x.RoomName == roomDto.RoomName);
            

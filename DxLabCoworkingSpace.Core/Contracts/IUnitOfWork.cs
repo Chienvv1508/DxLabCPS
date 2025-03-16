@@ -16,6 +16,7 @@ namespace DxLabCoworkingSpace
         IGenericRepository<Blog> BlogRepository { get; }
 
         IGenericRepository<Room> RoomRepository { get; }
+        IGenericRepository<AreaType> AreaTypeRepository { get; }
         DbContext Context { get; }
         Task CommitAsync();
         Task RollbackAsync();

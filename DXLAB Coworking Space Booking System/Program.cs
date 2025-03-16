@@ -2,6 +2,7 @@ using DXLAB_Coworking_Space_Booking_System;
 using DxLabCoworkingSpace;
 using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
@@ -15,6 +16,19 @@ builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => string.IsNullOrEmpty(e.ErrorMessage) ? "Giá trị không hợp lệ." : e.ErrorMessage)
+            .ToList();
+
+        var response = new ResponseDTO<object>(400, "Lỗi: " + string.Join("; ", errors), null);
+        return new BadRequestObjectResult(response);
+    };
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var key = builder.Configuration.GetSection("Jwt")["key"];
