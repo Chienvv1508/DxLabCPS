@@ -26,10 +26,11 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             .Select(e => string.IsNullOrEmpty(e.ErrorMessage) ? "Giá trị không hợp lệ." : e.ErrorMessage)
             .ToList();
 
-        var response = new ResponseDTO<object>("Lỗi: " + string.Join("; ", errors), null);
+        var response = new ResponseDTO<object>(string.Join("; ", errors), null);
         return new BadRequestObjectResult(response);
     };
 });
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var key = builder.Configuration.GetSection("Jwt")["key"];
 var issuer = builder.Configuration.GetSection("Jwt")["Issuer"];

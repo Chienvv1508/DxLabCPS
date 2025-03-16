@@ -35,6 +35,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ResponseDTO<object>("Dữ liệu không hợp lệ", ModelState));
+                }
                 if (file == null || file.Length == 0)
                 {
                     return BadRequest(new ResponseDTO<object>("Không có file nào được tải lên!", null));

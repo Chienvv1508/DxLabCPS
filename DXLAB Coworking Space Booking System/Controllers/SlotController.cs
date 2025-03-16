@@ -21,23 +21,23 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> CreateSlots([FromBody] SlotGenerationRequest request)
         {
-            //if (!ModelState.IsValid)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ResponseDTO<object>("Dữ liệu đầu vào không hợp lệ!", ModelState));
+            }
+            TimeSpan startTime = TimeSpan.Parse(request.StartTime); // Hỗ trợ HH:mm:ss
+            TimeSpan endTime = TimeSpan.Parse(request.EndTime);
+
+            //if (request == null)
             //{
-            //    return BadRequest(new ResponseDTO<object>("Dữ liệu đầu vào không hợp lệ!", ModelState));
+            //    return BadRequest(new ResponseDTO<object>("Nội dung yêu cầu là bắt buộc!", null));
             //}
-            //TimeSpan startTime = TimeSpan.Parse(request.StartTime); // Hỗ trợ HH:mm:ss
-            //TimeSpan endTime = TimeSpan.Parse(request.EndTime);
 
-            if (request == null)
-            {
-                return BadRequest(new ResponseDTO<object>("Nội dung yêu cầu là bắt buộc!", null));
-            }
-
-            if (!TimeSpan.TryParse(request.StartTime, out TimeSpan startTime) ||
-                !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
-            {
-                return BadRequest(new ResponseDTO<object>("Định dạng thời gian không hợp lệ!", null));
-            }
+            //if (!TimeSpan.TryParse(request.StartTime, out TimeSpan startTime) ||
+            //    !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
+            //{
+            //    return BadRequest(new ResponseDTO<object>("Định dạng thời gian không hợp lệ!", null));
+            //}
 
             if (startTime >= endTime)
             {
@@ -56,11 +56,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             catch (InvalidOperationException ex)
             {
-                return Conflict(new { Message = ex.Message });
+                return Conflict(new ResponseDTO<object>(ex.Message, null));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Lỗi khi tạo slots: " + ex.Message });
+                return StatusCode(500, new ResponseDTO<object>("Lỗi khi tạo slot: " + ex.Message, null));
             }
         }
         // API Lấy tất cả slot
