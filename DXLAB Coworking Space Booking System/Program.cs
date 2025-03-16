@@ -65,6 +65,7 @@ builder.Services.AddScoped<ISlotService, SlotService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
+builder.Services.AddScoped<IBlogService, BlogService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 // ✅ Cập nhật CORS
