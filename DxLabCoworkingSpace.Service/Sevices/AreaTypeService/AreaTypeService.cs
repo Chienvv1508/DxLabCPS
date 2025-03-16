@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -27,17 +28,18 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<AreaType> Get(Expression<Func<AreaType, bool>> expression)
+        public async Task<AreaType> Get(Expression<Func<AreaType, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeRepository.GetWithInclude(expression, x => x.Images);
+
         }
 
-        public Task<IEnumerable<AreaType>> GetAll()
+        public async Task<IEnumerable<AreaType>> GetAll()
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeRepository.GetAllWithInclude( x => x.Images);
         }
 
-        public Task<IEnumerable<AreaType>> GetAll(Expression<Func<AreaType, bool>> expression)
+        public async Task<IEnumerable<AreaType>> GetAll(Expression<Func<AreaType, bool>> expression)
         {
             throw new NotImplementedException();
         }

@@ -64,7 +64,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (patchDoc == null)
             {
-                var response = new ResponseDTO<object>(404, "Bạn chưa truyền dữ liệu vào", null);
+                var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
                 return BadRequest(response);
             }
             var roomFromDb = await _roomService.Get(r => r.RoomId == id);

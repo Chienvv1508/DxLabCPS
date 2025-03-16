@@ -64,6 +64,7 @@ builder.Services.AddScoped<ISlotService, SlotService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IAreaTypeService, AreaTypeService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 
