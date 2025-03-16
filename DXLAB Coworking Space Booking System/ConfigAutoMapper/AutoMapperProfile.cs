@@ -32,16 +32,20 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             // Mapping cho Blog và BlogDTO
             CreateMap<Blog, BlogDTO>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (BlogDTO.BlogStatus)src.Status)) // int -> enum
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (BlogDTO.BlogStatus)src.Status))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : null))
-                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images
-                    .Where(i => i.BlogId != null)
-                    .Select(i => i.ImageUrl)
-                    .ToList()));
+                .ForMember(dest => dest.BlogCreatedDate, opt => opt.MapFrom(src => src.BlogCreatedDate.ToString("yyyy-MM-ddTHH:mm:ss")))
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null
+                    ? src.Images.Where(i => i.BlogId != null)
+                        .Select(i => i.ImageUrl)
+                        .ToList()
+                    : new List<string>()));
+
             CreateMap<BlogDTO, Blog>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status)) // enum -> int
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.BlogCreatedDate, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.BlogCreatedDate) ? DateTime.Now : DateTime.Parse(src.BlogCreatedDate)))
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null
                     ? src.Images.Select(url => new Image
                     {

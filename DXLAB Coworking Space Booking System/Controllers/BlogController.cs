@@ -5,7 +5,6 @@ using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -37,23 +36,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var userId = 1; // Hardcode UserId = 1 để test
                 blog.UserId = userId;
 
-                // Lưu blog vào DB để lấy BlogId
-                await _blogService.Add(blog);
-
-                // Cập nhật BlogId cho các Image (nếu có)
-                if (blog.Images != null && blog.Images.Any())
-                {
-                    foreach (var image in blog.Images)
-                    {
-                        image.BlogId = blog.BlogId; // Gán BlogId từ blog vừa tạo
-                    }
-                    await _blogService.Update(blog);
-                }
-
-                // Lấy lại blog từ DB để đảm bảo Images được load đúng
-                var savedBlog = await _blogService.GetById(blog.BlogId);
+                await _blogService.Add(blog); // BlogCreatedDate sẽ được gán trong BlogService
+                var savedBlog = await _blogService.GetByIdWithUser(blog.BlogId); // Lấy lại với Images và User
                 var resultDto = _mapper.Map<BlogDTO>(savedBlog);
-                return StatusCode(201, new ResponseDTO<BlogDTO>("Blog đã được tạo thành công!", resultDto));
+                
+                return Ok(new ResponseDTO<BlogDTO>("Blog đã được tạo thành công!", resultDto));
             }
             catch (ArgumentException ex)
             {
@@ -78,18 +65,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var userId = 1; // Hardcode UserId = 1 để test
                 var blogs = await _blogService.GetAll(b => b.Status == (int)blogStatus && b.UserId == userId);
-                var blogList = blogs.ToList();
+                var blogDtos = _mapper.Map<IEnumerable<BlogDTO>>(blogs);
 
-                // Đảm bảo load Images từ DB nếu cần
-                foreach (var blog in blogList)
-                {
-                    if (blog.Images == null || !blog.Images.Any())
-                    {
-                        blog.Images = (await _blogService.GetById(blog.BlogId)).Images;
-                    }
-                }
-
-                var blogDtos = _mapper.Map<IEnumerable<BlogDTO>>(blogList);
                 if (blogDtos == null || !blogDtos.Any())
                 {
                     return NotFound(new ResponseDTO<object>("Không tìm thấy blog nào với trạng thái này!", null));
@@ -114,7 +91,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
-                var userId = 1; // Hardcode UserId = 1 để test
                 var existingBlog = await _blogService.GetById(id);
                 if (existingBlog == null)
                 {
@@ -125,18 +101,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 updatedBlog.BlogId = id; // Đảm bảo BlogId không bị thay đổi
                 await _blogService.EditCancelledBlog(id, updatedBlog);
 
-                // Lấy lại blog từ DB để đảm bảo Images được load đúng
-                var savedBlog = await _blogService.GetById(id);
-                if (updatedBlog.Images != null && updatedBlog.Images.Any())
-                {
-                    savedBlog.Images = updatedBlog.Images.Select(img => new Image
-                    {
-                        BlogId = id,
-                        ImageUrl = img.ImageUrl
-                    }).ToList();
-                    await _blogService.Update(savedBlog);
-                }
-
+                var savedBlog = await _blogService.GetByIdWithUser(id); // Lấy lại với Images và User
                 var resultDto = _mapper.Map<BlogDTO>(savedBlog);
                 return Ok(new ResponseDTO<BlogDTO>("Blog đã được chỉnh sửa thành công!", resultDto));
             }
@@ -152,17 +117,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                var userId = 1; // Hardcode UserId = 1 để test
-                var blog = await _blogService.GetById(id);
+                var blog = await _blogService.GetByIdWithUser(id); // Dùng GetByIdWithUser để load Images và User
                 if (blog == null)
                 {
                     return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
-                }
-
-                // Đảm bảo load Images từ DB nếu cần
-                if (blog.Images == null || !blog.Images.Any())
-                {
-                    blog.Images = (await _blogService.GetById(id)).Images;
                 }
 
                 var blogDto = _mapper.Map<BlogDTO>(blog);

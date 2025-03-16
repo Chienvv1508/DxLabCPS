@@ -68,7 +68,7 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             modelBuilder.Entity<Blog>(entity =>
             {
-                entity.Property(e => e.BlogCreatedDate).HasColumnType("date");
+                entity.Property(e => e.BlogCreatedDate).HasPrecision(0);
 
                 entity.Property(e => e.BlogTitle).HasMaxLength(50);
 

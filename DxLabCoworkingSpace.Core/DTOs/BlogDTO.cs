@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
@@ -26,7 +27,8 @@ namespace DxLabCoworkingSpace.Core.DTOs
         [StringLength(int.MaxValue, MinimumLength = 10, ErrorMessage = "Nội dung blog phải ít nhất 10 ký tự")]
         public string BlogContent { get; set; } = null!;
 
-        public DateTime BlogCreatedDate { get; set; }
+        [DefaultValue("")]
+        public String BlogCreatedDate { get; set; }
 
         public BlogStatus Status { get; set; }
         public string? UserName { get; set; }

@@ -19,7 +19,6 @@ namespace DxLabCoworkingSpace.Service.Sevices
         }
 
         // Import Facility Form Excel File
-        // Import Facility From Excel File
         public async Task AddFacilityFromExcel(List<Facility> facilities)
         {
             if (facilities == null || !facilities.Any())

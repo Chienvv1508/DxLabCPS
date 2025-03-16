@@ -14,5 +14,6 @@ namespace DxLabCoworkingSpace.Service.Sevices
         Task CancelBlog(int id);
         Task<Blog> GetByIdWithUser(int id); // Thêm cho Admin
         Task<IEnumerable<Blog>> GetAllWithUser(Expression<Func<Blog, bool>> expression); // Thêm cho Admin
+        Task<IEnumerable<Blog>> GetAllWithInclude(Expression<Func<Blog, bool>> expression, params Expression<Func<Blog, object>>[] includes);
     }
 }
