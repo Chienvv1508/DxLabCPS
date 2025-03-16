@@ -67,15 +67,43 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var response = new ResponseDTO<object>(404, "Bạn chưa truyền dữ liệu vào", null);
                 return BadRequest(response);
             }
-
-            var result = await _roomService.PatchRoomAsync(id, patchDoc);
-            if (!result)
+            var roomFromDb = await _roomService.Get(r => r.RoomId == id);
+            if (roomFromDb == null)
             {
-                var response = new ResponseDTO<object>(404, "Không tìm thấy room", null);
-                return NotFound(response);
+                return NotFound();
             }
-            var response1 = new ResponseDTO<object>(200, "Cập nhập dữ liệu thành công", null);
-            return Ok(response1);
+
+           patchDoc.ApplyTo(roomFromDb, ModelState);  
+
+            
+            if (!ModelState.IsValid)
+            {
+                var allErrors = ModelState
+                .SelectMany(ms => ms.Value.Errors
+                .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
+                .ToList();
+                string errorString = string.Join(" | ", allErrors);
+                var response = new ResponseDTO<object>(400, errorString, null);
+                return BadRequest(response);
+            }
+
+            var roomDTO = _mapper.Map<RoomDTO>(roomFromDb);
+            
+            bool isValid = TryValidateModel(roomDTO);
+            if (!isValid)
+            {
+                var allErrors = ModelState
+                .SelectMany(ms => ms.Value.Errors
+                .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
+                .ToList();
+
+                string errorString = string.Join(" | ", allErrors);
+                var response = new ResponseDTO<object>(404, errorString, null);
+                return BadRequest(response);  
+            }
+            await _roomService.Update(roomFromDb);
+            return NoContent();
+
         }
 
         [HttpGet]

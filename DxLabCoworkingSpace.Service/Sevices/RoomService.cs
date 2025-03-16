@@ -55,11 +55,13 @@ namespace DxLabCoworkingSpace {
             patchDoc.ApplyTo(room);
             await _unitOfWork.CommitAsync();
             return true;
-        }
+     }
 
-        public Task Update(Room entity)
+        public async Task Update(Room entity)
     {
-        throw new NotImplementedException();
+             await _unitOfWork.RoomRepository.Update(entity);
+            await _unitOfWork.CommitAsync();
+
     }
 }
 }
