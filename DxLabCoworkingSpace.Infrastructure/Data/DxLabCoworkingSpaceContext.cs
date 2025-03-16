@@ -150,7 +150,7 @@ namespace DXLAB_Coworking_Space_Booking_System
 
                 entity.HasOne(d => d.Area)
                     .WithMany(p => p.Images)
-                    .HasForeignKey(d => d.AreaId)
+                    .HasForeignKey(d => d.AreaTypeId)
                     .HasConstraintName("FK_Images_Areas");
 
                 entity.HasOne(d => d.Blog)

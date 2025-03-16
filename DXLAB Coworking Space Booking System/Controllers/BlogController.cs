@@ -33,7 +33,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 var blog = _mapper.Map<Blog>(blogDto);
-                var userId = 1; // Hardcode UserId = 1 để test
+                var userId = 2; // Hardcode UserId = 1 để test
                 blog.UserId = userId;
 
                 await _blogService.Add(blog); // BlogCreatedDate sẽ được gán trong BlogService
@@ -63,7 +63,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
-                var userId = 1; // Hardcode UserId = 1 để test
+                var userId = 2; // Hardcode UserId = 1 để test
                 var blogs = await _blogService.GetAll(b => b.Status == (int)blogStatus && b.UserId == userId);
                 var blogDtos = _mapper.Map<IEnumerable<BlogDTO>>(blogs);
 

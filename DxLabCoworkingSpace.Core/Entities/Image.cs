@@ -8,7 +8,7 @@ namespace DxLabCoworkingSpace
         public int ImageId { get; set; }
         public string? ImageUrl { get; set; }
         public int? RoomId { get; set; }
-        public int? AreaId { get; set; }
+        public int? AreaTypeId { get; set; }
         public int? FacilityId { get; set; }
         public int? BlogId { get; set; }
 
