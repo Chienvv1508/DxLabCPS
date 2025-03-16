@@ -10,7 +10,7 @@ using System.Text;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/user")]
     [ApiController]
 
     
