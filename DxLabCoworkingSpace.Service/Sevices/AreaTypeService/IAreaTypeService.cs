@@ -8,6 +8,6 @@ namespace DxLabCoworkingSpace
 {
     public interface IAreaTypeService : IGenericService<AreaType>
     {
-
+        public Task<object> GetAreaTypeForAddRoom();
     }
 }

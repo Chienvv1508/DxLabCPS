@@ -49,9 +49,15 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task Update(AreaType entity)
+        public async Task Update(AreaType entity)
         {
-            throw new NotImplementedException();
+            await _unitOfWork.AreaTypeRepository.Update(entity);
+        }
+        public async Task<object> GetAreaTypeForAddRoom()
+        {
+            var listAreaType = await _unitOfWork.AreaTypeRepository.GetAll();
+            var listAreaTypeResult = listAreaType.Select(x => new AreaAddDTO() { AreaTypeId = x.AreaTypeId, AreaTypeName = x.AreaTypeName, Size = x.Size });
+            return listAreaTypeResult;
         }
     }
 }

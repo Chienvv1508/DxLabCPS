@@ -12,7 +12,7 @@ namespace DxLabCoworkingSpace
     {
         public RoomDTO()
         {
-           
+
         }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int RoomId { get; set; }
@@ -26,6 +26,8 @@ namespace DxLabCoworkingSpace
         public bool IsDeleted { get; set; }
 
         public List<String>? Images { get; set; }
-        
+
+        public List<AreaAddDTO> Area_DTO { get; set; }
+
     }
 }

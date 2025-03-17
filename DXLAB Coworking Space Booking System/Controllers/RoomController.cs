@@ -18,21 +18,34 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     {
         private readonly IRoomService _roomService;
         private readonly IMapper _mapper;
+        private readonly IAreaTypeService _areaTypeService;
 
-        public RoomController(IRoomService roomService, IMapper mapper)
+        public RoomController(IRoomService roomService, IMapper mapper, IAreaTypeService areaTypeService)
         {
 
             _roomService = roomService;
             _mapper = mapper;
+            _areaTypeService = areaTypeService;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDto)
         {
 
-            var existedRoom =  await _roomService.Get(x => x.RoomName == roomDto.RoomName);
-           
-            if(existedRoom != null)
+            if (roomDto.Area_DTO == null)
+            {
+                var response = new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null);
+                return BadRequest(response);
+            }
+            if (roomDto.Area_DTO.Count() == 0)
+            {
+                var response = new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null);
+                return BadRequest(response);
+            }
+
+            var existedRoom = await _roomService.Get(x => x.RoomName == roomDto.RoomName);
+
+            if (existedRoom != null)
             {
                 var response = new ResponseDTO<object>(400, "Tên phòng đã tồn tại!", null);
                 return BadRequest(response);
@@ -40,7 +53,52 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
+                int areas_totalSize = 0;
+                var areaTypeList = await _areaTypeService.GetAll();
+                var areaTypeListPara = new List<AreaType>();
+                foreach (var area in roomDto.Area_DTO)
+                {
+
+                    var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
+                    if (areatype != null)
+                    {
+                        areas_totalSize += areatype.Size;
+                        areaTypeListPara.Add(areatype);
+
+                    }
+                    else
+                    {
+                        var response1 = new ResponseDTO<object>(400, $"Mã khu vực {area.AreaTypeId} không tồn tại!", null);
+                        return BadRequest(response1);
+                    }
+                }
+
+                if (areas_totalSize > roomDto.Capacity)
+                {
+                    var response1 = new ResponseDTO<object>(400, $"Sức chứa của phòng là: {roomDto.Capacity}. Nhưng tổng chỗ trong khu vực của bạn đã quá!", null);
+                    return BadRequest(response1);
+                }
+
+
                 var room = _mapper.Map<Room>(roomDto);
+                var individualAreaTypeList = areaTypeListPara.Where(x => x.AreaCategory == 2);
+                if (individualAreaTypeList != null)
+                {
+                    foreach (var areatype in individualAreaTypeList)
+                    {
+                        int[] position = Enumerable.Range(1, areatype.Size).ToArray();
+                        List<Position> positions = new List<Position>();
+                        for (int i = 0; i < position.Length; i++)
+                        {
+                            var areaPosition = new Position();
+                            areaPosition.Status = 0;
+                            areaPosition.PositionNumber = i;
+                            positions.Add(areaPosition);
+                        }
+                        var area = room.Areas.FirstOrDefault(x => x.AreaTypeId == areatype.AreaTypeId);
+                        area.Positions = positions;
+                    }
+                }
                 await _roomService.Add(room);
                 roomDto = _mapper.Map<RoomDTO>(room);
 
@@ -73,7 +131,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return NotFound();
             }
 
-           patchDoc.ApplyTo(roomFromDb, ModelState);  
+            
+
+            patchDoc.ApplyTo(roomFromDb, ModelState);  
 
             
             if (!ModelState.IsValid)

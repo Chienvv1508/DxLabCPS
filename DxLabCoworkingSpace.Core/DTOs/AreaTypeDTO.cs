@@ -15,7 +15,7 @@ namespace DxLabCoworkingSpace
 
         [Required(ErrorMessage = "Tên khu vực không được để trống.")]
         [StringLength(255, MinimumLength = 3, ErrorMessage = "Tên khu vực phải từ 3 đến 255 ký tự.")]
-        public string AreaName { get; set; } = null!;
+        public string AreaTypeName { get; set; } = null!;
 
         [Required(ErrorMessage = "Loại danh mục khu vực không được để trống.")]
         [Range(1, 2, ErrorMessage = "Loại danh mục khu vực chỉ có thể là cá nhân hoặc nhóm.")]
