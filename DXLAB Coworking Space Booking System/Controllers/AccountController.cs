@@ -144,7 +144,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Get All Account By Role Name
-        [HttpGet("role/{roleName}")]
+        [HttpGet("role/{rolename}")]
         public async Task<IActionResult> GetUsersByRoleName(string roleName)
         {
             try

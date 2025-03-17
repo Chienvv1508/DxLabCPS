@@ -38,7 +38,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
         public async Task<IEnumerable<Blog>> GetAll(Expression<Func<Blog, bool>> expression)
         {
-            return await GetAllWithInclude(expression, x => x.Images); // Sử dụng phương thức mới
+            return await GetAllWithInclude(expression, x => x.Images);
         }
 
         public async Task<Blog> GetById(int id)
@@ -81,9 +81,15 @@ namespace DxLabCoworkingSpace.Service.Sevices
         public async Task EditCancelledBlog(int id, Blog updatedBlog)
         {
             var blog = await GetById(id);
-            if (blog == null) throw new Exception("Không tìm thấy blog");
-            if (blog.Status != (int)BlogDTO.BlogStatus.Cancel)
+            if (blog == null)
+            {
+                throw new Exception("Không tìm thấy blog");
+            }
+
+            if (blog.Status != (int)BlogDTO.BlogStatus.Cancel) 
+            {
                 throw new Exception("Chỉ blog có trạng thái Cancel mới được chỉnh sửa");
+            }   
 
             blog.BlogTitle = updatedBlog.BlogTitle;
             blog.BlogContent = updatedBlog.BlogContent;
@@ -97,10 +103,15 @@ namespace DxLabCoworkingSpace.Service.Sevices
         public async Task ApproveBlog(int id)
         {
             var blog = await GetById(id);
-            if (blog == null) throw new Exception("Không tìm thấy blog");
+            if (blog == null)
+            {
+                throw new Exception("Không tìm thấy blog");
+            }
             if (blog.Status != (int)BlogDTO.BlogStatus.Pending)
+            {
                 throw new Exception("Chỉ blog có trạng thái Pending mới được duyệt");
-
+            }
+                
             blog.Status = (int)BlogDTO.BlogStatus.Approve;
             await _unitOfWork.BlogRepository.Update(blog);
             await _unitOfWork.CommitAsync();
@@ -109,9 +120,14 @@ namespace DxLabCoworkingSpace.Service.Sevices
         public async Task CancelBlog(int id)
         {
             var blog = await GetById(id);
-            if (blog == null) throw new Exception("Không tìm thấy blog");
+            if (blog == null)
+            {
+                throw new Exception("Không tìm thấy blog");
+            }
             if (blog.Status != (int)BlogDTO.BlogStatus.Pending)
+            {
                 throw new Exception("Chỉ blog có trạng thái Pending mới được hủy");
+            }    
 
             blog.Status = (int)BlogDTO.BlogStatus.Cancel;
             await _unitOfWork.BlogRepository.Update(blog);
