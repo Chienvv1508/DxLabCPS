@@ -15,7 +15,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
         public AccountService(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         private async Task<IQueryable<User>> ApplyIncludes(IQueryable<User> query, params Expression<Func<User, object>>[] includes)
@@ -32,7 +32,6 @@ namespace DxLabCoworkingSpace.Service.Sevices
             return await Task.FromResult(_unitOfWork.Context.Set<User>().AsQueryable());
         }
 
-        // Hàm kiểm tra Role để từ chối Admin
         private void RestrictAdminRole(Role role)
         {
             if (role?.RoleId == 1) // RoleId = 1 là Admin
@@ -41,7 +40,6 @@ namespace DxLabCoworkingSpace.Service.Sevices
             }
         }
 
-        // Hàm kiểm tra User để từ chối Admin
         private void RestrictAdminAccess(User user)
         {
             if (user?.RoleId == 1) // RoleId = 1 là Admin
@@ -49,6 +47,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
                 throw new UnauthorizedAccessException("Bạn không có quyền truy cập tài khoản Admin!");
             }
         }
+
         public async Task AddFromExcel(List<User> users)
         {
             if (users == null || !users.Any())
@@ -58,11 +57,9 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
             var existingEmails = (await _unitOfWork.UserRepository.GetAll())
                                  .Select(u => u.Email.Trim().ToLower())
-                                 .ToHashSet(); // Dùng HashSet để kiểm tra nhanh hơn
+                                 .ToHashSet();
 
             var emailsInFile = users.Select(u => u.Email.Trim().ToLower()).ToList();
-
-            // Kiểm tra email bị trùng trong file Excel
             var duplicateEmailsInFile = emailsInFile.GroupBy(e => e)
                                                    .Where(g => g.Count() > 1)
                                                    .Select(g => g.Key)
@@ -70,18 +67,16 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
             if (duplicateEmailsInFile.Any())
             {
-                throw new InvalidOperationException($"Email bị trùng trong file: {string.Join(", ", duplicateEmailsInFile)}.");
+                throw new InvalidOperationException($"Email bị trùng trong file: {string.Join(", ", duplicateEmailsInFile)}");
             }
 
-            // Kiểm tra email đã tồn tại trong database trước khi thêm bất kỳ dữ liệu nào
             var duplicateEmailsInDB = emailsInFile.Where(e => existingEmails.Contains(e)).ToList();
             if (duplicateEmailsInDB.Any())
             {
-                throw new InvalidOperationException($"Email đã tồn tại trong database: {string.Join(", ", duplicateEmailsInDB)}.");
+                throw new InvalidOperationException($"Email đã tồn tại trong database: {string.Join(", ", duplicateEmailsInDB)}");
             }
 
             var validationErrors = new List<string>();
-
             var roleIds = users.Where(u => u.RoleId.HasValue).Select(u => u.RoleId.Value).Distinct().ToList();
             var roles = (await _unitOfWork.RoleRepository.GetAll())
                          .Where(r => roleIds.Contains(r.RoleId))
@@ -110,36 +105,32 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
                 if (!Validator.TryValidateObject(dto, validationContext, validationResults, true))
                 {
-                    validationErrors.AddRange(validationResults.Select(r => $"{r.ErrorMessage} (Email: {user.Email})"));
+                    validationErrors.AddRange(validationResults.Select(r => $"{dto.Email}: {r.ErrorMessage}"));
                     continue;
                 }
 
                 if (role == null)
                 {
-                    validationErrors.Add($"RoleName không phải là Student hay Staff. Vui lòng sửa lại! (Email: {user.Email})");
+                    validationErrors.Add($"{dto.Email}: RoleName không phải là Student hay Staff. Vui lòng sửa lại!");
                     continue;
                 }
 
                 RestrictAdminRole(role);
-
                 user.Status = true;
                 newUsers.Add(user);
             }
 
             if (validationErrors.Any())
             {
-                throw new InvalidOperationException(string.Join(" ", validationErrors));
+                throw new InvalidOperationException(string.Join(" | ", validationErrors));
             }
 
-            // Nếu không có lỗi nào, thêm tất cả vào database cùng một lúc
             foreach (var newUser in newUsers)
             {
                 await _unitOfWork.UserRepository.Add(newUser);
             }
-
             await _unitOfWork.CommitAsync();
         }
-
 
         public async Task<IEnumerable<User>> GetUsersByRoleName(string roleName)
         {
@@ -154,142 +145,153 @@ namespace DxLabCoworkingSpace.Service.Sevices
             {
                 throw new InvalidOperationException("Chỉ có thể truy xuất tài khoản với Role là Student hoặc Staff!");
             }
-            return (await GetAllWithInclude(u => u.Role)).Where(u => u.RoleId == role.RoleId && u.Status);
-        }
 
-        async Task IGenericService<User>.Add(User entity)
-        {
-            throw new NotImplementedException();
-        }
-
-        // get all list theo status và role name(Student, Staff)
-        async Task<IEnumerable<User>> IGenericService<User>.GetAll()
-        {
-            return (await GetAllWithInclude(u => u.Role)).Where(u => u.Status && (u.RoleId == 2 || u.RoleId == 3));
+            return (await this.GetAllWithInclude(u => u.Role))
+                .Where(u => u.RoleId == role.RoleId && u.Status);
         }
 
         public async Task<User> Get(Expression<Func<User, bool>> expression)
         {
-            return await Get(expression, u => u.Role);
-        }
-
-        public async Task<User> Get(Expression<Func<User, bool>> expression, params Expression<Func<User, object>>[] includes)
-        {
-            IQueryable<User> query = await GetAllQueryable();
-            query = await ApplyIncludes(query, includes);
-            var user = query.Where(expression).FirstOrDefault();
+            var user = await _unitOfWork.UserRepository.Get(expression);
             if (user == null)
             {
-                throw new InvalidOperationException("Không có người dùng trong database");
+                throw new InvalidOperationException("Không tìm thấy người dùng phù hợp.");
             }
             return user;
+        }
+
+        public async Task<IEnumerable<User>> GetAll()
+        {
+            return (await this.GetAllWithInclude(u => u.Role))
+                .Where(u => u.Status && (u.RoleId == 2 || u.RoleId == 3));
         }
 
         public async Task<IEnumerable<User>> GetAll(Expression<Func<User, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.UserRepository.GetAll(expression);
         }
 
-        async Task<User> IGenericService<User>.GetById(int id)
+        public async Task<User> GetById(int id)
         {
-            // Lấy user mà không lọc RoleId trước
-            var user = await Get(u => u.UserId == id, u => u.Role);
+            var user = await _unitOfWork.UserRepository.GetWithInclude(u => u.UserId == id, u => u.Role);
+            if (user == null)
+            {
+                throw new InvalidOperationException($"Người dùng với ID: {id} không tìm thấy!");
+            }
 
-            // Kiểm tra quyền truy cập
             RestrictAdminAccess(user);
-
-            // Nếu không phải Admin, kiểm tra xem có phải Student/Staff không
-            if (user.Role.RoleId != 2 && user.Role.RoleId != 3)
+            if (user.RoleId != 2 && user.RoleId != 3)
             {
                 throw new InvalidOperationException($"Người dùng với ID: {id} không phải là Student hoặc Staff!");
             }
-
             return user;
         }
+
+        public async Task<IEnumerable<User>> GetAllWithInclude(params Expression<Func<User, object>>[] includes)
+        {
+            return await _unitOfWork.UserRepository.GetAllWithInclude(includes);
+        }
+        public async Task<User> GetWithInclude(Expression<Func<User, bool>> expression, params Expression<Func<User, object>>[] includes)
+        {
+            var user = await _unitOfWork.UserRepository.GetWithInclude(expression, includes);
+            if (user == null)
+            {
+                throw new InvalidOperationException("Không tìm thấy người dùng phù hợp.");
+            }
+            return user;
+        }
+
+        public async Task Add(User entity)
+        {
+            throw new NotImplementedException("Sử dụng AddFromExcel để thêm người dùng.");
+        }
+
         public async Task Update(User entity)
         {
-            var existingUser = await Get(u => u.UserId == entity.UserId, u => u.Role);
+            var existingUser = await this.GetWithInclude(u => u.UserId == entity.UserId, u => u.Role);
             if (existingUser == null)
             {
                 throw new InvalidOperationException($"Người dùng với ID {entity.UserId} không tìm thấy!");
             }
             RestrictAdminAccess(existingUser);
 
-            if (existingUser.Email != entity.Email || existingUser.FullName != entity.FullName ||
-                existingUser.Avatar != entity.Avatar || existingUser.WalletAddress != entity.WalletAddress ||
-                existingUser.Status != entity.Status || existingUser.AccessToken != entity.AccessToken)
+            if (entity.Role != null && !string.IsNullOrEmpty(entity.Role.RoleName))
             {
-                throw new InvalidOperationException("Chỉ có Role mới thay đổi được. Những trường khác không thay đổi được!");
-            }
+                var validRoles = new[] { "Student", "Staff" };
+                if (!validRoles.Contains(entity.Role.RoleName))
+                {
+                    throw new InvalidOperationException("RoleName phải là 'Student' hoặc 'Staff'!");
+                }
 
-            if (!string.IsNullOrEmpty(entity.Role?.RoleName))
-            {
                 var role = (await _unitOfWork.RoleRepository.GetAll()).FirstOrDefault(r => r.RoleName == entity.Role.RoleName);
-                if (role != null)
-                {
-                    RestrictAdminRole(role); // Từ chối nếu cập nhật thành Admin
-                    if (role.RoleId!=2 && role.RoleId!=3)
-                    {
-                        throw new InvalidOperationException("Chỉ có thể cập nhật Role thành Student hoặc Staff!");
-                    }
-                    existingUser.RoleId = role.RoleId;
-                    existingUser.Role = role; // Cập nhật Role để giữ RoleName mới
-                }
-                else if (entity.RoleId.HasValue)
-                {
-                    role = await _unitOfWork.RoleRepository.GetById(entity.RoleId.Value);
-                    if (role != null)
-                    {
-                        RestrictAdminRole(role); // Từ chối nếu cập nhật thành Admin
-                        if (role.RoleId != 2 && role.RoleId != 3)
-                        {
-                            throw new InvalidOperationException("Chỉ có thể cập nhật Role thành Student hoặc Staff!");
-                        }
-                        existingUser.RoleId = role.RoleId;
-                        existingUser.Role = role;
-                    }
-                }
                 if (role == null)
                 {
-                    throw new InvalidOperationException($"Role với tên {entity.Role?.RoleName} hoặc ID {entity.RoleId} không tìm thấy!");
+                    throw new InvalidOperationException($"Role với tên {entity.Role.RoleName} không tìm thấy!");
                 }
+
+                RestrictAdminRole(role);
+                existingUser.RoleId = role.RoleId;
+                existingUser.Role = role;
+            }
+            else if (entity.RoleId.HasValue)
+            {
+                var role = await _unitOfWork.RoleRepository.GetById(entity.RoleId.Value);
+                if (role == null)
+                {
+                    throw new InvalidOperationException($"Role với ID {entity.RoleId} không tìm thấy!");
+                }
+
+                RestrictAdminRole(role);
+                if (role.RoleId != 2 && role.RoleId != 3)
+                {
+                    throw new InvalidOperationException("Chỉ có thể cập nhật Role thành Student hoặc Staff!");
+                }
+                existingUser.RoleId = role.RoleId;
+                existingUser.Role = role;
+            }
+            else
+            {
+                throw new InvalidOperationException("RoleName hoặc RoleId là bắt buộc để cập nhật role!");
             }
 
+            existingUser.Email = entity.Email;
+            existingUser.FullName = entity.FullName;
+            existingUser.Status = entity.Status;
+
             await _unitOfWork.UserRepository.Update(existingUser);
-            _unitOfWork.Context.Entry(existingUser).State = EntityState.Modified;
-            await _unitOfWork.CommitAsync(); 
+            await _unitOfWork.CommitAsync();
         }
 
-
-        async Task IGenericService<User>.Delete(int id)
+        public async Task Delete(int id)
         {
-            var user = await Get(u => u.UserId == id, u => u.Role);
+            var user = await this.GetWithInclude(u => u.UserId == id, u => u.Role);
             if (user == null)
             {
                 throw new InvalidOperationException($"Người dùng với ID: {id} không tìm thấy!");
             }
-            RestrictAdminAccess(user); // Từ chối nếu là Admin
+            RestrictAdminAccess(user);
 
             if (user.Status)
             {
-                throw new InvalidOperationException($"Người dùng với ID: {id} không tìm thấy!");
+                throw new InvalidOperationException($"Người dùng với ID: {id} chưa được xóa mềm. Sử dụng SoftDelete.");
             }
 
-            await _unitOfWork.UserRepository.Delete(id); 
-            await _unitOfWork.CommitAsync(); 
+            await _unitOfWork.UserRepository.Delete(id);
+            await _unitOfWork.CommitAsync();
         }
+
         public async Task SoftDelete(int id)
         {
-            var user = await Get(u => u.UserId == id, u => u.Role);
+            var user = await this.GetWithInclude(u => u.UserId == id, u => u.Role);
             if (user == null)
             {
                 throw new InvalidOperationException($"Người dùng với ID: {id} không tìm thấy!");
             }
 
-            RestrictAdminAccess(user); // Từ chối nếu là Admin
+            RestrictAdminAccess(user);
             if (!user.Status)
             {
-                throw new InvalidOperationException($"Người dùng với ID: {id} đã bị xóa trước đó!");
+                throw new InvalidOperationException($"Người dùng với ID: {id} đã bị xóa mềm trước đó!");
             }
 
             user.Status = false;
@@ -299,29 +301,25 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
         public async Task<IEnumerable<User>> GetDeletedAccounts()
         {
-            return (await GetAllWithInclude(u => u.Role)).Where(u => !u.Status);
+            return (await this.GetAllWithInclude(u => u.Role)).Where(u => !u.Status);
         }
+
         public async Task Restore(int id)
         {
-            var user = await Get(u => u.UserId == id, u => u.Role);
+            var user = await this.GetWithInclude(u => u.UserId == id, u => u.Role);
             if (user == null)
             {
                 throw new InvalidOperationException($"Người dùng với ID: {id} không tìm thấy!");
             }
+
             if (user.Status)
             {
-                throw new InvalidOperationException($"Người dùng với ID: {id} không tìm thấy!");
+                throw new InvalidOperationException($"Người dùng với ID: {id} không ở trạng thái xóa mềm!");
             }
-            user.Status = true;
-            await _unitOfWork.UserRepository.Update(user); 
-            await _unitOfWork.CommitAsync();
-        }
 
-        public async Task<IEnumerable<User>> GetAllWithInclude(params Expression<Func<User, object>>[] includes)
-        {
-            IQueryable<User> query = await GetAllQueryable();
-            query = await ApplyIncludes(query, includes);
-            return query.ToList();
+            user.Status = true;
+            await _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.CommitAsync();
         }
     }
 }

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/slot")]
     [ApiController]
     public class SlotController : ControllerBase
     {
@@ -17,53 +17,50 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _slotService = slotService;
             _mapper = mapper;
         }
-
-        public class SlotGenerationRequest
-        {
-            public string? StartTime { get; set; } 
-            public string? EndTime { get; set; } 
-            public int? BreakTime { get; set; }
-        }
         // API Generate slot
-        [HttpPost("Generate")]
-        public async Task<IActionResult> GenerateSlot([FromBody] SlotGenerationRequest request)
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateSlots([FromBody] SlotGenerationRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ResponseDTO<object>("Dữ liệu đầu vào không hợp lệ!", ModelState));
+            }
+            TimeSpan startTime = TimeSpan.Parse(request.StartTime); // Hỗ trợ HH:mm:ss
+            TimeSpan endTime = TimeSpan.Parse(request.EndTime);
+
+            //if (request == null)
+            //{
+            //    return BadRequest(new ResponseDTO<object>("Nội dung yêu cầu là bắt buộc!", null));
+            //}
+
+            //if (!TimeSpan.TryParse(request.StartTime, out TimeSpan startTime) ||
+            //    !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
+            //{
+            //    return BadRequest(new ResponseDTO<object>("Định dạng thời gian không hợp lệ!", null));
+            //}
+
+            if (startTime >= endTime)
+            {
+                return BadRequest(new ResponseDTO<object>("StartTime phải sớm hơn EndTime!", null));
+            }
+
+            int breakTime = request.BreakTime ?? 10;
             try
             {
-                if (request == null)
-                {
-                    return BadRequest(new { Message = "Nội dung yêu cầu là bắt buộc!" });
-                }
-
-                if (!TimeSpan.TryParse(request.StartTime, out TimeSpan startTime) ||
-                    !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
-                {
-                    return BadRequest(new { Message = "Định dạng thời gian không hợp lệ!" });
-                }
-
-                if (startTime >= endTime)
-                {
-                    return BadRequest(new { Message = "StartTime phải sớm hơn EndTime!" });
-                }
-
-                int breakTime = request.BreakTime ?? 10;
-
-                var slots = await _slotService.GenerateSlots(startTime, endTime, breakTime);
+                var slots = await _slotService.CreateSlots(startTime, endTime, breakTime);
                 await _slotService.AddMany(slots);
 
-                return Ok(new
-                {
-                    Message = $"{slots.Count} slots được tạo thành công!",
-                    Slots = slots.Select(slot => _mapper.Map<SlotDTO>(slot))
-                });
+                var slotDtos = _mapper.Map<IEnumerable<SlotDTO>>(slots);
+                return Ok(new ResponseDTO<IEnumerable<SlotDTO>>($"{slots.Count} slots được tạo thành công!", slotDtos));
             }
+
             catch (InvalidOperationException ex)
             {
-                return Conflict(new { Message = ex.Message });
+                return Conflict(new ResponseDTO<object>(ex.Message, null));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Lỗi khi tạo slots: " + ex.Message });
+                return StatusCode(500, new ResponseDTO<object>("Lỗi khi tạo slot: " + ex.Message, null));
             }
         }
         // API Lấy tất cả slot
@@ -73,12 +70,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 var slots = await _slotService.GetAll();
-                var slotDTOs = _mapper.Map<List<SlotDTO>>(slots);
-                return Ok(slotDTOs);
+                var slotDtos = _mapper.Map<IEnumerable<SlotDTO>>(slots);
+                return Ok(new ResponseDTO<IEnumerable<SlotDTO>>("Lấy danh sách slot thành công.", slotDtos));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Lỗi khi lấy slots: " + ex.Message });
+                return StatusCode(500, new ResponseDTO<object>("Lỗi khi lấy danh sách slot: " + ex.Message, null));
             }
         }
 
@@ -91,15 +88,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var slot = await _slotService.GetById(id);
                 if (slot == null)
                 {
-                    return NotFound(new { Message = $"Slot với id: {id} không tìm thấy!" });
+                    return NotFound(new ResponseDTO<object>($"Slot với ID {id} không tìm thấy!", null));
                 }
 
-                var slotDTO = _mapper.Map<SlotDTO>(slot);
-                return Ok(slotDTO);
+                var slotDto = _mapper.Map<SlotDTO>(slot);
+                return Ok(new ResponseDTO<SlotDTO>("Lấy thông tin slot thành công.", slotDto));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Lỗi khi truy xuất slot: " + ex.Message });
+                return StatusCode(500, new ResponseDTO<object>("Lỗi khi truy xuất slot: " + ex.Message, null));
             }
         }
     }

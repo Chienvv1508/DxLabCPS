@@ -16,6 +16,7 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<Slot> _slotRepository;
         private IGenericRepository<User> _userRepository;
         private IGenericRepository<Blog> _blogRepository;
+        private IGenericRepository<Facility> _facilityRepository;
         public UnitOfWork(DxLabCoworkingSpaceContext dbContext) 
         {
             _dbContext = dbContext;
@@ -24,6 +25,7 @@ namespace DxLabCoworkingSpace
         public IGenericRepository<Slot> SlotRepository => _slotRepository ?? new GenericRepository<Slot>(_dbContext);
         public IGenericRepository<User> UserRepository => _userRepository ?? new GenericRepository<User>(_dbContext);
         public IGenericRepository<Blog> BlogRepository => _blogRepository ?? new GenericRepository<Blog>(_dbContext);
+        public IGenericRepository<Facility> FacilityRepository => _facilityRepository ?? new GenericRepository<Facility>(_dbContext);
         public DbContext Context => _dbContext;
 
         public async Task CommitAsync()

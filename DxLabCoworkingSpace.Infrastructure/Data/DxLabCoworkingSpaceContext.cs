@@ -68,7 +68,7 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             modelBuilder.Entity<Blog>(entity =>
             {
-                entity.Property(e => e.BlogCreatedDate).HasColumnType("date");
+                entity.Property(e => e.BlogCreatedDate).HasPrecision(0);
 
                 entity.Property(e => e.BlogTitle).HasMaxLength(50);
 
@@ -150,7 +150,7 @@ namespace DXLAB_Coworking_Space_Booking_System
 
                 entity.HasOne(d => d.Area)
                     .WithMany(p => p.Images)
-                    .HasForeignKey(d => d.AreaId)
+                    .HasForeignKey(d => d.AreaTypeId)
                     .HasConstraintName("FK_Images_Areas");
 
                 entity.HasOne(d => d.Blog)

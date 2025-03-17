@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/role")]
     [ApiController]
     public class RoleController : ControllerBase
     {
@@ -20,29 +20,45 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         // Get All Student and Staff Role
-        [HttpGet("GetRoleByAdmin")]
-        public async Task<IActionResult> GetAllRole()
+        [HttpGet("rolebyadmin")]
+        public async Task<IActionResult> GetRoleByAdmin()
         {
-            var roles = await _roleSevice.GetAll();
-            if (roles == null || !roles.Any())
+            try
             {
-                return NotFound("Không tìm thấy role nào!");
+                var roles = await _roleSevice.GetAll();
+                if (roles == null || !roles.Any())
+                {
+                    return NotFound(new ResponseDTO<object>("Không tìm thấy role nào!", null));
+                }
+
+                var roleDtos = _mapper.Map<IEnumerable<RoleDTO>>(roles);
+                return Ok(new ResponseDTO<IEnumerable<RoleDTO>>("Danh sách role đã được lấy thành công!", roleDtos));
             }
-            var roleDTOs = _mapper.Map<List<RoleDTO>>(roles);
-            return Ok(roleDTOs);
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy danh sách role: {ex.Message}", null));
+            }
         }
 
         //Get Role By Id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRoleById(int id)
         {
-            var role = await _roleSevice.GetById(id);
-            if (role == null)
+            try
             {
-                return NotFound($"Role với id: {id} không tìm thấy!");
+                var role = await _roleSevice.GetById(id);
+                if (role == null)
+                {
+                    return NotFound(new ResponseDTO<object>($"Role với ID: {id} không tìm thấy!", null));
+                }
+
+                var roleDto = _mapper.Map<RoleDTO>(role);
+                return Ok(new ResponseDTO<RoleDTO>("Lấy thông tin role thành công!", roleDto));
             }
-            var roleDTO = _mapper.Map<RoleDTO>(role);
-            return Ok(roleDTO);
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy role: {ex.Message}", null));
+            }
         }
     }
 }
