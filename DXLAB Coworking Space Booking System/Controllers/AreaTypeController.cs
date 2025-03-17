@@ -55,15 +55,24 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAreTypeById(int id)
         {
-            var areaType = await _areaTypeService.Get(x => x.AreaTypeId == id);
-            if (areaType == null)
+            try
             {
-                var responseNotFound = new ResponseDTO<object>(404, "Mã AreaType không tồn tại", null);
-                return NotFound(responseNotFound);
+                var areaType = await _areaTypeService.Get(x => x.AreaTypeId == id);
+                if (areaType == null)
+                {
+                    var responseNotFound = new ResponseDTO<object>(404, "Mã AreaType không tồn tại", null);
+                    return NotFound(responseNotFound);
+                }
+                var areaTypeDTO = _mapper.Map<AreaTypeDTO>(areaType);
+                var response = new ResponseDTO<object>(200, "Lấy thành công", areaTypeDTO);
+                return Ok(response);
             }
-            var areaTypeDTO = _mapper.Map<AreaTypeDTO>(areaType);
-            var response = new ResponseDTO<object>(200, "Lấy thành công", areaTypeDTO);
-            return Ok(response);
+            catch (Exception ex)
+            {
+                var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
+                return StatusCode(500, response);
+            }
+
 
         }
 
@@ -80,7 +89,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             catch (Exception ex)
             {
                 var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
-                return Ok(response);
+                return StatusCode(500, response);
             }
 
         }
@@ -98,7 +107,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             catch (Exception ex)
             {
                 var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
-                return Ok(response);
+                return StatusCode(500, response);
             }
 
         }
@@ -106,73 +115,86 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<AreaType> patchDoc)
         {
-            if (patchDoc == null)
+            try
             {
-                var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
-                return BadRequest(response);
-            }
-            var allowedPaths = new HashSet<string>
+                if (patchDoc == null)
+                {
+                    var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
+                    return BadRequest(response);
+                }
+                var allowedPaths = new HashSet<string>
             {
-                        "AreaTypeName",
-                        "AreaDescription",
-                        "Price",
-                        "Images"
+                       "areaTypeName",
+                        "areaDescription",
+                        "price",
+                        "images"
 
             };
-            var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("AreaTypeName", StringComparison.OrdinalIgnoreCase)).value.ToString();
-            var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp);
-            if(existedAreaType != null)
-            {
-                var response = new ResponseDTO<object>(400, $"Tên loại phòng {areaTypeNameOp} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
-                return BadRequest(response);
-            }
-
-            foreach (var operation in patchDoc.Operations)
-            {
-                if (!allowedPaths.Contains(operation.path))
+                var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("AreaTypeName", StringComparison.OrdinalIgnoreCase)).value.ToString();
+                var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp);
+                if (existedAreaType != null)
                 {
-                    return BadRequest($"Không thể cập nhật trường: {operation.path}");
+                    var response = new ResponseDTO<object>(400, $"Tên loại phòng {areaTypeNameOp} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
+                    return BadRequest(response);
                 }
+
+                foreach (var operation in patchDoc.Operations)
+                {
+                    if (!allowedPaths.Contains(operation.path))
+                    {
+                        var response1 = new ResponseDTO<object>(400, $"Không thể cập nhật trường: {operation.path}", null);
+                        return BadRequest(response1);
+                    }
+                }
+
+
+
+                var areaTypeFromDb = await _areaTypeService.Get(x => x.AreaTypeId == id);
+                if (areaTypeFromDb == null)
+                {
+                    var response2 = new ResponseDTO<object>(404, "Không tìm thấy phòng. Vui lòng nhập lại mã loại phòng!", null);
+                    return NotFound(response2);
+                }
+
+                patchDoc.ApplyTo(areaTypeFromDb, ModelState);
+
+
+                if (!ModelState.IsValid)
+                {
+                    var allErrors = ModelState
+                    .SelectMany(ms => ms.Value.Errors
+                    .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
+                    .ToList();
+                    string errorString = string.Join(" | ", allErrors);
+                    var response = new ResponseDTO<object>(400, errorString, null);
+                    return BadRequest(response);
+                }
+
+                var areaTypeDTO = _mapper.Map<AreaTypeDTO>(areaTypeFromDb);
+
+                bool isValid = TryValidateModel(areaTypeDTO);
+                if (!isValid)
+                {
+                    var allErrors = ModelState
+                    .SelectMany(ms => ms.Value.Errors
+                    .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
+                    .ToList();
+
+                    string errorString = string.Join(" | ", allErrors);
+                    var response = new ResponseDTO<object>(404, errorString, null);
+                    return BadRequest(response);
+                }
+                await _areaTypeService.Update(areaTypeFromDb);
+                var response3 = new ResponseDTO<object>(200, "Cập nhập thành công!", null);
+                return Ok(response3);
             }
-
-
-
-            var areaTypeFromDb = await _areaTypeService.Get(x => x.AreaTypeId == id);
-            if (areaTypeFromDb == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                var response = new ResponseDTO<object>(01, "Lỗi khi cập nhập dữ liệu!", null);
+                return StatusCode(500, response);
+
             }
 
-            patchDoc.ApplyTo(areaTypeFromDb, ModelState);
-
-
-            if (!ModelState.IsValid)
-            {
-                var allErrors = ModelState
-                .SelectMany(ms => ms.Value.Errors
-                .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
-                .ToList();
-                string errorString = string.Join(" | ", allErrors);
-                var response = new ResponseDTO<object>(400, errorString, null);
-                return BadRequest(response);
-            }
-
-            var areaTypeDTO = _mapper.Map<AreaTypeDTO>(areaTypeFromDb);
-
-            bool isValid = TryValidateModel(areaTypeDTO);
-            if (!isValid)
-            {
-                var allErrors = ModelState
-                .SelectMany(ms => ms.Value.Errors
-                .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
-                .ToList();
-
-                string errorString = string.Join(" | ", allErrors);
-                var response = new ResponseDTO<object>(404, errorString, null);
-                return BadRequest(response);
-            }
-            await _areaTypeService.Update(areaTypeFromDb);
-            return NoContent();
 
         }
 
