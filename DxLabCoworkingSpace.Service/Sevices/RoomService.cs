@@ -31,11 +31,11 @@ namespace DxLabCoworkingSpace {
 
     public async Task<Room> Get(Expression<Func<Room, bool>> expression)
     {
-      return  await _unitOfWork.RoomRepository.GetWithInclude(expression, x => x.Images);
+      return  await _unitOfWork.RoomRepository.GetWithInclude(expression, x => x.Images,x => x.Areas);
     }
     public async Task<IEnumerable<Room>> GetAll()
     {
-            return await _unitOfWork.RoomRepository.GetAllWithInclude(x => x.Images);
+            return await _unitOfWork.RoomRepository.GetAllWithInclude(x => x.Images , x => x.Areas);
     }
 
     public async Task<IEnumerable<Room>> GetAll(Expression<Func<Room, bool>> expression)

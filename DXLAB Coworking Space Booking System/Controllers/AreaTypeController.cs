@@ -127,16 +127,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                        "areaTypeName",
                         "areaDescription",
                         "price",
-                        "images"
+                        "images",
+                        "isDeleted"
 
             };
-                var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("AreaTypeName", StringComparison.OrdinalIgnoreCase)).value.ToString();
-                var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp);
-                if (existedAreaType != null)
+                var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
+                if(areaTypeNameOp != null)
                 {
-                    var response = new ResponseDTO<object>(400, $"Tên loại phòng {areaTypeNameOp} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
-                    return BadRequest(response);
+                    var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp.value.ToString());
+                    if (existedAreaType != null)
+                    {
+                        var response = new ResponseDTO<object>(400, $"Tên loại phòng {areaTypeNameOp} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
+                        return BadRequest(response);
+                    }
                 }
+                
 
                 foreach (var operation in patchDoc.Operations)
                 {

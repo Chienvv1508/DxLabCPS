@@ -50,11 +50,13 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             CreateMap<RoomDTO, Room>()
            .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
-               src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null));
+               src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null))
+           .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area { AreaName = a.AreaName, AreaTypeId = a.AreaTypeId }) : null));
 
             CreateMap<Room, RoomDTO>()
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
-                    src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
+                    src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null))
+                .ForMember(dest => dest.Area_DTO, opt => opt.MapFrom(x => x.Areas != null ? x.Areas.Select(a => new AreaDTO { AreaName = a.AreaName, AreaTypeId = a.AreaTypeId }) : null));
 
             CreateMap<AreaTypeDTO, AreaType>()
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
@@ -63,7 +65,9 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<AreaType, AreaTypeDTO>()
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
                     src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
-            CreateMap<AreaType, AreaAddDTO>().ReverseMap();
+            CreateMap<AreaType, AreaDTO>().ReverseMap();
+
+
         }
     }
 }

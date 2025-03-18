@@ -27,7 +27,7 @@ namespace DxLabCoworkingSpace
 
         public List<String>? Images { get; set; }
 
-        public List<AreaAddDTO> Area_DTO { get; set; }
+        public List<AreaDTO> Area_DTO { get; set; }
 
     }
 }
