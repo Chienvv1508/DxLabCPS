@@ -129,5 +129,20 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy blog: {ex.Message}", null));
             }
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteApprovedBlog(int id)
+        {
+            try
+            {
+                await _blogService.Delete(id);
+                return Ok(new ResponseDTO<object>($"Blog với ID: {id} đã được xóa thành công!", null));
+            }
+
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>($"Lỗi khi xóa blog: {ex.Message}", null));
+            }
+        }
     }
 }

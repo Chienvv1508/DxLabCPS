@@ -74,6 +74,24 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
         public async Task Delete(int id)
         {
+
+            var blog = await GetByIdWithUser(id);
+            if(blog == null)
+            {
+                throw new Exception($"Blog với ID: {id} không tìm thấy!");
+            }
+
+            if(blog.Status != (int)BlogDTO.BlogStatus.Approve)
+            {
+                throw new Exception("Chỉ blog được duyệt mới có thể xóa!");
+            }
+
+            //Xóa cả ảnh liên quan đến Blog
+            if (blog.Images != null && blog.Images.Any())
+            {
+                _unitOfWork.Context.Set<Image>().RemoveRange(blog.Images);
+            }
+
             await _unitOfWork.BlogRepository.Delete(id);
             await _unitOfWork.CommitAsync();
         }
