@@ -80,7 +80,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
         public async Task EditCancelledBlog(int id, Blog updatedBlog)
         {
-            var blog = await GetById(id);
+            var blog = await GetWithInclude(b => b.BlogId == id, x => x.Images); 
             if (blog == null)
             {
                 throw new Exception("Không tìm thấy blog");
@@ -94,8 +94,12 @@ namespace DxLabCoworkingSpace.Service.Sevices
             blog.BlogTitle = updatedBlog.BlogTitle;
             blog.BlogContent = updatedBlog.BlogContent;
             blog.Status = (int)BlogDTO.BlogStatus.Pending;
-            blog.Images = updatedBlog.Images;
+            blog.Images.Clear(); // xóa toàn bộ ảnh cũ
 
+            if (updatedBlog.Images != null)
+            {
+                blog.Images = updatedBlog.Images.Select(img => new Image { ImageUrl = img.ImageUrl}).ToList();
+            }
             await _unitOfWork.BlogRepository.Update(blog);
             await _unitOfWork.CommitAsync();
         }
