@@ -105,7 +105,6 @@ namespace DxLabCoworkingSpace.Service.Sevices
             await _unitOfWork.BlogRepository.Delete(id);
             await _unitOfWork.CommitAsync();
         }
-
         public async Task EditCancelledBlog(int id, Blog updatedBlog)
         {
             var blog = await GetWithInclude(b => b.BlogId == id, x => x.Images);
@@ -130,10 +129,11 @@ namespace DxLabCoworkingSpace.Service.Sevices
                         File.Delete(filePath);
                     }
                 }
-            }
 
-            // Xóa các bản ghi ảnh trong cơ sở dữ liệu
-            blog.Images.Clear();
+                // Xóa các bản ghi ảnh trong cơ sở dữ liệu
+                _unitOfWork.Context.Set<Image>().RemoveRange(blog.Images);
+                blog.Images.Clear(); // Làm sạch danh sách ảnh trong bộ nhớ
+            }
 
             // Cập nhật thông tin blog
             blog.BlogTitle = updatedBlog.BlogTitle;
