@@ -74,54 +74,81 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
         public async Task Delete(int id)
         {
-
             var blog = await GetByIdWithUser(id);
-            if(blog == null)
+            if (blog == null)
             {
                 throw new Exception($"Blog với ID: {id} không tìm thấy!");
             }
 
-            if(blog.Status != (int)BlogDTO.BlogStatus.Approve)
+            if (blog.Status != (int)BlogDTO.BlogStatus.Approve)
             {
                 throw new Exception("Chỉ blog được duyệt mới có thể xóa!");
             }
 
-            //Xóa cả ảnh liên quan đến Blog
+            // Xóa các file ảnh vật lý trong wwwroot/images (nếu có)
             if (blog.Images != null && blog.Images.Any())
             {
+                foreach (var image in blog.Images)
+                {
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", image.ImageUrl.TrimStart('/'));
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
+                }
+
+                // Xóa các bản ghi ảnh trong cơ sở dữ liệu
                 _unitOfWork.Context.Set<Image>().RemoveRange(blog.Images);
             }
 
+            // Xóa blog
             await _unitOfWork.BlogRepository.Delete(id);
             await _unitOfWork.CommitAsync();
         }
 
         public async Task EditCancelledBlog(int id, Blog updatedBlog)
         {
-            var blog = await GetWithInclude(b => b.BlogId == id, x => x.Images); 
+            var blog = await GetWithInclude(b => b.BlogId == id, x => x.Images);
             if (blog == null)
             {
                 throw new Exception("Không tìm thấy blog");
             }
 
-            if (blog.Status != (int)BlogDTO.BlogStatus.Cancel) 
+            if (blog.Status != (int)BlogDTO.BlogStatus.Cancel)
             {
                 throw new Exception("Chỉ blog có trạng thái Cancel mới được chỉnh sửa");
-            }   
+            }
 
+            // Xóa các file ảnh vật lý trong wwwroot/images (nếu có)
+            if (blog.Images != null && blog.Images.Any())
+            {
+                foreach (var image in blog.Images)
+                {
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", image.ImageUrl.TrimStart('/'));
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
+                }
+            }
+
+            // Xóa các bản ghi ảnh trong cơ sở dữ liệu
+            blog.Images.Clear();
+
+            // Cập nhật thông tin blog
             blog.BlogTitle = updatedBlog.BlogTitle;
             blog.BlogContent = updatedBlog.BlogContent;
             blog.Status = (int)BlogDTO.BlogStatus.Pending;
-            blog.Images.Clear(); // xóa toàn bộ ảnh cũ
 
+            // Thêm ảnh mới (nếu có)
             if (updatedBlog.Images != null)
             {
-                blog.Images = updatedBlog.Images.Select(img => new Image { ImageUrl = img.ImageUrl}).ToList();
+                blog.Images = updatedBlog.Images.Select(img => new Image { ImageUrl = img.ImageUrl }).ToList();
             }
+
             await _unitOfWork.BlogRepository.Update(blog);
             await _unitOfWork.CommitAsync();
         }
-
         public async Task ApproveBlog(int id)
         {
             var blog = await GetById(id);
