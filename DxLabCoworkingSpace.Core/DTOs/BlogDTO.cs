@@ -34,8 +34,6 @@ namespace DxLabCoworkingSpace.Core.DTOs
 
         public BlogStatus Status { get; set; }
         public string? UserName { get; set; }
-
-        [JsonIgnore]
         public List<IFormFile>? ImageFiles { get; set; }
         public List<string>? Images { get; set; } // list đường dẫn ảnh trong response
     }

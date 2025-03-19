@@ -14,7 +14,7 @@ namespace DxLabCoworkingSpace.Service.Sevices
 
         public BlogService(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _unitOfWork = unitOfWork;
         }
 
         public async Task Add(Blog entity)
