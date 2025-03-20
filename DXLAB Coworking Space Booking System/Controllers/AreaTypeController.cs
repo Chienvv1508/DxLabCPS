@@ -161,7 +161,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return NotFound(response2);
                 }
 
-                patchDoc.ApplyTo(areaTypeFromDb, ModelState);
+               // patchDoc.ApplyTo(areaTypeFromDb, ModelState);
 
 
                 if (!ModelState.IsValid)
