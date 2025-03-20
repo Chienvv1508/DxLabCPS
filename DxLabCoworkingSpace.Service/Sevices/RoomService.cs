@@ -43,12 +43,22 @@ namespace DxLabCoworkingSpace {
             return await _unitOfWork.RoomRepository.GetAll(expression);
         }
 
-    public Task<Room> GetById(int id)
+        public Task<IEnumerable<Room>> GetAllWithInclude(params Expression<Func<Room, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Room> GetById(int id)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<bool> PatchRoomAsync(int id, JsonPatchDocument<Room> patchDoc)
+        public Task<Room> GetWithInclude(Expression<Func<Room, bool>> expression, params Expression<Func<Room, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> PatchRoomAsync(int id, JsonPatchDocument<Room> patchDoc)
      {
             var room = await _unitOfWork.RoomRepository.GetById(id);
             if (room == null) return false;

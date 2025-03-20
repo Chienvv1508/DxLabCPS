@@ -17,8 +17,6 @@ namespace DxLabCoworkingSpace
         Task<T> GetWithInclude(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes);
 
         Task<T> GetById(int id);
-        Task<IEnumerable<T>> GetAllWithInclude(params Expression<Func<T, object>>[] includes);
-        Task<T> GetWithInclude(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes);
         Task Add(T entity);
         Task Update(T entity);
         Task Delete(int id);
