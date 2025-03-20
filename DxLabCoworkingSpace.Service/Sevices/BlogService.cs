@@ -139,6 +139,7 @@ namespace DxLabCoworkingSpace
             blog.BlogTitle = updatedBlog.BlogTitle;
             blog.BlogContent = updatedBlog.BlogContent;
             blog.Status = (int)BlogDTO.BlogStatus.Pending;
+            blog.BlogCreatedDate = DateTime.Now;
 
             // Thêm ảnh mới (nếu có)
             if (updatedBlog.Images != null)
