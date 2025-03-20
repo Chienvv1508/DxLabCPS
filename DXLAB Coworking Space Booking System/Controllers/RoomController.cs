@@ -179,7 +179,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
 
 
-           // patchDoc.ApplyTo(roomFromDb, ModelState);
+           patchDoc.ApplyTo(roomFromDb, ModelState);
 
 
             if (!ModelState.IsValid)
