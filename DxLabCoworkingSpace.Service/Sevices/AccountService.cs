@@ -285,6 +285,35 @@ namespace DxLabCoworkingSpace
                 throw new InvalidOperationException($"Người dùng với ID: {id} chưa được xóa mềm. Sử dụng SoftDelete.");
             }
 
+            // Lấy tất cả Blog của User với Images liên quan
+            var blogs = await _unitOfWork.Context.Set<Blog>()
+                .Where(b => b.UserId == id)
+                .Include(b => b.Images)
+                .ToListAsync();
+
+            foreach (var blog in blogs)
+            {
+                // Xóa các file ảnh vật lý trong wwwroot/images (nếu có)
+                if (blog.Images != null && blog.Images.Any())
+                {
+                    foreach (var image in blog.Images)
+                    {
+                        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", image.ImageUrl.TrimStart('/'));
+                        if (File.Exists(filePath))
+                        {
+                            File.Delete(filePath);
+                        }
+                    }
+
+                    // Xóa các bản ghi Image trong cơ sở dữ liệu
+                    _unitOfWork.Context.Set<Image>().RemoveRange(blog.Images);
+                }
+
+                // Xóa Blog
+                await _unitOfWork.BlogRepository.Delete(blog.BlogId);
+            }
+
+            // Sau khi xóa hết Blog và Image liên quan, xóa User
             await _unitOfWork.UserRepository.Delete(id);
             await _unitOfWork.CommitAsync();
         }
