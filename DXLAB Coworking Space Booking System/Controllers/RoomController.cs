@@ -1,10 +1,9 @@
 ﻿using AutoMapper;
-using DxLabCoworkingSpace.Core.DTOs;
-using DxLabCoworkingSpace.Core.Entities;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.JsonPatch;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
