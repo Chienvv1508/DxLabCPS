@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
-{ 
-    public interface IFacilityService : IGenericService<Facility>
+{
+    public interface IRoomService : IGenericService<Room>
     {
-        Task AddFacilityFromExcel(List<Facility> facilities);
+        Task<bool> PatchRoomAsync(int id, JsonPatchDocument<Room> patchDoc);
     }
 }

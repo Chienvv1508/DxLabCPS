@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using DxLabCoworkingSpace.Core.DTOs;
 using DxLabCoworkingSpace.Service.Sevices;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +27,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ResponseDTO<object>("Dữ liệu không hợp lệ!", ModelState));
+                return BadRequest(new ResponseDTO<object>(400, "Dữ liệu không hợp lệ!", ModelState));
             }
 
             try
@@ -56,13 +55,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             // Kiểm tra loại file (chỉ cho phép .jpg, .png)
                             if (!file.FileName.EndsWith(".jpg") && !file.FileName.EndsWith(".png"))
                             {
-                                return BadRequest(new ResponseDTO<object>("Chỉ chấp nhận file .jpg hoặc .png!", null));
+                                return BadRequest(new ResponseDTO<object>(400, "Chỉ chấp nhận file .jpg hoặc .png!", null));
                             }
 
                             // Kiểm tra kích thước file (giới hạn 5MB)
                             if (file.Length > 5 * 1024 * 1024)
                             {
-                                return BadRequest(new ResponseDTO<object>("File quá lớn, tối đa 5MB!", null));
+                                return BadRequest(new ResponseDTO<object>(400, "File quá lớn, tối đa 5MB!", null));
                             }
 
                             var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
@@ -94,15 +93,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     Images = resultDto.Images
                 };
 
-                return Ok(new ResponseDTO<object>("Blog đã được tạo thành công!", responseDto));
+                return Ok(new ResponseDTO<object>(200, "Blog đã được tạo thành công!", responseDto));
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new ResponseDTO<object>($"Lỗi khi tạo blog: {ex.Message}", null));
+                return BadRequest(new ResponseDTO<object>(400, $"Lỗi khi tạo blog: {ex.Message}", null));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi xử lý yêu cầu: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi xử lý yêu cầu: {ex.Message}", null));
             }
         }
 
@@ -112,7 +111,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (!Enum.TryParse<BlogDTO.BlogStatus>(status, true, out var blogStatus))
             {
-                return BadRequest(new ResponseDTO<object>("Trạng thái không hợp lệ. Sử dụng: Pending, Approve, Cancel", null));
+                return BadRequest(new ResponseDTO<object>(400, "Trạng thái không hợp lệ. Sử dụng: Pending, Approve, Cancel", null));
             }
 
             try
@@ -123,7 +122,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if (blogDtos == null || !blogDtos.Any())
                 {
-                    return NotFound(new ResponseDTO<object>("Không tìm thấy blog nào với trạng thái này!", null));
+                    return NotFound(new ResponseDTO<object>(404, "Không tìm thấy blog nào với trạng thái này!", null));
                 }
 
                 // Chỉ trả về các trường cần thiết trong response
@@ -138,11 +137,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     Images = dto.Images
                 });
 
-                return Ok(new ResponseDTO<IEnumerable<object>>("Danh sách blog đã được lấy thành công!", responseDtos));
+                return Ok(new ResponseDTO<IEnumerable<object>>(200, "Danh sách blog đã được lấy thành công!", responseDtos));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy danh sách blog: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi lấy danh sách blog: {ex.Message}", null));
             }
         }
 
@@ -152,7 +151,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ResponseDTO<object>("Dữ liệu không hợp lệ!", ModelState));
+                return BadRequest(new ResponseDTO<object>(400, "Dữ liệu không hợp lệ!", ModelState));
             }
 
             try
@@ -160,7 +159,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var existingBlog = await _blogService.GetByIdWithUser(id);
                 if (existingBlog == null)
                 {
-                    return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
+                    return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
                 }
 
                 var updatedBlog = _mapper.Map<Blog>(blogRequestDTO);
@@ -186,13 +185,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             // Kiểm tra loại file (chỉ cho phép .jpg, .png)
                             if (!file.FileName.EndsWith(".jpg") && !file.FileName.EndsWith(".png"))
                             {
-                                return BadRequest(new ResponseDTO<object>("Chỉ chấp nhận file .jpg hoặc .png!", null));
+                                return BadRequest(new ResponseDTO<object>(400, "Chỉ chấp nhận file .jpg hoặc .png!", null));
                             }
 
                             // Kiểm tra kích thước file (giới hạn 5MB)
                             if (file.Length > 5 * 1024 * 1024)
                             {
-                                return BadRequest(new ResponseDTO<object>("File quá lớn, tối đa 5MB!", null));
+                                return BadRequest(new ResponseDTO<object>(400, "File quá lớn, tối đa 5MB!", null));
                             }
 
                             var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
@@ -228,11 +227,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     Images = resultDto.Images
                 };
 
-                return Ok(new ResponseDTO<object>("Blog đã được chỉnh sửa thành công!", responseDto));
+                return Ok(new ResponseDTO<object>(200, "Blog đã được chỉnh sửa thành công!", responseDto));
             }
             catch (Exception ex)
             {
-                return BadRequest(new ResponseDTO<object>($"Lỗi khi chỉnh sửa blog: {ex.Message}", null));
+                return BadRequest(new ResponseDTO<object>(400, $"Lỗi khi chỉnh sửa blog: {ex.Message}", null));
             }
         }
 
@@ -245,7 +244,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var blog = await _blogService.GetByIdWithUser(id);
                 if (blog == null)
                 {
-                    return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
+                    return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
                 }
 
                 var blogDto = _mapper.Map<BlogDTO>(blog);
@@ -262,11 +261,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     Images = blogDto.Images
                 };
 
-                return Ok(new ResponseDTO<object>("Lấy thông tin blog thành công!", responseDto));
+                return Ok(new ResponseDTO<object>(200, "Lấy thông tin blog thành công!", responseDto));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy blog: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi lấy blog: {ex.Message}", null));
             }
         }
     }

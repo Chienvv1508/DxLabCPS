@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpace.Core.DTOs
+namespace DxLabCoworkingSpace
 {
     public class BlogRequestDTO
     {

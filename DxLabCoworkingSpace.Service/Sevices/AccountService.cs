@@ -7,7 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
-namespace DxLabCoworkingSpace.Service.Sevices
+namespace DxLabCoworkingSpace
 {
     public class AccountService : IAccountService
     {
@@ -254,9 +254,18 @@ namespace DxLabCoworkingSpace.Service.Sevices
                 throw new InvalidOperationException("RoleName hoặc RoleId là bắt buộc để cập nhật role!");
             }
 
-            existingUser.Email = entity.Email;
-            existingUser.FullName = entity.FullName;
-            existingUser.Status = entity.Status;
+            if (!string.IsNullOrEmpty(entity.Email))
+            {
+                existingUser.Email = entity.Email;
+            }
+            if (!string.IsNullOrEmpty(entity.FullName))
+            {
+                existingUser.FullName = entity.FullName;
+            }
+            if (entity.Status != existingUser.Status) 
+            {
+                existingUser.Status = entity.Status;
+            }
 
             await _unitOfWork.UserRepository.Update(existingUser);
             await _unitOfWork.CommitAsync();

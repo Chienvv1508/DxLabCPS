@@ -30,7 +30,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ResponseDTO<object>("Dữ liệu không hợp lệ!", ModelState));
+                return BadRequest(new ResponseDTO<object>(400, "Dữ liệu không hợp lệ!", ModelState));
             }
 
             try
@@ -63,11 +63,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 var token = GenerateJwtToken(user);
                 var responseData = new { Token = token, User = userDto };
-                return Ok(new ResponseDTO<object>("Người dùng đã được tạo hoặc xác thực thành công!", responseData));
+                return Ok(new ResponseDTO<object>(200, "Người dùng đã được tạo hoặc xác thực thành công!", responseData));
+                return Ok(new ResponseDTO<object>(200, "Người dùng đã được tạo hoặc xác thực thành công!", responseData));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi xử lý người dùng: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi xử lý người dùng: {ex.Message}", null));
             }
         }
 

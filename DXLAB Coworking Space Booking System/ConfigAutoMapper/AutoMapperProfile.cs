@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
 using DXLAB_Coworking_Space_Booking_System;
-using DxLabCoworkingSpace.Core.DTOs;
 
 namespace DXLAB_Coworking_Space_Booking_System
 {
@@ -30,7 +29,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             // Mapping cho Facilities
             CreateMap<Facility, FacilitiesDTO>().ReverseMap();
 
-            // Mapping cho Blog và BlogDTO
+            // Mapping cho Blog
             CreateMap<Blog, BlogDTO>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (BlogDTO.BlogStatus)src.Status))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : null))
@@ -56,6 +55,26 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.BlogCreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.Images, opt => opt.Ignore());
+
+            CreateMap<RoomDTO, Room>()
+           .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
+               src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null))
+           .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area { AreaName = a.AreaName, AreaTypeId = a.AreaTypeId }) : null));
+
+            CreateMap<Room, RoomDTO>()
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
+                    src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null))
+                .ForMember(dest => dest.Area_DTO, opt => opt.MapFrom(x => x.Areas != null ? x.Areas.Select(a => new AreaDTO { AreaName = a.AreaName, AreaTypeId = a.AreaTypeId }) : null));
+
+            CreateMap<AreaTypeDTO, AreaType>()
+            .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
+             src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null));
+
+            CreateMap<AreaType, AreaTypeDTO>()
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
+                    src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
+            CreateMap<AreaType, AreaDTO>().ReverseMap();
+
         }
     }
 }

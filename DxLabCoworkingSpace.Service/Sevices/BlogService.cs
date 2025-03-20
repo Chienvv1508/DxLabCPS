@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using DxLabCoworkingSpace.Core.DTOs;
+using DxLabCoworkingSpace;
 using Microsoft.EntityFrameworkCore;
 
-namespace DxLabCoworkingSpace.Service.Sevices
+namespace DxLabCoworkingSpace
 {
     public class BlogService : IBlogService
     {

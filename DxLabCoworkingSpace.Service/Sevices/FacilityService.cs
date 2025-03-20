@@ -1,4 +1,4 @@
-﻿using DxLabCoworkingSpace.Core.DTOs;
+﻿using DxLabCoworkingSpace;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpace.Service.Sevices
+namespace DxLabCoworkingSpace
 {
     public class FacilityService : IFacilityService
     {

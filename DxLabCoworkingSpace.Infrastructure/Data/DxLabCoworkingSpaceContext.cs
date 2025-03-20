@@ -32,6 +32,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         public virtual DbSet<Room> Rooms { get; set; } = null!;
         public virtual DbSet<Slot> Slots { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
+        public virtual DbSet<AreaType> AreaTypes { get; set; } = null!;
         public virtual DbSet<UsingFacility> UsingFacilities { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -50,20 +51,15 @@ namespace DXLAB_Coworking_Space_Booking_System
         {
             modelBuilder.Entity<Area>(entity =>
             {
-                entity.Property(e => e.AreaName).HasMaxLength(50);
-
-                entity.Property(e => e.AreaType).HasMaxLength(50);
-
-                entity.Property(e => e.IsDeleted).HasColumnName("isDeleted");
-
-                entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
-
-                entity.Property(e => e.Size).HasColumnType("decimal(10, 2)");
-
                 entity.HasOne(d => d.Room)
                     .WithMany(p => p.Areas)
                     .HasForeignKey(d => d.RoomId)
                     .HasConstraintName("FK_Areas_Rooms");
+
+                entity.HasOne(d => d.AreaType)
+                   .WithMany(p => p.Areas)
+                   .HasForeignKey(d => d.AreaTypeId)
+                   .HasConstraintName("FK_Areas_AreaTypes");
             });
 
             modelBuilder.Entity<Blog>(entity =>
@@ -148,10 +144,10 @@ namespace DXLAB_Coworking_Space_Booking_System
                     .HasMaxLength(255)
                     .HasColumnName("ImageURL");
 
-                entity.HasOne(d => d.Area)
+                entity.HasOne(d => d.AreaType)
                     .WithMany(p => p.Images)
                     .HasForeignKey(d => d.AreaTypeId)
-                    .HasConstraintName("FK_Images_Areas");
+                    .HasConstraintName("FK_Images_AreaTypes");
 
                 entity.HasOne(d => d.Blog)
                     .WithMany(p => p.Images)
@@ -183,22 +179,14 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             modelBuilder.Entity<Position>(entity =>
             {
-                entity.HasIndex(e => e.BookingDetailId, "UQ_Positions_BookingDetailId")
-                    .IsUnique();
 
-                entity.Property(e => e.PositionName).HasMaxLength(50);
-
-                entity.Property(e => e.UsingFacilityId).HasMaxLength(50);
 
                 entity.HasOne(d => d.Area)
                     .WithMany(p => p.Positions)
                     .HasForeignKey(d => d.AreaId)
                     .HasConstraintName("FK_Positions_Areas");
 
-                entity.HasOne(d => d.BookingDetail)
-                    .WithOne(p => p.Position)
-                    .HasForeignKey<Position>(d => d.BookingDetailId)
-                    .HasConstraintName("FK_Positions_BookingDetails");
+
             });
 
             modelBuilder.Entity<Report>(entity =>
