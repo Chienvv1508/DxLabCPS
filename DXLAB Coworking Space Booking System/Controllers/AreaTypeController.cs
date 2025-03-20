@@ -132,7 +132,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             };
                 var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
-                if (areaTypeNameOp != null)
+                if(areaTypeNameOp != null)
                 {
                     var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp.value.ToString());
                     if (existedAreaType != null)
@@ -141,7 +141,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         return BadRequest(response);
                     }
                 }
-
+                
 
                 foreach (var operation in patchDoc.Operations)
                 {
@@ -161,7 +161,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return NotFound(response2);
                 }
 
-               patchDoc.ApplyTo(areaTypeFromDb, ModelState);
+                patchDoc.ApplyTo(areaTypeFromDb, ModelState);
 
 
                 if (!ModelState.IsValid)

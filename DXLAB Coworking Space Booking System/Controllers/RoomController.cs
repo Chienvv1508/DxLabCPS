@@ -1,9 +1,14 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.JsonPatch;
+using NBitcoin.Secp256k1;
+using Nethereum.Contracts.Standards.ERC20.TokenList;
+using Thirdweb;
+
+
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -84,9 +89,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var areaList = roomDto.Area_DTO;
                 var areaNameList = new List<string>();
                 var araeExistedList = await _areaService.GetAll();
-                foreach (var area in areaList)
+                foreach(var area in areaList)
                 {
-                    if (areaNameList.FirstOrDefault(x => x.Equals(area.AreaName)) != null)
+                    if(areaNameList.FirstOrDefault(x => x.Equals(area.AreaName)) != null)
                     {
                         var response1 = new ResponseDTO<object>(400, "Tên khu vực đang nhập trùng nhau", null);
                         return BadRequest(response1);
@@ -177,11 +182,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return NotFound(response);
             }
 
+            
 
+            patchDoc.ApplyTo(roomFromDb, ModelState);  
 
-           patchDoc.ApplyTo(roomFromDb, ModelState);
-
-
+            
             if (!ModelState.IsValid)
             {
                 var allErrors = ModelState
@@ -194,7 +199,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
 
             var roomDTO = _mapper.Map<RoomDTO>(roomFromDb);
-
+            
             bool isValid = TryValidateModel(roomDTO);
             if (!isValid)
             {
@@ -205,7 +210,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 string errorString = string.Join(" | ", allErrors);
                 var response = new ResponseDTO<object>(404, errorString, null);
-                return BadRequest(response);
+                return BadRequest(response);  
             }
             await _roomService.Update(roomFromDb);
             var response2 = new ResponseDTO<object>(200, $"Cập nhập thành công phòng {id}!", null);
@@ -222,7 +227,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             return Ok(response);
         }
 
-
+        
         [HttpGet("{id}")]
         public async Task<ActionResult<RoomDTO>> GetRoomById(int id)
         {

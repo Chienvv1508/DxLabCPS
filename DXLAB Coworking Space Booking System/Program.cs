@@ -12,10 +12,18 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => string.IsNullOrEmpty(e.ErrorMessage) ? "Giá trị không hợp lệ." : e.ErrorMessage)
+            .ToList();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -70,6 +78,7 @@ builder.Services.AddScoped<IAreaTypeService, AreaTypeService>();
 builder.Services.AddScoped<IAreaService, AreaService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
+
 // ✅ Cập nhật CORS
 builder.Services.AddCors(options =>
 {
@@ -101,6 +110,13 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 
 app.UseAuthorization();
+app.UseCors(builder =>
+{
+    builder
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader();
+});
 
 app.MapControllers();
 app.Run();

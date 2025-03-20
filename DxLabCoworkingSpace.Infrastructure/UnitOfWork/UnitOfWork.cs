@@ -36,6 +36,8 @@ namespace DxLabCoworkingSpace
 
         public async Task CommitAsync()
         {
+
+            //await _dbContext.SaveChangesAsync();
             using (var transaction = await _dbContext.Database.BeginTransactionAsync())
             {
                 try
