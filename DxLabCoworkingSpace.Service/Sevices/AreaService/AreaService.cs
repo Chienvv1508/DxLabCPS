@@ -10,7 +10,7 @@ namespace DxLabCoworkingSpace
 {
     public class AreaService : IAreaService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork; 
         private readonly IMapper _mapper;
 
         public AreaService(IUnitOfWork unitOfWork)
