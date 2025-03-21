@@ -27,17 +27,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             TimeSpan startTime = TimeSpan.Parse(request.StartTime); // Hỗ trợ HH:mm:ss
             TimeSpan endTime = TimeSpan.Parse(request.EndTime);
 
-            //if (request == null)
-            //{
-            //    return BadRequest(new ResponseDTO<object>("Nội dung yêu cầu là bắt buộc!", null));
-            //}
-
-            //if (!TimeSpan.TryParse(request.StartTime, out TimeSpan startTime) ||
-            //    !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
-            //{
-            //    return BadRequest(new ResponseDTO<object>("Định dạng thời gian không hợp lệ!", null));
-            //}
-
             if (startTime >= endTime)
             {
                 return BadRequest(new ResponseDTO<object>(400, "StartTime phải sớm hơn EndTime!", null));

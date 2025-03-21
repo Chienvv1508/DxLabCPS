@@ -9,7 +9,7 @@ namespace DxLabCoworkingSpace
         public TimeSpan? StartTime { get; set; }
         public TimeSpan? EndTime { get; set; }
         public int Status { get; set; }
-
+        public int SlotNumber { get; set; }
         public virtual BookingDetail? BookingDetail { get; set; }
     }
 }
