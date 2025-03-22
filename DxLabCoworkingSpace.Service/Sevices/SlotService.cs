@@ -5,7 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
-namespace DxLabCoworkingSpace.Service.Sevices
+namespace DxLabCoworkingSpace
 {
     public class SlotService : ISlotService
     {
@@ -19,39 +19,39 @@ namespace DxLabCoworkingSpace.Service.Sevices
         {
             List<Slot> slots = new List<Slot>();
             TimeSpan currentStart = startTime;
-            double breakTimeInMinutes = breakTime ?? 10; // Đảm bảo non-nullable
+            double breakTimeInMinutes = breakTime ?? 10;
             int slotDuration = 120; // 2 giờ
 
-            // Lấy danh sách slot hiện có từ database
             var existingSlots = (await _unitOfWork.SlotRepository.GetAll()).OrderBy(s => s.StartTime).ToList();
+            int maxSlotNumber = existingSlots.Any() ? existingSlots.Max(s => s.SlotNumber) : 0;
+            int slotNumber = maxSlotNumber + 1;
 
             while (currentStart < endTime)
             {
                 TimeSpan currentEnd = currentStart.Add(TimeSpan.FromMinutes(slotDuration));
                 if (currentEnd > endTime) break;
 
-                // Kiểm tra xung đột với slot hiện có và xung đột giao nhau ở biên
                 var conflictingSlot = existingSlots.FirstOrDefault(s =>
                     s.StartTime <= currentEnd && s.EndTime >= currentStart);
 
-                if (conflictingSlot == null) // Không xung đột
+                if (conflictingSlot == null)
                 {
                     slots.Add(new Slot
                     {
                         StartTime = currentStart,
                         EndTime = currentEnd,
-                        Status = 1
+                        Status = 1,
+                        SlotNumber = slotNumber++
                     });
                     currentStart = currentEnd.Add(TimeSpan.FromMinutes(breakTimeInMinutes));
                 }
-                else // Có xung đột, nhảy đến thời điểm sau slot xung đột
+                else
                 {
-                    // Xử lý trường hợp StartTime và EndTime nullable
                     TimeSpan conflictingEndTime = conflictingSlot.EndTime.HasValue
                         ? conflictingSlot.EndTime.Value
                         : (conflictingSlot.StartTime.HasValue
                             ? conflictingSlot.StartTime.Value.Add(TimeSpan.FromMinutes(slotDuration))
-                            : currentEnd); // Fallback nếu cả hai đều null
+                            : currentEnd);
                     currentStart = conflictingEndTime.Add(TimeSpan.FromMinutes(breakTimeInMinutes));
                 }
             }

@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
-using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -29,11 +28,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var deletedUsers = await _accountService.GetDeletedAccounts();
                 var deletedAccountDtos = _mapper.Map<IEnumerable<AccountDTO>>(deletedUsers);
-                return Ok(new ResponseDTO<IEnumerable<AccountDTO>>("Danh sách tài khoản bị xóa tạm thời đã được lấy ra thành công!", deletedAccountDtos));
+                return Ok(new ResponseDTO<IEnumerable<AccountDTO>>(200, "Danh sách tài khoản bị xóa tạm thời đã được lấy ra thành công!", deletedAccountDtos));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy tài khoản bị xóa: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi lấy tài khoản bị xóa: {ex.Message}", null));
             }
         }
 
@@ -44,15 +43,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 await _accountService.Restore(id);
-                return Ok(new ResponseDTO<object>($"Tài khoản với ID: {id} đã được phục hồi!", null));
+                return Ok(new ResponseDTO<object>(200, $"Tài khoản với ID: {id} đã được phục hồi!", null));
             }
             catch (InvalidOperationException ex)
             {
-                return NotFound(new ResponseDTO<object>(ex.Message, null));
+                return NotFound(new ResponseDTO<object>(404, ex.Message, null));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi phục hồi tài khoản: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi phục hồi tài khoản: {ex.Message}", null));
             }
         }
 
@@ -63,19 +62,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 await _accountService.Delete(id);
-                return Ok(new ResponseDTO<object>($"Tài khoản với ID: {id} đã được xóa vĩnh viễn!", null));
+                return Ok(new ResponseDTO<object>(200, $"Tài khoản với ID: {id} đã được xóa vĩnh viễn!", null));
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, new ResponseDTO<object>(ex.Message, null)); // Từ chối nếu là Admin
+                return StatusCode(403, new ResponseDTO<object>(403, ex.Message, null)); // Từ chối nếu là Admin
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new ResponseDTO<object>(ex.Message, null));
+                return BadRequest(new ResponseDTO<object>(400, ex.Message, null));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi xóa vĩnh viễn tài khoản: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi xóa vĩnh viễn tài khoản: {ex.Message}", null));
             }
         }
     }

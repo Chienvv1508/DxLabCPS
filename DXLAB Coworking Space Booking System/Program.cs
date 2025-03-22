@@ -1,6 +1,5 @@
 using DXLAB_Coworking_Space_Booking_System;
 using DxLabCoworkingSpace;
-using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +11,11 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -26,11 +26,10 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             .Select(e => string.IsNullOrEmpty(e.ErrorMessage) ? "Giá trị không hợp lệ." : e.ErrorMessage)
             .ToList();
 
-        var response = new ResponseDTO<object>(string.Join("; ", errors), null);
+        var response = new ResponseDTO<object>(400, "Lỗi: " + string.Join("; ", errors), null);
         return new BadRequestObjectResult(response);
     };
 });
-
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var key = builder.Configuration.GetSection("Jwt")["key"];
 var issuer = builder.Configuration.GetSection("Jwt")["Issuer"];
@@ -66,7 +65,11 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
 builder.Services.AddScoped<IBlogService, BlogService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IAreaTypeService, AreaTypeService>();
+builder.Services.AddScoped<IAreaService, AreaService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
+
 
 // ✅ Cập nhật CORS
 builder.Services.AddCors(options =>
@@ -91,6 +94,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseCors("AllowFrontend");
 

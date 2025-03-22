@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
-{ 
-    public interface IFacilityService : IGenericService<Facility>
+{
+    public interface IAreaTypeService : IGenericService<AreaType>
     {
-        Task AddFacilityFromExcel(List<Facility> facilities);
+        public Task<object> GetAreaTypeForAddRoom();
     }
 }

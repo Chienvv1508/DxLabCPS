@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,6 +16,9 @@ namespace DxLabCoworkingSpace
         IGenericRepository<User> UserRepository { get; }
         IGenericRepository<Blog> BlogRepository { get; }
         IGenericRepository<Facility> FacilityRepository { get; }
+        IGenericRepository<Room> RoomRepository { get; }
+        IGenericRepository<AreaType> AreaTypeRepository { get; }
+        IGenericRepository<Area> AreaRepository { get; }
         DbContext Context { get; }
         Task CommitAsync();
         Task RollbackAsync();

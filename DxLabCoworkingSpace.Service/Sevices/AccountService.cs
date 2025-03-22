@@ -7,7 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
-namespace DxLabCoworkingSpace.Service.Sevices
+namespace DxLabCoworkingSpace
 {
     public class AccountService : IAccountService
     {
@@ -254,9 +254,18 @@ namespace DxLabCoworkingSpace.Service.Sevices
                 throw new InvalidOperationException("RoleName hoặc RoleId là bắt buộc để cập nhật role!");
             }
 
-            existingUser.Email = entity.Email;
-            existingUser.FullName = entity.FullName;
-            existingUser.Status = entity.Status;
+            if (!string.IsNullOrEmpty(entity.Email))
+            {
+                existingUser.Email = entity.Email;
+            }
+            if (!string.IsNullOrEmpty(entity.FullName))
+            {
+                existingUser.FullName = entity.FullName;
+            }
+            if (entity.Status != existingUser.Status) 
+            {
+                existingUser.Status = entity.Status;
+            }
 
             await _unitOfWork.UserRepository.Update(existingUser);
             await _unitOfWork.CommitAsync();
@@ -276,6 +285,35 @@ namespace DxLabCoworkingSpace.Service.Sevices
                 throw new InvalidOperationException($"Người dùng với ID: {id} chưa được xóa mềm. Sử dụng SoftDelete.");
             }
 
+            // Lấy tất cả Blog của User với Images liên quan
+            var blogs = await _unitOfWork.Context.Set<Blog>()
+                .Where(b => b.UserId == id)
+                .Include(b => b.Images)
+                .ToListAsync();
+
+            foreach (var blog in blogs)
+            {
+                // Xóa các file ảnh vật lý trong wwwroot/images (nếu có)
+                if (blog.Images != null && blog.Images.Any())
+                {
+                    foreach (var image in blog.Images)
+                    {
+                        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", image.ImageUrl.TrimStart('/'));
+                        if (File.Exists(filePath))
+                        {
+                            File.Delete(filePath);
+                        }
+                    }
+
+                    // Xóa các bản ghi Image trong cơ sở dữ liệu
+                    _unitOfWork.Context.Set<Image>().RemoveRange(blog.Images);
+                }
+
+                // Xóa Blog
+                await _unitOfWork.BlogRepository.Delete(blog.BlogId);
+            }
+
+            // Sau khi xóa hết Blog và Image liên quan, xóa User
             await _unitOfWork.UserRepository.Delete(id);
             await _unitOfWork.CommitAsync();
         }

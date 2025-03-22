@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
-using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
@@ -23,25 +22,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ResponseDTO<object>("Dữ liệu đầu vào không hợp lệ!", ModelState));
+                return BadRequest(new ResponseDTO<object>(400, "Dữ liệu đầu vào không hợp lệ!", ModelState));
             }
             TimeSpan startTime = TimeSpan.Parse(request.StartTime); // Hỗ trợ HH:mm:ss
             TimeSpan endTime = TimeSpan.Parse(request.EndTime);
 
-            //if (request == null)
-            //{
-            //    return BadRequest(new ResponseDTO<object>("Nội dung yêu cầu là bắt buộc!", null));
-            //}
-
-            //if (!TimeSpan.TryParse(request.StartTime, out TimeSpan startTime) ||
-            //    !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
-            //{
-            //    return BadRequest(new ResponseDTO<object>("Định dạng thời gian không hợp lệ!", null));
-            //}
-
             if (startTime >= endTime)
             {
-                return BadRequest(new ResponseDTO<object>("StartTime phải sớm hơn EndTime!", null));
+                return BadRequest(new ResponseDTO<object>(400, "StartTime phải sớm hơn EndTime!", null));
             }
 
             int breakTime = request.BreakTime ?? 10;
@@ -51,16 +39,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 await _slotService.AddMany(slots);
 
                 var slotDtos = _mapper.Map<IEnumerable<SlotDTO>>(slots);
-                return Ok(new ResponseDTO<IEnumerable<SlotDTO>>($"{slots.Count} slots được tạo thành công!", slotDtos));
+                return Ok(new ResponseDTO<IEnumerable<SlotDTO>>(200, $"{slots.Count} slots được tạo thành công!", slotDtos));
             }
 
             catch (InvalidOperationException ex)
             {
-                return Conflict(new ResponseDTO<object>(ex.Message, null));
+                return Conflict(new ResponseDTO<object>(409, ex.Message, null));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>("Lỗi khi tạo slot: " + ex.Message, null));
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi tạo slot: " + ex.Message, null));
             }
         }
         // API Lấy tất cả slot
@@ -71,11 +59,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var slots = await _slotService.GetAll();
                 var slotDtos = _mapper.Map<IEnumerable<SlotDTO>>(slots);
-                return Ok(new ResponseDTO<IEnumerable<SlotDTO>>("Lấy danh sách slot thành công.", slotDtos));
+                return Ok(new ResponseDTO<IEnumerable<SlotDTO>>(200, "Lấy danh sách slot thành công.", slotDtos));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>("Lỗi khi lấy danh sách slot: " + ex.Message, null));
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi lấy danh sách slot: " + ex.Message, null));
             }
         }
 
@@ -88,15 +76,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var slot = await _slotService.GetById(id);
                 if (slot == null)
                 {
-                    return NotFound(new ResponseDTO<object>($"Slot với ID {id} không tìm thấy!", null));
+                    return NotFound(new ResponseDTO<object>(404, $"Slot với ID {id} không tìm thấy!", null));
                 }
 
                 var slotDto = _mapper.Map<SlotDTO>(slot);
-                return Ok(new ResponseDTO<SlotDTO>("Lấy thông tin slot thành công.", slotDto));
+                return Ok(new ResponseDTO<SlotDTO>(200, "Lấy thông tin slot thành công.", slotDto));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>("Lỗi khi truy xuất slot: " + ex.Message, null));
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi truy xuất slot: " + ex.Message, null));
             }
         }
     }

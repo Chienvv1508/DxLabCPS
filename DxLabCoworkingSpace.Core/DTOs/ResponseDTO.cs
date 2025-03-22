@@ -8,13 +8,13 @@ namespace DxLabCoworkingSpace
 {
     public class ResponseDTO<T>
     {
-        //public int StatusCode { get; set; }
+        public int StatusCode { get; set; }
         public string Message { get; set; }
         public T Data { get; set; }
 
-        public ResponseDTO( string message, T data)
+        public ResponseDTO(int statusCode, string message, T data)
         {
-            //StatusCode = statusCode;
+            StatusCode = statusCode;
             Message = message;
             Data = data;
         }

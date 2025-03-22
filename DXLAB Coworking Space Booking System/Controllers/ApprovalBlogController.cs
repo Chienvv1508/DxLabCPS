@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
-using DxLabCoworkingSpace.Core.DTOs;
-using DxLabCoworkingSpace.Service.Sevices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,14 +30,26 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if (blogDtos == null || !blogDtos.Any())
                 {
-                    return NotFound(new ResponseDTO<object>("Không tìm thấy blog nào đang chờ duyệt!", null));
+                    return NotFound(new ResponseDTO<object>(404, "Không tìm thấy blog nào đang chờ duyệt!", null));
                 }
 
-                return Ok(new ResponseDTO<IEnumerable<BlogDTO>>("Danh sách blog đang chờ duyệt đã được lấy thành công!", blogDtos));
+                // Chỉ trả về các trường cần thiết trong response
+                var responseDtos = blogDtos.Select(dto => new
+                {
+                    BlogId = dto.BlogId,
+                    BlogTitle = dto.BlogTitle,
+                    BlogContent = dto.BlogContent,
+                    BlogCreatedDate = dto.BlogCreatedDate,
+                    Status = dto.Status,
+                    UserName = dto.UserName,
+                    Images = dto.Images
+                });
+
+                return Ok(new ResponseDTO<IEnumerable<object>>(200, "Danh sách blog đang chờ duyệt đã được lấy thành công!", responseDtos));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy danh sách blog: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi lấy danh sách blog: {ex.Message}", null));
             }
         }
 
@@ -54,14 +64,26 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if (blogDtos == null || !blogDtos.Any())
                 {
-                    return NotFound(new ResponseDTO<object>("Không tìm thấy blog nào đã được duyệt!", null));
+                    return NotFound(new ResponseDTO<object>(404, "Không tìm thấy blog nào đã được duyệt!", null));
                 }
 
-                return Ok(new ResponseDTO<IEnumerable<BlogDTO>>("Danh sách blog đã được duyệt đã được lấy thành công!", blogDtos));
+                // Chỉ trả về các trường cần thiết trong response
+                var responseDtos = blogDtos.Select(dto => new
+                {
+                    BlogId = dto.BlogId,
+                    BlogTitle = dto.BlogTitle,
+                    BlogContent = dto.BlogContent,
+                    BlogCreatedDate = dto.BlogCreatedDate,
+                    Status = dto.Status,
+                    UserName = dto.UserName,
+                    Images = dto.Images
+                });
+
+                return Ok(new ResponseDTO<IEnumerable<object>>(200, "Danh sách blog đã được duyệt đã được lấy thành công!", responseDtos));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy danh sách blog: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi lấy danh sách blog: {ex.Message}", null));
             }
         }
 
@@ -75,15 +97,28 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var blog = await _blogService.GetByIdWithUser(id);
                 if (blog == null)
                 {
-                    return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
+                    return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
                 }
 
                 var blogDto = _mapper.Map<BlogDTO>(blog);
-                return Ok(new ResponseDTO<BlogDTO>("Blog đã được duyệt thành công!", blogDto));
+
+                // Chỉ trả về các trường cần thiết trong response
+                var responseDto = new
+                {
+                    BlogId = blogDto.BlogId,
+                    BlogTitle = blogDto.BlogTitle,
+                    BlogContent = blogDto.BlogContent,
+                    BlogCreatedDate = blogDto.BlogCreatedDate,
+                    Status = blogDto.Status,
+                    UserName = blogDto.UserName,
+                    Images = blogDto.Images
+                };
+
+                return Ok(new ResponseDTO<object>(200, "Blog đã được duyệt thành công!", responseDto));
             }
             catch (Exception ex)
             {
-                return BadRequest(new ResponseDTO<object>($"Lỗi khi duyệt blog: {ex.Message}", null));
+                return BadRequest(new ResponseDTO<object>(400, $"Lỗi khi duyệt blog: {ex.Message}", null));
             }
         }
 
@@ -97,15 +132,28 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var blog = await _blogService.GetByIdWithUser(id);
                 if (blog == null)
                 {
-                    return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
+                    return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
                 }
 
                 var blogDto = _mapper.Map<BlogDTO>(blog);
-                return Ok(new ResponseDTO<BlogDTO>("Blog đã được hủy thành công!", blogDto));
+
+                // Chỉ trả về các trường cần thiết trong response
+                var responseDto = new
+                {
+                    BlogId = blogDto.BlogId,
+                    BlogTitle = blogDto.BlogTitle,
+                    BlogContent = blogDto.BlogContent,
+                    BlogCreatedDate = blogDto.BlogCreatedDate,
+                    Status = blogDto.Status,
+                    UserName = blogDto.UserName,
+                    Images = blogDto.Images
+                };
+
+                return Ok(new ResponseDTO<object>(200, "Blog đã được hủy thành công!", responseDto));
             }
             catch (Exception ex)
             {
-                return BadRequest(new ResponseDTO<object>($"Lỗi khi hủy blog: {ex.Message}", null));
+                return BadRequest(new ResponseDTO<object>(400, $"Lỗi khi hủy blog: {ex.Message}", null));
             }
         }
 
@@ -118,15 +166,49 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var blog = await _blogService.GetByIdWithUser(id);
                 if (blog == null)
                 {
-                    return NotFound(new ResponseDTO<object>($"Blog với ID: {id} không tìm thấy!", null));
+                    return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
                 }
 
                 var blogDto = _mapper.Map<BlogDTO>(blog);
-                return Ok(new ResponseDTO<BlogDTO>("Lấy thông tin blog thành công!", blogDto));
+
+                // Chỉ trả về các trường cần thiết trong response
+                var responseDto = new
+                {
+                    BlogId = blogDto.BlogId,
+                    BlogTitle = blogDto.BlogTitle,
+                    BlogContent = blogDto.BlogContent,
+                    BlogCreatedDate = blogDto.BlogCreatedDate,
+                    Status = blogDto.Status,
+                    UserName = blogDto.UserName,
+                    Images = blogDto.Images
+                };
+
+                return Ok(new ResponseDTO<object>(200, "Lấy thông tin blog thành công!", responseDto));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>($"Lỗi khi lấy blog: {ex.Message}", null));
+                return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi lấy blog: {ex.Message}", null));
+            }
+        }
+
+        [HttpDelete("{id}")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteApprovedBlog(int id)
+        {
+            try
+            {
+                var blog = await _blogService.GetByIdWithUser(id);
+                if (blog == null)
+                {
+                    return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
+                }
+
+                await _blogService.Delete(id);
+                return Ok(new ResponseDTO<object>(200, $"Blog với ID: {id} đã được xóa thành công!", null));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>(400, $"Lỗi khi xóa blog: {ex.Message}", null));
             }
         }
     }
