@@ -59,5 +59,7 @@ namespace DxLabCoworkingSpace
             var listAreaTypeResult = listAreaType.Select(x => new AreaAddDTO() { AreaTypeId = x.AreaTypeId, AreaTypeName = x.AreaTypeName, Size = x.Size });
             return listAreaTypeResult;
         }
+
+        
     }
 }

@@ -11,8 +11,12 @@ namespace DxLabCoworkingSpace
         public DateTime CheckoutTime { get; set; }
         public int? BookingId { get; set; }
         public int? SlotId { get; set; }
+        
+        public virtual int PositionId { get; set; }
+        public virtual int AreaId { get; set; }
 
         public virtual Booking? Booking { get; set; }
+        public virtual Area? Area { get; set; }
         public virtual Slot? Slot { get; set; }
         public virtual Position? Position { get; set; }
         public virtual Report? Report { get; set; }

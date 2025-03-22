@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using System;
 using System.Collections.Generic;
@@ -48,7 +49,26 @@ namespace DxLabCoworkingSpace {
         throw new NotImplementedException();
     }
 
-    public async Task<bool> PatchRoomAsync(int id, JsonPatchDocument<Room> patchDoc)
+        public async Task<Room> GetRoomWithAllInClude(Expression<Func<Room, bool>> expression)
+        {
+            return await _unitOfWork.RoomRepository.GetWithInclude(expression, x => x.Images, x => x.Areas);
+        }
+
+        public async Task<Room> GetRoomWithAraeAnAreaType(Expression<Func<Room, bool>> expression)
+        {
+            var rooms = await _unitOfWork.RoomRepository.GetAll();
+            var fRooms = (IQueryable<Room>)rooms;
+            var result = fRooms.Include(x => x.Areas).ThenInclude(y => y.AreaType);
+            if (expression != null)
+            {
+                return result.FirstOrDefault(expression);
+            }
+            return null;
+           
+            
+        }
+
+        public async Task<bool> PatchRoomAsync(int id, JsonPatchDocument<Room> patchDoc)
      {
             var room = await _unitOfWork.RoomRepository.GetById(id);
             if (room == null) return false;
