@@ -31,7 +31,14 @@ namespace DxLabCoworkingSpace
         {
             return await _unitOfWork.RoleRepository.GetById(id);
         }
-
+        public async Task<IEnumerable<Role>> GetAllWithInclude(params Expression<Func<Role, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<Role> GetWithInclude(Expression<Func<Role, bool>> expression, params Expression<Func<Role, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
         async Task IGenericService<Role>.Update(Role entity)
         {
             throw new NotImplementedException();

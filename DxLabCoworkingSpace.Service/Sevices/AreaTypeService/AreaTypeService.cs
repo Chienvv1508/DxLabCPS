@@ -60,6 +60,14 @@ namespace DxLabCoworkingSpace
             return listAreaTypeResult;
         }
 
-        
+        public Task<IEnumerable<AreaType>> GetAllWithInclude(params Expression<Func<AreaType, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<AreaType> GetWithInclude(Expression<Func<AreaType, bool>> expression, params Expression<Func<AreaType, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

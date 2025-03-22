@@ -44,7 +44,12 @@ namespace DxLabCoworkingSpace {
             return await _unitOfWork.RoomRepository.GetAll(expression);
         }
 
-    public Task<Room> GetById(int id)
+        public Task<IEnumerable<Room>> GetAllWithInclude(params Expression<Func<Room, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Room> GetById(int id)
     {
         throw new NotImplementedException();
     }

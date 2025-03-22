@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpace.Service.Sevices
+namespace DxLabCoworkingSpace
 {
     public class UserService : IUserService
     {
@@ -41,7 +41,14 @@ namespace DxLabCoworkingSpace.Service.Sevices
         {
             return await _unitOfWork.UserRepository.GetById(id);
         }
-
+        public async Task<IEnumerable<User>> GetAllWithInclude(params Expression<Func<User, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<User> GetWithInclude(Expression<Func<User, bool>> expression, params Expression<Func<User, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
         public async Task Update(User entity)
         {
             throw new NotImplementedException();

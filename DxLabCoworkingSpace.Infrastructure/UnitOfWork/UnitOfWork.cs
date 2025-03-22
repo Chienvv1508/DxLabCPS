@@ -16,6 +16,7 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<Slot> _slotRepository;
         private IGenericRepository<User> _userRepository;
         private IGenericRepository<Blog> _blogRepository;
+        private IGenericRepository<Facility> _facilityRepository;
         private IGenericRepository<Room> _roomRepository;
         private IGenericRepository<AreaType> _areaTypeRepository;
         private IGenericRepository<Area> _areaRepository;
@@ -29,6 +30,7 @@ namespace DxLabCoworkingSpace
         public IGenericRepository<Slot> SlotRepository => _slotRepository ?? new GenericRepository<Slot>(_dbContext);
         public IGenericRepository<User> UserRepository => _userRepository ?? new GenericRepository<User>(_dbContext);
         public IGenericRepository<Blog> BlogRepository => _blogRepository ?? new GenericRepository<Blog>(_dbContext);
+        public IGenericRepository<Facility> FacilityRepository => _facilityRepository ?? new GenericRepository<Facility>(_dbContext);
         public IGenericRepository<Room> RoomRepository => _roomRepository ?? new GenericRepository<Room>(_dbContext);
         public IGenericRepository<AreaType> AreaTypeRepository => _areaTypeRepository ?? new GenericRepository<AreaType>(_dbContext);
         public IGenericRepository<Area> AreaRepository => _areaRepository ?? new GenericRepository<Area>(_dbContext);

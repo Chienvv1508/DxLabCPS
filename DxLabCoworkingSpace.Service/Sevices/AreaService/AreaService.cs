@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -29,7 +28,7 @@ namespace DxLabCoworkingSpace
 
         public async Task<Area> Get(Expression<Func<Area, bool>> expression)
         {
-          return  await _unitOfWork.AreaRepository.Get(expression);
+            return await _unitOfWork.AreaRepository.Get(expression);
         }
 
         public async Task<IEnumerable<Area>> GetAll()
@@ -48,6 +47,14 @@ namespace DxLabCoworkingSpace
         }
 
         public Task<Area> GetById(int id)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<IEnumerable<Area>> GetAllWithInclude(params Expression<Func<Area, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<Area> GetWithInclude(Expression<Func<Area, bool>> expression, params Expression<Func<Area, object>>[] includes)
         {
             throw new NotImplementedException();
         }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace DxLabCoworkingSpace
         IGenericRepository<Slot> SlotRepository { get; }
         IGenericRepository<User> UserRepository { get; }
         IGenericRepository<Blog> BlogRepository { get; }
-
+        IGenericRepository<Facility> FacilityRepository { get; }
         IGenericRepository<Room> RoomRepository { get; }
         IGenericRepository<AreaType> AreaTypeRepository { get; }
         IGenericRepository<Area> AreaRepository { get; }

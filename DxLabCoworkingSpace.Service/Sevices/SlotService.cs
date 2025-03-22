@@ -5,7 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
-namespace DxLabCoworkingSpace.Service.Sevices
+namespace DxLabCoworkingSpace
 {
     public class SlotService : ISlotService
     {
@@ -15,43 +15,50 @@ namespace DxLabCoworkingSpace.Service.Sevices
             _unitOfWork = unitOfWork;
         }
         //Generate slot
-        public async Task<List<Slot>> GenerateSlots(TimeSpan startTime, TimeSpan endTime, int? breakTime = 10)
+        public async Task<List<Slot>> CreateSlots(TimeSpan startTime, TimeSpan endTime, int? breakTime = 10)
         {
             List<Slot> slots = new List<Slot>();
             TimeSpan currentStart = startTime;
             double breakTimeInMinutes = breakTime ?? 10;
-            int slotDuration = 120;
+            int slotDuration = 120; // 2 giờ
 
-            // Lấy danh sách slot đã có từ database
-            var existingSlots = (await _unitOfWork.SlotRepository.GetAll()).ToList();
+            var existingSlots = (await _unitOfWork.SlotRepository.GetAll()).OrderBy(s => s.StartTime).ToList();
+            int maxSlotNumber = existingSlots.Any() ? existingSlots.Max(s => s.SlotNumber) : 0;
+            int slotNumber = maxSlotNumber + 1;
 
-            // Kiểm tra trước toàn bộ khoảng thời gian để phát hiện chồng chéo
             while (currentStart < endTime)
             {
                 TimeSpan currentEnd = currentStart.Add(TimeSpan.FromMinutes(slotDuration));
                 if (currentEnd > endTime) break;
 
-                // Sửa logic: coi giao nhau ở biên cũng là xung đột
-                var conflictingSlot = existingSlots.FirstOrDefault(s => s.StartTime <= currentEnd && s.EndTime >= currentStart);
-                if (conflictingSlot != null)
-                {
-                    throw new InvalidOperationException("Khoảng thời gian slot trùng với khoảng thời gian slot đã tồn tại!");
-                }
-                 
-                // Nếu không có xung đột, thêm slot vào danh sách
-                slots.Add(new Slot
-                {
-                    StartTime = currentStart,
-                    EndTime = currentEnd,
-                    Status = 1 // Chưa book
-                });
+                var conflictingSlot = existingSlots.FirstOrDefault(s =>
+                    s.StartTime <= currentEnd && s.EndTime >= currentStart);
 
-                currentStart = currentEnd.Add(TimeSpan.FromMinutes(breakTimeInMinutes));
+                if (conflictingSlot == null)
+                {
+                    slots.Add(new Slot
+                    {
+                        StartTime = currentStart,
+                        EndTime = currentEnd,
+                        Status = 1,
+                        SlotNumber = slotNumber++
+                    });
+                    currentStart = currentEnd.Add(TimeSpan.FromMinutes(breakTimeInMinutes));
+                }
+                else
+                {
+                    TimeSpan conflictingEndTime = conflictingSlot.EndTime.HasValue
+                        ? conflictingSlot.EndTime.Value
+                        : (conflictingSlot.StartTime.HasValue
+                            ? conflictingSlot.StartTime.Value.Add(TimeSpan.FromMinutes(slotDuration))
+                            : currentEnd);
+                    currentStart = conflictingEndTime.Add(TimeSpan.FromMinutes(breakTimeInMinutes));
+                }
             }
 
             if (slots.Count == 0)
             {
-                throw new InvalidOperationException("Không thể tạo được slots vì rằng buộc thời gian!");
+                throw new InvalidOperationException("Không thể tạo được slots vì tất cả khoảng thời gian đều xung đột hoặc không đủ thời gian!");
             }
 
             return slots;
@@ -101,6 +108,14 @@ namespace DxLabCoworkingSpace.Service.Sevices
         async Task<Slot> IGenericService<Slot>.GetById(int id)
         {
             return await _unitOfWork.SlotRepository.GetById(id);
+        }
+        public async Task<IEnumerable<Slot>> GetAllWithInclude(params Expression<Func<Slot, object>>[] includes)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<Slot> GetWithInclude(Expression<Func<Slot, bool>> expression, params Expression<Func<Slot, object>>[] includes)
+        {
+            throw new NotImplementedException();
         }
         async Task IGenericService<Slot>.Update(Slot entity)
         {
