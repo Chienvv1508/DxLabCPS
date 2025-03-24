@@ -136,7 +136,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                                 bookingDetail.SlotId = slotid;
                                 bookingDetail.CheckinTime = dte.BookingDate;
                                 bookingDetail.CheckoutTime = dte.BookingDate;
-
+                                //var areaBook = _areaService.GetWithInclude(x => x.,x => x.AreaType, x => x.Positions);
+                               // bookingDetail.Price = areaBook.
                                 bookingDetails.Add(bookingDetail);
                             }
                         }
