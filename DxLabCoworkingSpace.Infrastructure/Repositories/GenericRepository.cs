@@ -56,7 +56,9 @@ namespace DxLabCoworkingSpace
         }
         public async Task Add(T entity)
         {
+
             _entitySet.Add(entity);
+       
             await _dbContext.SaveChangesAsync();
         }
 

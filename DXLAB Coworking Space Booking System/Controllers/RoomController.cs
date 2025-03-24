@@ -134,7 +134,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         {
                             var pos = new Position();
                             pos.PositionNumber = i;
-                            pos.Status = 1;
+                            pos.Status = true;
                             postions.Add(pos);
                         }
                     xr.Positions = postions;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,9 +10,17 @@ namespace DxLabCoworkingSpace
 {
     public class BookingService : IBookingService
     {
-        public Task Add(Booking entity)
+        private IUnitOfWork _unitOfWork;
+
+        public BookingService(IUnitOfWork unitOfWork)
         {
-            throw new NotImplementedException();
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task Add(Booking entity)
+        {
+            await _unitOfWork.BookingRepository.Add(entity);
+            await _unitOfWork.CommitAsync();
         }
 
         public Task Delete(int id)
@@ -19,14 +28,14 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<Booking> Get(Expression<Func<Booking, bool>> expression)
+        public async Task<Booking> Get(Expression<Func<Booking, bool>> expression)
         {
-            throw new NotImplementedException();
+           return await _unitOfWork.BookingRepository.Get(expression);
         }
 
-        public Task<IEnumerable<Booking>> GetAll()
+        public async Task<IEnumerable<Booking>> GetAll()
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.BookingRepository.GetAll();
         }
 
         public Task<IEnumerable<Booking>> GetAll(Expression<Func<Booking, bool>> expression)
@@ -34,14 +43,25 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<Booking> GetById(int id)
+        public Task<IEnumerable<Booking>> GetAllWithInclude(params Expression<Func<Booking, object>>[] includes)
         {
             throw new NotImplementedException();
         }
 
-        public Task Update(Booking entity)
+        public async Task<Booking> GetById(int id)
+        {
+            return await _unitOfWork.BookingRepository.GetById(id);
+        }
+
+        public Task<Booking> GetWithInclude(Expression<Func<Booking, bool>> expression, params Expression<Func<Booking, object>>[] includes)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task Update(Booking entity)
+        {
+            await _unitOfWork.BookingRepository.Update(entity);
+            await _unitOfWork.CommitAsync();
         }
     }
 }

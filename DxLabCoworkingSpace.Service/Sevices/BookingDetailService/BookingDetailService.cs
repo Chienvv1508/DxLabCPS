@@ -9,9 +9,18 @@ namespace DxLabCoworkingSpace
 {
     public class BookingDetailService : IBookingDetailService
     {
-        public Task Add(BookingDetail entity)
+        private IUnitOfWork _unitOfWork;
+
+        public BookingDetailService(IUnitOfWork unitOfWork)
         {
-            throw new NotImplementedException();
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task Add(BookingDetail entity)
+        {
+
+            await _unitOfWork.BookingDetailRepository.Add(entity);
+            await _unitOfWork.CommitAsync();
         }
 
         public Task Delete(int id)
@@ -34,34 +43,32 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<Area>> GetAllWithInclude( params Expression<Func<Area, object>>[] includes)
+      
+
+        public async Task<IEnumerable<BookingDetail>> GetAllWithInclude(params Expression<Func<BookingDetail, object>>[] includes)
         {
-            throw new NotImplementedException();
+                return await _unitOfWork.BookingDetailRepository.GetAllWithInclude(includes);
+            
         }
 
-        public Task<IEnumerable<BookingDetail>> GetAllWithInclude(params Expression<Func<BookingDetail, object>>[] includes)
+        public async Task<BookingDetail> GetById(int id)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.BookingDetailRepository.GetById(id);
+
+
         }
 
-        public Task<BookingDetail> GetById(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Area> GetWithInclude(Expression<Func<Area, bool>> expression, params Expression<Func<Area, object>>[] includes)
-        {
-            throw new NotImplementedException();
-        }
+       
 
         public Task<BookingDetail> GetWithInclude(Expression<Func<BookingDetail, bool>> expression, params Expression<Func<BookingDetail, object>>[] includes)
         {
             throw new NotImplementedException();
         }
 
-        public Task Update(BookingDetail entity)
+        public async Task Update(BookingDetail entity)
         {
-            throw new NotImplementedException();
+            await _unitOfWork.BookingDetailRepository.Update(entity);
+            await _unitOfWork.CommitAsync();
         }
     }
 }

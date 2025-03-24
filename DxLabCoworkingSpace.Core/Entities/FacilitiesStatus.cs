@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
- namespace DxLabCoworkingSpace
-
+namespace DxLabCoworkingSpace
 {
     public partial class FacilitiesStatus
     {

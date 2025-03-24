@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IBookingDetailService: IGenericService<BookingDetail>
+    public interface IBookingDetailService : IGenericService<BookingDetail>
     {
-        Task<IEnumerable<BookingDetail>> GetAllWithInclude( params Expression<Func<BookingDetail, object>>[] includes);
-        Task<BookingDetail> GetWithInclude(Expression<Func<BookingDetail, bool>> expression, params Expression<Func<BookingDetail, object>>[] includes);
     }
 }

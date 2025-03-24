@@ -53,7 +53,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 //Dependency Injection LibraryDbContext
-builder.Services.AddDbContext<DxLabCoworkingSpaceContext>(options =>
+builder.Services.AddDbContext<DxLabSystemContext>(options =>
 {
     options.UseSqlServer(connectionString);
 });
@@ -68,6 +68,8 @@ builder.Services.AddScoped<IBlogService, BlogService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IAreaTypeService, AreaTypeService>();
 builder.Services.AddScoped<IAreaService, AreaService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IBookingDetailService, BookingDetailService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 

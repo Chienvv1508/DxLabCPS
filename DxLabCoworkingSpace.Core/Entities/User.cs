@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
-
 namespace DxLabCoworkingSpace
 {
-    public class User
+    public partial class User
     {
-
         public User()
         {
             Blogs = new HashSet<Blog>();

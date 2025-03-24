@@ -1,4 +1,4 @@
-﻿using DXLAB_Coworking_Space_Booking_System;
+﻿
 using DxLabCoworkingSpace;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -11,7 +11,7 @@ namespace DxLabCoworkingSpace
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly DxLabCoworkingSpaceContext _dbContext;
+        private readonly DxLabSystemContext _dbContext;
         private IGenericRepository<Role> _roleRepository;
         private IGenericRepository<Slot> _slotRepository;
         private IGenericRepository<User> _userRepository;
@@ -22,7 +22,7 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<Area> _areaRepository;
         private IGenericRepository<Booking> _bookingRepository;
         private IGenericRepository<BookingDetail> _bookingDetailRepository;
-        public UnitOfWork(DxLabCoworkingSpaceContext dbContext) 
+        public UnitOfWork(DxLabSystemContext dbContext) 
         {
             _dbContext = dbContext;
         }
