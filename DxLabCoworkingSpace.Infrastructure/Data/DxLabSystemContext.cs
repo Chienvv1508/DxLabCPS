@@ -1,24 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using DxLabCoworkingSpace;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.Extensions.Configuration;
 
-namespace DXLAB_Coworking_Space_Booking_System
+namespace DxLabCoworkingSpace
 {
-    public partial class DxLabCoworkingSpaceContext : DbContext
+    public partial class DxLabSystemContext : DbContext
     {
-        public DxLabCoworkingSpaceContext()
+        public DxLabSystemContext()
         {
         }
 
-        public DxLabCoworkingSpaceContext(DbContextOptions<DxLabCoworkingSpaceContext> options)
+        public DxLabSystemContext(DbContextOptions<DxLabSystemContext> options)
             : base(options)
         {
         }
 
         public virtual DbSet<Area> Areas { get; set; } = null!;
+        public virtual DbSet<AreaType> AreaTypes { get; set; } = null!;
         public virtual DbSet<Blog> Blogs { get; set; } = null!;
         public virtual DbSet<Booking> Bookings { get; set; } = null!;
         public virtual DbSet<BookingDetail> BookingDetails { get; set; } = null!;
@@ -32,18 +31,14 @@ namespace DXLAB_Coworking_Space_Booking_System
         public virtual DbSet<Room> Rooms { get; set; } = null!;
         public virtual DbSet<Slot> Slots { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
-        public virtual DbSet<AreaType> AreaTypes { get; set; } = null!;
         public virtual DbSet<UsingFacility> UsingFacilities { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                var builder = new ConfigurationBuilder()
-                              .SetBasePath(Directory.GetCurrentDirectory())
-                              .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-                IConfigurationRoot configuration = builder.Build();
-                optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseSqlServer("Server=DESKTOP-9KB6FKU\\SQLEXPRESS;Database=DxLabSystem; uid = sa; pwd = 123");
             }
         }
 
@@ -51,20 +46,35 @@ namespace DXLAB_Coworking_Space_Booking_System
         {
             modelBuilder.Entity<Area>(entity =>
             {
+                entity.Property(e => e.AreaName).HasMaxLength(250);
+
+                entity.HasOne(d => d.AreaType)
+                    .WithMany(p => p.Areas)
+                    .HasForeignKey(d => d.AreaTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Areas_AreaTypes");
+
                 entity.HasOne(d => d.Room)
                     .WithMany(p => p.Areas)
                     .HasForeignKey(d => d.RoomId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Areas_Rooms");
+            });
 
-                entity.HasOne(d => d.AreaType)
-                   .WithMany(p => p.Areas)
-                   .HasForeignKey(d => d.AreaTypeId)
-                   .HasConstraintName("FK_Areas_AreaTypes");
+            modelBuilder.Entity<AreaType>(entity =>
+            {
+                entity.Property(e => e.AreaDescription).HasMaxLength(250);
+
+                entity.Property(e => e.AreaTypeName).HasMaxLength(250);
+
+                entity.Property(e => e.IsDeleted).HasColumnName("isDeleted");
+
+                entity.Property(e => e.Price).HasColumnType("decimal(10, 0)");
             });
 
             modelBuilder.Entity<Blog>(entity =>
             {
-                entity.Property(e => e.BlogCreatedDate).HasPrecision(0);
+                entity.Property(e => e.BlogCreatedDate).HasColumnType("date");
 
                 entity.Property(e => e.BlogTitle).HasMaxLength(50);
 
@@ -88,22 +98,34 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             modelBuilder.Entity<BookingDetail>(entity =>
             {
-                entity.HasIndex(e => e.SlotId, "UQ_BookingDetails_SlotId")
-                    .IsUnique();
+                
 
                 entity.Property(e => e.CheckinTime).HasColumnType("datetime");
 
                 entity.Property(e => e.CheckoutTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
+
+                entity.HasOne(d => d.Area)
+                    .WithMany(p => p.BookingDetails)
+                    .HasForeignKey(d => d.AreaId)
+                    .HasConstraintName("FK_BookingDetails_Areas");
 
                 entity.HasOne(d => d.Booking)
                     .WithMany(p => p.BookingDetails)
                     .HasForeignKey(d => d.BookingId)
                     .HasConstraintName("FK_BookingDetails_Bookings");
 
+                entity.HasOne(d => d.Position)
+                    .WithMany(p => p.BookingDetails)
+                    .HasForeignKey(d => d.PositionId)
+                    .HasConstraintName("FK_BookingDetails_Positions");
+
                 entity.HasOne(d => d.Slot)
-                    .WithOne(p => p.BookingDetail)
-                    .HasForeignKey<BookingDetail>(d => d.SlotId)
-                    .HasConstraintName("FK_BookingDetails_Slots");
+                    .WithMany(p => p.BookingDetails)
+                    .HasForeignKey(d => d.SlotId)
+                    .HasConstraintName("FK_BookingDetails_Slots")
+                    .OnDelete(DeleteBehavior.Restrict); 
             });
 
             modelBuilder.Entity<FacilitiesStatus>(entity =>
@@ -147,7 +169,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 entity.HasOne(d => d.AreaType)
                     .WithMany(p => p.Images)
                     .HasForeignKey(d => d.AreaTypeId)
-                    .HasConstraintName("FK_Images_AreaTypes");
+                    .HasConstraintName("FK_Images_AreaType");
 
                 entity.HasOne(d => d.Blog)
                     .WithMany(p => p.Images)
@@ -179,14 +201,11 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             modelBuilder.Entity<Position>(entity =>
             {
-
-
                 entity.HasOne(d => d.Area)
                     .WithMany(p => p.Positions)
                     .HasForeignKey(d => d.AreaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Positions_Areas");
-
-
             });
 
             modelBuilder.Entity<Report>(entity =>

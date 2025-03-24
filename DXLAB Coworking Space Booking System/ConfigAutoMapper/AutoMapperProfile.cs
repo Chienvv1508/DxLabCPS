@@ -74,6 +74,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
                     src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
             CreateMap<AreaType, AreaDTO>().ReverseMap();
+            CreateMap<Area, AreaDTO>().ReverseMap();
 
         }
     }
