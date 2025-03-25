@@ -17,7 +17,12 @@ namespace DxLabCoworkingSpace
         [RegularExpression(@"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", ErrorMessage = "EndTime sai định dang thời gian!")]
         public string? EndTime { get; set; }
 
-        [Range(0, 20, ErrorMessage = "BreakTime phải là từ 0 đến 20!")]
+        [Required(ErrorMessage = "TimeSlot là bắt buộc!")]
+        [Range(0, 150, ErrorMessage ="Thời gian 1 slot phải từ 0 đến 150 phút!")]
+        public int? TimeSlot { get; set; }
+
+        [Required(ErrorMessage = "EndTime là bắt buộc!")]
+        [Range(0, 20, ErrorMessage = "BreakTime phải là từ 0 đến 20 phút!")]
         public int? BreakTime { get; set; }
     }
 }
