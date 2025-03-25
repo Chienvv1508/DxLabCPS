@@ -31,11 +31,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 return BadRequest(new ResponseDTO<object>(400, "StartTime phải sớm hơn EndTime!", null));
             }
-
-            int breakTime = request.BreakTime ?? 10;
+            int timeSLot = request.TimeSlot ?? throw new ArgumentException(nameof(timeSLot), "Time Slot là bắt buộc");
+            int breakTime = request.BreakTime ?? throw new ArgumentException(nameof(breakTime), "Break Time là bắt buộc");
             try
             {
-                var slots = await _slotService.CreateSlots(startTime, endTime, breakTime);
+                var slots = await _slotService.CreateSlots(startTime, endTime, timeSLot, breakTime);
                 await _slotService.AddMany(slots);
 
                 var slotDtos = _mapper.Map<IEnumerable<SlotDTO>>(slots);
