@@ -108,7 +108,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     slotArray[i] = x.SlotNumber;
                 }
                 int[][] slotJaggedMatrix = CreateSlotJaggedMatrix(slotArray);
-                Tuple<bool, string, Dictionary<int, int[]>> findPositionResult = findPosition(slotJaggedMatrix, searchMatrix);
+                Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPositionResult = findPosition(slotJaggedMatrix, searchMatrix);
                 if(findPositionResult.Item1 == false)
                 {
                     var reponse = new ResponseDTO<object>(400, findPositionResult.Item2, null);
@@ -188,15 +188,15 @@ namespace DXLAB_Coworking_Space_Booking_System
             return Ok();
         }
 
-        private Tuple<bool, string, Dictionary<int, int[]>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, int[]> searchMatrix)
+        private Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, int[]> searchMatrix)
         {
             if (slotJaggedMatrix == null || searchMatrix == null)
-            return new Tuple<bool, string, Dictionary<int, int[]>>(false, "Lỗi khi đặt phòng", null);
+            return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(false, "Lỗi khi đặt phòng", null);
             List<int[]> listOfJaggedMatrix = slotJaggedMatrix.ToList();
             listOfJaggedMatrix.Sort((a, b) => b.Length.CompareTo(a.Length));
             
             //kết quả
-            Dictionary<int, int[]> dictResult = new Dictionary<int, int[]>();
+            List<KeyValuePair<int, int[]>>   dictResult = new List<KeyValuePair<int, int[]>> ();
 
             //Duyệt listJaggedMatrix
             for(int i = 0; i < listOfJaggedMatrix.Count; i++)
@@ -246,13 +246,18 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (find)
                 {
                     var bestFitPos = filterPos.OrderBy(x => x.sizeOfFrag).FirstOrDefault();
-                    searchMatrix.Remove(bestFitPos.Key);
-                    dictResult.Add(bestFitPos.Key, bestFitPos.slotNums);
+                    foreach(var item in bestFitPos.slotNums)
+                    {
+                        searchMatrix[bestFitPos.Key][item - 1] = 0;
+                    }
+
+                    ;
+                    dictResult.Add(new KeyValuePair<int, int[]>(bestFitPos.Key, bestFitPos.slotNums));
                 }
-                else return new Tuple<bool, string, Dictionary<int, int[]>>(false, "Lỗi khi đặt phòng", null);
+                else return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(false, "Lỗi khi đặt phòng", null);
             }
 
-            return new Tuple<bool, string, Dictionary<int, int[]>>(true, "", dictResult);
+            return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(true, "", dictResult);
         }
         
         private int[][] CreateSlotJaggedMatrix(int[] arr)
