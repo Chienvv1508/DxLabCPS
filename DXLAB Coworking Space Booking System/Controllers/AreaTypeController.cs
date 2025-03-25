@@ -77,14 +77,26 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllAreaType()
+        public async Task<IActionResult> GetAllAreaType(string fil)
         {
             try
             {
                 var areaTypes = await _areaTypeService.GetAll();
-                var areaTypesDTO = _mapper.Map<IEnumerable<AreaTypeDTO>>(areaTypes);
-                var response = new ResponseDTO<object>(200, "Lấy thành công", areaTypesDTO);
-                return Ok(response);
+                if (fil.Equals("1"))
+                {
+                    areaTypes = areaTypes.Where(x => x.IsDeleted == false);
+                    var areaTypesDTO = _mapper.Map<IEnumerable<AreaTypeDTO>>(areaTypes);
+                    var response = new ResponseDTO<object>(200, "Lấy thành công", areaTypesDTO);
+                    return Ok(response);
+                }
+                else
+                {
+                    var areaTypesDTO = _mapper.Map<IEnumerable<AreaTypeDTO>>(areaTypes);
+                    var response = new ResponseDTO<object>(200, "Lấy thành công", areaTypesDTO);
+                    return Ok(response);
+                }
+                
+               
             }
             catch (Exception ex)
             {

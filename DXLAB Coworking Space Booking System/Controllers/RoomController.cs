@@ -228,7 +228,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RoomDTO>>> GetAllRooms()
         {
+            
             var rooms = await _roomService.GetAll();
+           
             foreach(var r in rooms)
             {
                 foreach(var a in r.Areas)
