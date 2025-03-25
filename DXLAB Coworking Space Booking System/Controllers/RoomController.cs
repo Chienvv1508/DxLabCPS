@@ -59,7 +59,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 //check size
                 int areas_totalSize = 0;
                 var areaTypeList = await _areaTypeService.GetAll();
-                var areaTypeListPara = new List<AreaType>();
+               // var areaTypeListPara = new List<AreaType>();
+                Area individualArea = null;
+                int inputIndividual = 0;
                 foreach (var area in roomDto.Area_DTO)
                 {
 
@@ -67,7 +69,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     if (areatype != null)
                     {
                         areas_totalSize += areatype.Size;
-                        areaTypeListPara.Add(areatype);
+                      //  areaTypeListPara.Add(areatype);
+                        if (areatype.AreaCategory == 1)
+                        {
+                            inputIndividual++;
+                            if(inputIndividual > 1)
+                            {
+                                var response1 = new ResponseDTO<object>(400, $"Trong phòng chỉ được có 1 phòng cá nhân", null);
+                                return BadRequest(response1);
+                            }    
+                            individualArea = new Area();
+                            individualArea = _mapper.Map<Area>(area);
+                            individualArea.AreaType = areatype;
+                            
+                        }
+                            
 
                     }
                     else
@@ -88,7 +104,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 var areaList = roomDto.Area_DTO;
                 var areaNameList = new List<string>();
-                var araeExistedList = await _areaService.GetAll();
+                //var araeExistedList = await _areaService.GetAll();
                 foreach(var area in areaList)
                 {
                     if(areaNameList.FirstOrDefault(x => x.Equals(area.AreaName)) != null)
@@ -112,25 +128,52 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
 
                 var room = _mapper.Map<Room>(roomDto);
-                //var individualAreaTypeList = areaTypeListPara.Where(x => x.AreaCategory == 2);
-                //if (individualAreaTypeList != null)
-                //{
-                //    foreach (var areatype in individualAreaTypeList)
-                //    {
-                //        int[] position = Enumerable.Range(1, areatype.Size).ToArray();
-                //        List<Position> positions = new List<Position>();
-                //        for (int i = 0; i < position.Length; i++)
-                //        {
-                //            var areaPosition = new Position();
-                //            areaPosition.Status = 0;
-                //            areaPosition.PositionNumber = i;
-                //            positions.Add(areaPosition);
-                //        }
-                //        var area = room.Areas.FirstOrDefault(x => x.AreaTypeId == areatype.AreaTypeId);
-                //        area.Positions = positions;
-                //    }
-                //}
-                await _roomService.Add(room);
+                //T hêm position
+              
+                
+              
+             
+                    if (individualArea != null)
+                    {
+                    var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == individualArea.AreaTypeId);
+
+                        int[] position = Enumerable.Range(1, individualArea.AreaType.Size).ToArray();
+                        List<Position> postions = new List<Position>();
+                        for (int i = 1; i <= position.Length; i++)
+                        {
+                            var pos = new Position();
+                            pos.PositionNumber = i;
+                            pos.Status = true;
+                            postions.Add(pos);
+                        }
+                    xr.Positions = postions;
+
+                    }
+                    //else
+                    //{
+                    //    var response1 = new ResponseDTO<object>(400, $"Id: {individualArea.AreaTypeId} chưa tồn tại!", null);
+                    //    return BadRequest(response1);
+                    //}
+                
+                        //var individualAreaTypeList = areaTypeListPara.Where(x => x.AreaCategory == 2);
+                        //if (individualAreaTypeList != null)
+                        //{
+                        //    foreach (var areatype in individualAreaTypeList)
+                        //    {
+                        //        int[] position = Enumerable.Range(1, areatype.Size).ToArray();
+                        //        List<Position> positions = new List<Position>();
+                        //        for (int i = 0; i < position.Length; i++)
+                        //        {
+                        //            var areaPosition = new Position();
+                        //            areaPosition.Status = 0;
+                        //            areaPosition.PositionNumber = i;
+                        //            positions.Add(areaPosition);
+                        //        }
+                        //        var area = room.Areas.FirstOrDefault(x => x.AreaTypeId == areatype.AreaTypeId);
+                        //        area.Positions = positions;
+                        //    }
+                        //}
+                        await _roomService.Add(room);
                 roomDto = _mapper.Map<RoomDTO>(room);
 
                 var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDto);
