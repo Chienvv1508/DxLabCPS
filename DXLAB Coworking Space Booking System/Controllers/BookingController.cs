@@ -246,6 +246,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (find)
                 {
                     var bestFitPos = filterPos.OrderBy(x => x.sizeOfFrag).FirstOrDefault();
+                    searchMatrix.Remove(bestFitPos.Key);
                     dictResult.Add(bestFitPos.Key, bestFitPos.slotNums);
                 }
                 else return new Tuple<bool, string, Dictionary<int, int[]>>(false, "Lỗi khi đặt phòng", null);
