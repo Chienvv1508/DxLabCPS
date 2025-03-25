@@ -14,13 +14,14 @@ namespace DxLabCoworkingSpace
         {
             _unitOfWork = unitOfWork;
         }
-        //Generate slot
-        public async Task<List<Slot>> CreateSlots(TimeSpan startTime, TimeSpan endTime, int? breakTime = 10)
+        //Create slot
+        public async Task<List<Slot>> CreateSlots(TimeSpan startTime, TimeSpan endTime, int?timeSlot, int? breakTime)
         {
             List<Slot> slots = new List<Slot>();
             TimeSpan currentStart = startTime;
-            double breakTimeInMinutes = breakTime ?? 10;
-            int slotDuration = 120; // 2 giờ
+            double slotDuration = timeSlot ?? throw new ArgumentException(nameof(breakTime), "Time Slot là bắt buộc");
+            double breakTimeInMinutes = breakTime ?? throw new ArgumentException(nameof(breakTime), "Break Time là bắt buộc");
+            
 
             var existingSlots = (await _unitOfWork.SlotRepository.GetAll()).OrderBy(s => s.StartTime).ToList();
             int maxSlotNumber = existingSlots.Any() ? existingSlots.Max(s => s.SlotNumber) : 0;
