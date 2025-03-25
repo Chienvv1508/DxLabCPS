@@ -254,6 +254,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var responseNotFound = new ResponseDTO<object>(404, "Mã Room không tồn tại", null);
                 return NotFound(responseNotFound);
             }
+            foreach (var a in room.Areas)
+            {
+                var areaType = await _areaTypeService.Get(x => x.AreaTypeId == a.AreaTypeId);
+                a.AreaType = areaType;
+
+            }
             var roomDto = _mapper.Map<RoomDTO>(room);
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDto);
             return Ok(response);
