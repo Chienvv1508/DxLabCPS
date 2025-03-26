@@ -73,9 +73,9 @@ namespace DxLabCoworkingSpace {
             
         }
 
-        public Task<Room> GetWithInclude(Expression<Func<Room, bool>> expression, params Expression<Func<Room, object>>[] includes)
+        public async Task<Room> GetWithInclude(Expression<Func<Room, bool>> expression, params Expression<Func<Room, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.RoomRepository.GetWithInclude(expression, includes);
         }
 
         public async Task<bool> PatchRoomAsync(int id, JsonPatchDocument<Room> patchDoc)
