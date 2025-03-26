@@ -12,14 +12,16 @@ namespace DXLAB_Coworking_Space_Booking_System
         private readonly IBookingService _bookingService;
         private readonly IBookingDetailService _bookDetailService;
         private readonly IAreaService _areaService;
+        private readonly IAreaTypeService _areaTypeService;
 
-        public BookingController(IRoomService roomService,ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService)
+        public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService, IAreaTypeService areaTypeService)
         {
             _roomService = roomService;
             _slotService = slotService;
             _bookingService = bookingService;
             _bookDetailService = bookDetailService;
             _areaService = areaService;
+            _areaTypeService = areaTypeService;
         }
 
         [HttpPost]
@@ -376,6 +378,71 @@ namespace DXLAB_Coworking_Space_Booking_System
         //   await _bookDetailService.Update(b1);
         //    return Ok();
         //}
+
+        [HttpGet("AvailiblePos")]
+        public async Task<IActionResult> GetAvailableSlot([FromQuery] AvailableSlotRequestDTO availableSlotRequestDTO)
+        {
+            var room = await _roomService.GetWithInclude(x => x.IsDeleted == false && x.RoomId == availableSlotRequestDTO.RoomId, x => x.Areas);
+            if (room == null)
+            {
+                var responseDTO = new ResponseDTO<object>(404, "Phòng không tồn tại. Vui lòng nhập lại!", null);
+                return NotFound(responseDTO);
+
+            }
+            var areaType = await _areaTypeService.Get(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId);
+            var areasInRoom = room.Areas.Where(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId);
+            if (!areasInRoom.Any())
+            {
+                var responseDTO = new ResponseDTO<object>(404, $"Không tồn tại khu vực đã nhập trong phòng{room.RoomName}", null);
+                return NotFound(responseDTO);
+            }
+            var bookingDetails = await _bookDetailService.GetAll(x => x.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date);
+            var slots = await _slotService.GetAll();
+            List<AvailableSlotResponseDTO> availableSlotResponseDTOs = new List<AvailableSlotResponseDTO>();
+            if (areaType.AreaCategory == 1)
+            {
+                var individualArea = areasInRoom.FirstOrDefault();
+                individualArea = await _areaService.GetWithInclude(x => x.AreaId == individualArea.AreaId, x => x.Positions);
+                foreach (var slot in slots)
+                {
+                    int availblePos = 0;
+                    int bookedPos = 0;
+                    foreach (var item in bookingDetails)
+                    {
+                        if (item.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date
+                          && item.SlotId == slot.SlotId && individualArea.Positions.FirstOrDefault(x => x.PositionId == item.PositionId) != null)
+                        { bookedPos++; }
+                    }
+                    var response = new AvailableSlotResponseDTO() { SlotId = slot.SlotId, SlotNumber = slot.SlotNumber, AvailableSlot = areaType.Size - bookedPos };
+                    availableSlotResponseDTOs.Add(response);
+
+                }
+
+            }
+            else
+            {
+
+
+                foreach (var slot in slots)
+                {
+                    int availblePos = 0;
+                    int bookedPos = 0;
+                    foreach (var item in bookingDetails)
+                    {
+                        if (item.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date
+                          && item.SlotId == slot.SlotId && areasInRoom.FirstOrDefault(x => x.AreaId == item.AreaId) != null)
+                        { bookedPos++; }
+                    }
+                    var response = new AvailableSlotResponseDTO() { SlotId = slot.SlotId, SlotNumber = slot.SlotNumber, AvailableSlot = areasInRoom.Count() - bookedPos };
+                    availableSlotResponseDTOs.Add(response);
+
+                }
+
+            }
+
+
+            return Ok(new ResponseDTO<List<AvailableSlotResponseDTO>>(200, "ok", availableSlotResponseDTOs));
+        }
     }
 
     public class FilterPos
