@@ -15,7 +15,9 @@ namespace DXLAB_Coworking_Space_Booking_System
         private readonly IAreaService _areaService;
         private readonly IAreaTypeService _areaTypeService;
         private readonly IMapper _mapper;
-        public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper)
+        private readonly IConfiguration _configuration;
+        public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService,
+            IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper, IConfiguration configuration)
         {
             _roomService = roomService;
             _slotService = slotService;
@@ -24,6 +26,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             _areaService = areaService;
             _areaTypeService = areaTypeService;
             _mapper = mapper;
+            _configuration = configuration;
         }
 
         [HttpPost]
@@ -479,7 +482,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 }
 
                 var areaTypeGroup = areaTypes.GroupBy(x => x.AreaCategory);
-                List<KeyValuePair<int,List<AreaTypeDTO>>> result = new List<KeyValuePair<int, List<AreaTypeDTO>>>(); 
+                List<KeyValuePair<AreaTypeCategoryDTO,List<AreaTypeDTO>>> result = new List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>>(); 
                 foreach(var group in areaTypeGroup)
                 {
                     List<AreaTypeDTO> areaTypeDTOs = new List<AreaTypeDTO>();
@@ -488,7 +491,23 @@ namespace DXLAB_Coworking_Space_Booking_System
                         var areaType = _mapper.Map<AreaTypeDTO>(item);
                         areaTypeDTOs.Add(areaType);
                     }
-                    KeyValuePair<int, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<int, List<AreaTypeDTO>>(group.Key, areaTypeDTOs);
+                    var aretypeCategory = new AreaTypeCategoryDTO();
+                    if (group.Key == 1)
+                    {
+                       
+                        aretypeCategory.CategoryId = 1;
+                        aretypeCategory.Title = _configuration["Individual:Title"];
+                        aretypeCategory.CategoryDescription = _configuration["Individual:Description"];
+                        aretypeCategory.Image = _configuration["Individual:Images"];
+                    }
+                    if(group.Key == 2)
+                    {
+                        aretypeCategory.CategoryId = 2;
+                        aretypeCategory.Title = _configuration["Group:Title"];
+                        aretypeCategory.CategoryDescription = _configuration["Group:Description"];
+                        aretypeCategory.Image = _configuration["Group:Images"];
+                    }    
+                    KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>(aretypeCategory, areaTypeDTOs);
                     result.Add(keyValuePair);
                 }
                 var response1 = new ResponseDTO<object>(200, "Trả thành công", result);
