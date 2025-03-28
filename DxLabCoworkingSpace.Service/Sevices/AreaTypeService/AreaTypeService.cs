@@ -41,7 +41,7 @@ namespace DxLabCoworkingSpace
 
         public async Task<IEnumerable<AreaType>> GetAll(Expression<Func<AreaType, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeRepository.GetAll(expression);
         }
 
         public Task<AreaType> GetById(int id)
