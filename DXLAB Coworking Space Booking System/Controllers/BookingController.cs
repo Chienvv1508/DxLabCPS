@@ -1,4 +1,5 @@
-﻿using DxLabCoworkingSpace;
+﻿using AutoMapper;
+using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System
@@ -13,8 +14,8 @@ namespace DXLAB_Coworking_Space_Booking_System
         private readonly IBookingDetailService _bookDetailService;
         private readonly IAreaService _areaService;
         private readonly IAreaTypeService _areaTypeService;
-
-        public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService, IAreaTypeService areaTypeService)
+        private readonly IMapper _mapper;
+        public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper)
         {
             _roomService = roomService;
             _slotService = slotService;
@@ -22,6 +23,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             _bookDetailService = bookDetailService;
             _areaService = areaService;
             _areaTypeService = areaTypeService;
+            _mapper = mapper;
         }
 
         [HttpPost]
@@ -394,7 +396,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         //    return Ok();
         //}
 
-        [HttpGet("AvailiblePos")]
+        [HttpGet("availiblepos")]
         public async Task<IActionResult> GetAvailableSlot([FromQuery] AvailableSlotRequestDTO availableSlotRequestDTO)
         {
             var room = await _roomService.GetWithInclude(x => x.IsDeleted == false && x.RoomId == availableSlotRequestDTO.RoomId, x => x.Areas);
@@ -403,6 +405,11 @@ namespace DXLAB_Coworking_Space_Booking_System
                 var responseDTO = new ResponseDTO<object>(404, "Phòng không tồn tại. Vui lòng nhập lại!", null);
                 return NotFound(responseDTO);
 
+            }
+            if(availableSlotRequestDTO.BookingDate.Date < DateTime.Now.Date)
+            {
+                var responseDTO = new ResponseDTO<object>(404, $"Phải nhập ngày lớn hoặc bằng ngày: {DateTime.Now.Date}", null);
+                return BadRequest(responseDTO);
             }
             var areaType = await _areaTypeService.Get(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId);
             var areasInRoom = room.Areas.Where(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId);
@@ -457,6 +464,58 @@ namespace DXLAB_Coworking_Space_Booking_System
 
 
             return Ok(new ResponseDTO<List<AvailableSlotResponseDTO>>(200, "ok", availableSlotResponseDTOs));
+        }
+
+        [HttpGet("categoryinroom")]
+        public async Task<IActionResult> GetAllAreaInRoom(int id)
+        {
+            try
+            {
+                var room = await _roomService.Get(x => x.RoomId == id && x.IsDeleted == false);
+                if(room == null)
+                {
+                    var response = new ResponseDTO<object>(400, "Không tìm thấy room", null);
+                    return NotFound(response);
+
+                }
+                var areas = await _areaService.GetAll(x => x.RoomId == room.RoomId);
+                if(areas == null)
+                {
+                    var response = new ResponseDTO<object>(400, "Không tìm thấy room", null);
+                    return NotFound(response);
+                }
+                List<AreaType> areaTypes = new List<AreaType>();
+                var areaTypesDb = await _areaTypeService.GetAll(x => x.IsDeleted == false);
+                foreach(var area in areas)
+                {
+                    var areaType = areaTypesDb.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
+                    if(areaType != null)
+                        areaTypes.Add(areaType);
+                }
+
+                var areaTypeGroup = areaTypes.GroupBy(x => x.AreaCategory);
+                List<KeyValuePair<int,List<AreaTypeDTO>>> result = new List<KeyValuePair<int, List<AreaTypeDTO>>>(); 
+                foreach(var group in areaTypeGroup)
+                {
+                    List<AreaTypeDTO> areaTypeDTOs = new List<AreaTypeDTO>();
+                    foreach(var item in group) 
+                    {
+                        var areaType = _mapper.Map<AreaTypeDTO>(item);
+                        areaTypeDTOs.Add(areaType);
+                    }
+                    KeyValuePair<int, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<int, List<AreaTypeDTO>>(group.Key, areaTypeDTOs);
+                    result.Add(keyValuePair);
+                }
+                var response1 = new ResponseDTO<object>(200, "Trả thành công", result);
+                return Ok(response1);
+                
+            }
+            catch(Exception ex)
+            {
+                var response1 = new ResponseDTO<object>(500, "Lỗi khi đặt phòng", ex.Message);
+                return StatusCode(500,response1);
+            }
+          
         }
     }
 
