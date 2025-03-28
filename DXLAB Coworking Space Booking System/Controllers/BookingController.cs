@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System
 {
-    [Route("api/[controller]")]
+    [Route("api/booking")]
     [ApiController]
     public class BookingController : ControllerBase
     {
@@ -183,11 +183,26 @@ namespace DXLAB_Coworking_Space_Booking_System
            
             booking.BookingDetails = bookingDetails;
 
+            //Tạo response trả về data
+            var responseData = new
+            {
+                BookingId = booking.BookingId,
+                UserId = booking.UserId,
+                BookingCreatedDate = booking.BookingCreatedDate,
+                TotalPrice = booking.Price,
+                Details = bookingDetails.Select(bd => new
+                {
+                    PositionId = bd.PositionId, 
+                    AreaId = bd.AreaId,         
+                    SlotId = bd.SlotId,
+                    CheckinTime = bd.CheckinTime,
+                    CheckoutTime = bd.CheckoutTime,
+                    Price = bd.Price
+                }).ToList()
+            };
 
-
-                
-            await _bookingService.Add(booking);
-            return Ok();
+            var response = new ResponseDTO<object>(200, "Đặt phòng thành công!", responseData);
+            return Ok(response);
         }
 
         private Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, int[]> searchMatrix)

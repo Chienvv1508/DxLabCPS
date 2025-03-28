@@ -70,6 +70,7 @@ builder.Services.AddScoped<IAreaTypeService, AreaTypeService>();
 builder.Services.AddScoped<IAreaService, AreaService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IBookingDetailService, BookingDetailService>();
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 
