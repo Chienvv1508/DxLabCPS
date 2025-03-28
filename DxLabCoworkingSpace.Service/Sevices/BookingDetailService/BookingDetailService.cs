@@ -33,14 +33,14 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<BookingDetail>> GetAll()
+        public async Task<IEnumerable<BookingDetail>> GetAll()
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.BookingDetailRepository.GetAll();
         }
 
-        public Task<IEnumerable<BookingDetail>> GetAll(Expression<Func<BookingDetail, bool>> expression)
+        public async Task<IEnumerable<BookingDetail>> GetAll(Expression<Func<BookingDetail, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.BookingDetailRepository.GetAll(expression);
         }
 
       

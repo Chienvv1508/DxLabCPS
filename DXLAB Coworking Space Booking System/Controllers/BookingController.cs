@@ -1,13 +1,9 @@
 ﻿using DxLabCoworkingSpace;
-
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Nethereum.RPC.Eth.Blocks;
-using System.IO.IsolatedStorage;
 
 namespace DXLAB_Coworking_Space_Booking_System
 {
-    [Route("api/[controller]")]
+    [Route("api/booking")]
     [ApiController]
     public class BookingController : ControllerBase
     {
@@ -16,14 +12,16 @@ namespace DXLAB_Coworking_Space_Booking_System
         private readonly IBookingService _bookingService;
         private readonly IBookingDetailService _bookDetailService;
         private readonly IAreaService _areaService;
+        private readonly IAreaTypeService _areaTypeService;
 
-        public BookingController(IRoomService roomService,ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService)
+        public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService, IAreaTypeService areaTypeService)
         {
             _roomService = roomService;
             _slotService = slotService;
             _bookingService = bookingService;
             _bookDetailService = bookDetailService;
             _areaService = areaService;
+            _areaTypeService = areaTypeService;
         }
 
         [HttpPost]
@@ -112,7 +110,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     slotArray[i] = x.SlotNumber;
                 }
                 int[][] slotJaggedMatrix = CreateSlotJaggedMatrix(slotArray);
-                Tuple<bool, string, Dictionary<int, int[]>> findPositionResult = findPosition(slotJaggedMatrix, searchMatrix);
+                Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPositionResult = findPosition(slotJaggedMatrix, searchMatrix);
                 if(findPositionResult.Item1 == false)
                 {
                     var reponse = new ResponseDTO<object>(400, findPositionResult.Item2, null);
@@ -130,14 +128,20 @@ namespace DXLAB_Coworking_Space_Booking_System
                             {
                                 var bookingDetail = new BookingDetail();
                                 int id = item.Key;
-                                int slotid = allSlot.FirstOrDefault(x => x.SlotNumber == item.Value[i]).SlotId;
+                               
                                 bookingDetail.PositionId = id;
-                                
-                                bookingDetail.SlotId = slotid;
-                                bookingDetail.CheckinTime = dte.BookingDate;
-                                bookingDetail.CheckoutTime = dte.BookingDate;
-                                //var areaBook = _areaService.GetWithInclude(x => x.,x => x.AreaType, x => x.Positions);
-                               // bookingDetail.Price = areaBook.
+                                var slot = allSlot.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
+                                bookingDetail.SlotId = slot.SlotId;
+                                bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
+                                if(i == item.Value.Length - 1)
+                                {
+                                    bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
+                                }else
+                                bookingDetail.CheckoutTime = null;
+
+                                var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
+                                var areaBook = areaBooks.FirstOrDefault(x => x.Positions.FirstOrDefault(x => x.PositionId == id) != null);
+                                bookingDetail.Price = areaBook.AreaType.Price;
                                 bookingDetails.Add(bookingDetail);
                             }
                         }
@@ -152,12 +156,20 @@ namespace DXLAB_Coworking_Space_Booking_System
                             {
                                 var bookingDetail = new BookingDetail();
                                 int id = item.Key;
-                                int slotid = allSlot.FirstOrDefault(x => x.SlotNumber == item.Value[i]).SlotId;
+                                
                                 bookingDetail.AreaId = id;
 
-                                bookingDetail.SlotId = slotid;
-                                bookingDetail.CheckinTime = dte.BookingDate;
-                                bookingDetail.CheckoutTime = dte.BookingDate;
+                                var slot = allSlot.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
+                                bookingDetail.SlotId = slot.SlotId;
+                                bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
+                                if (i == item.Value.Length - 1)
+                                {
+                                    bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
+                                }else
+                                bookingDetail.CheckoutTime = null;
+                                var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType);
+                                var areaBook = areaBooks.FirstOrDefault(x => x.AreaId == id);
+                                bookingDetail.Price = areaBook.AreaType.Price;
                                 bookingDetails.Add(bookingDetail);
                             }
                         }
@@ -171,22 +183,37 @@ namespace DXLAB_Coworking_Space_Booking_System
            
             booking.BookingDetails = bookingDetails;
 
+            //Tạo response trả về data
+            var responseData = new
+            {
+                BookingId = booking.BookingId,
+                UserId = booking.UserId,
+                BookingCreatedDate = booking.BookingCreatedDate,
+                TotalPrice = booking.Price,
+                Details = bookingDetails.Select(bd => new
+                {
+                    PositionId = bd.PositionId, 
+                    AreaId = bd.AreaId,         
+                    SlotId = bd.SlotId,
+                    CheckinTime = bd.CheckinTime,
+                    CheckoutTime = bd.CheckoutTime,
+                    Price = bd.Price
+                }).ToList()
+            };
 
-
-                
-            await _bookingService.Add(booking);
-            return Ok();
+            var response = new ResponseDTO<object>(200, "Đặt phòng thành công!", responseData);
+            return Ok(response);
         }
 
-        private Tuple<bool, string, Dictionary<int, int[]>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, int[]> searchMatrix)
+        private Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, int[]> searchMatrix)
         {
             if (slotJaggedMatrix == null || searchMatrix == null)
-            return new Tuple<bool, string, Dictionary<int, int[]>>(false, "Lỗi khi đặt phòng", null);
+            return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(false, "Lỗi khi đặt phòng", null);
             List<int[]> listOfJaggedMatrix = slotJaggedMatrix.ToList();
             listOfJaggedMatrix.Sort((a, b) => b.Length.CompareTo(a.Length));
             
             //kết quả
-            Dictionary<int, int[]> dictResult = new Dictionary<int, int[]>();
+            List<KeyValuePair<int, int[]>>   dictResult = new List<KeyValuePair<int, int[]>> ();
 
             //Duyệt listJaggedMatrix
             for(int i = 0; i < listOfJaggedMatrix.Count; i++)
@@ -236,12 +263,18 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (find)
                 {
                     var bestFitPos = filterPos.OrderBy(x => x.sizeOfFrag).FirstOrDefault();
-                    dictResult.Add(bestFitPos.Key, bestFitPos.slotNums);
+                    foreach(var item in bestFitPos.slotNums)
+                    {
+                        searchMatrix[bestFitPos.Key][item - 1] = 0;
+                    }
+
+                    ;
+                    dictResult.Add(new KeyValuePair<int, int[]>(bestFitPos.Key, bestFitPos.slotNums));
                 }
-                else return new Tuple<bool, string, Dictionary<int, int[]>>(false, "Lỗi khi đặt phòng", null);
+                else return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(false, "Lỗi khi đặt phòng", null);
             }
 
-            return new Tuple<bool, string, Dictionary<int, int[]>>(true, "", dictResult);
+            return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(true, "", dictResult);
         }
         
         private int[][] CreateSlotJaggedMatrix(int[] arr)
@@ -360,6 +393,71 @@ namespace DXLAB_Coworking_Space_Booking_System
         //   await _bookDetailService.Update(b1);
         //    return Ok();
         //}
+
+        [HttpGet("AvailiblePos")]
+        public async Task<IActionResult> GetAvailableSlot([FromQuery] AvailableSlotRequestDTO availableSlotRequestDTO)
+        {
+            var room = await _roomService.GetWithInclude(x => x.IsDeleted == false && x.RoomId == availableSlotRequestDTO.RoomId, x => x.Areas);
+            if (room == null)
+            {
+                var responseDTO = new ResponseDTO<object>(404, "Phòng không tồn tại. Vui lòng nhập lại!", null);
+                return NotFound(responseDTO);
+
+            }
+            var areaType = await _areaTypeService.Get(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId);
+            var areasInRoom = room.Areas.Where(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId);
+            if (!areasInRoom.Any())
+            {
+                var responseDTO = new ResponseDTO<object>(404, $"Không tồn tại khu vực đã nhập trong phòng{room.RoomName}", null);
+                return NotFound(responseDTO);
+            }
+            var bookingDetails = await _bookDetailService.GetAll(x => x.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date);
+            var slots = await _slotService.GetAll();
+            List<AvailableSlotResponseDTO> availableSlotResponseDTOs = new List<AvailableSlotResponseDTO>();
+            if (areaType.AreaCategory == 1)
+            {
+                var individualArea = areasInRoom.FirstOrDefault();
+                individualArea = await _areaService.GetWithInclude(x => x.AreaId == individualArea.AreaId, x => x.Positions);
+                foreach (var slot in slots)
+                {
+                    int availblePos = 0;
+                    int bookedPos = 0;
+                    foreach (var item in bookingDetails)
+                    {
+                        if (item.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date
+                          && item.SlotId == slot.SlotId && individualArea.Positions.FirstOrDefault(x => x.PositionId == item.PositionId) != null)
+                        { bookedPos++; }
+                    }
+                    var response = new AvailableSlotResponseDTO() { SlotId = slot.SlotId, SlotNumber = slot.SlotNumber, AvailableSlot = areaType.Size - bookedPos };
+                    availableSlotResponseDTOs.Add(response);
+
+                }
+
+            }
+            else
+            {
+
+
+                foreach (var slot in slots)
+                {
+                    int availblePos = 0;
+                    int bookedPos = 0;
+                    foreach (var item in bookingDetails)
+                    {
+                        if (item.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date
+                          && item.SlotId == slot.SlotId && areasInRoom.FirstOrDefault(x => x.AreaId == item.AreaId) != null)
+                        { bookedPos++; }
+                    }
+                    var response = new AvailableSlotResponseDTO() { SlotId = slot.SlotId, SlotNumber = slot.SlotNumber, AvailableSlot = areasInRoom.Count() - bookedPos };
+                    availableSlotResponseDTOs.Add(response);
+
+                }
+
+            }
+
+
+            return Ok(new ResponseDTO<List<AvailableSlotResponseDTO>>(200, "ok", availableSlotResponseDTOs));
+        }
     }
 
     public class FilterPos
