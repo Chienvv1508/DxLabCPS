@@ -30,6 +30,14 @@ namespace DXLAB_Coworking_Space_Booking_System
         public async Task<IActionResult> CreateBooking([FromBody] BookingDTO bookingDTO)
         {
 
+            // Thêm kiểm tra giới hạn 2 tuần
+            var maxBookingDate = DateTime.Now.Date.AddDays(14); // 2 tuần từ hôm nay
+            var outOfRangeDates = bookingDTO.bookingTimes.Where(x => x.BookingDate.Date > maxBookingDate);
+            if (outOfRangeDates.Any())
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Chỉ có thể đặt phòng trước tối đa 2 tuần!", null));
+            }
+
             //Get Information
             var roomId = bookingDTO.RoomId;
             var areaTypeId = bookingDTO.AreaTypeId;
@@ -145,6 +153,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                                     bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value).AddMinutes(-10);
                                 var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
                                 var areaBook = areaBooks.FirstOrDefault(x => x.Positions.FirstOrDefault(x => x.PositionId == id) != null);
+                                bookingDetail.AreaId = areaBook.AreaId;
                                 bookingDetail.Price = areaBook.AreaType.Price;
                                 bookingDetails.Add(bookingDetail);
                             }
