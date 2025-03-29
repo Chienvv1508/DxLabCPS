@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public class RoomPerformanceStatistics
+    public class ServiceTypeRevenueDTO
     {
+        public decimal TotalRevenue { get; set; }
+        public List<ServiceTypeDetailDTO> ServiceTypes { get; set; }
     }
 }
