@@ -109,7 +109,6 @@ namespace DXLAB_Coworking_Space_Booking_System
             {
                 booking.UserId = 3;
                 booking.BookingCreatedDate = dte.BookingDate;
-                booking.Price = 10000;
                
                 // Tạo ma trận
                 Dictionary<int, int[]> searchMatrix =  await CreateSearchMatrix(areasInRoom, dte.BookingDate.Date);
@@ -196,7 +195,9 @@ namespace DXLAB_Coworking_Space_Booking_System
                 
             }
 
-           
+            // Tính TotalPrice
+            booking.Price = bookingDetails.Sum(br => br.Price);
+
             booking.BookingDetails = bookingDetails;
             await _bookingService.Add(booking);
             //Tạo response trả về data
