@@ -107,7 +107,7 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             foreach (var dte in bookingDates)
             {
-                booking.UserId = 3;
+                booking.UserId = 6;
                 booking.BookingCreatedDate = dte.BookingDate;
                
                 // Tạo ma trận
@@ -152,7 +152,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                                     bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value).AddMinutes(-10);
                                 var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
                                 var areaBook = areaBooks.FirstOrDefault(x => x.Positions.FirstOrDefault(x => x.PositionId == id) != null);
-                                bookingDetail.AreaId = areaBook.AreaId;
                                 bookingDetail.Price = areaBook.AreaType.Price;
                                 bookingDetails.Add(bookingDetail);
                             }
