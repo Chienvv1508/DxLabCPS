@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public class RevenueStatistics
+    public class PeriodRequestDTO
     {
+        public string Period { get; set; }
     }
 }

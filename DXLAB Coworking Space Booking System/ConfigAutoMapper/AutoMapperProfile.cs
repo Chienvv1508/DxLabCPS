@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
 using DXLAB_Coworking_Space_Booking_System;
-
 namespace DXLAB_Coworking_Space_Booking_System
 {
     public class AutoMapperProfile : Profile
@@ -77,6 +76,16 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<AreaType, AreaDTO>().ReverseMap();
             CreateMap<Area, AreaDTO>().ForMember(dest => dest.AreaTypeName, opt => opt.MapFrom(x => x.AreaType.AreaTypeName));
             CreateMap<AreaDTO, Area>();
+
+            // Mapping cho thống kê
+            CreateMap<Booking, StudentRevenueDTO>();
+            CreateMap<BookingDetail, ServiceTypeDetailDTO>()
+                .ForMember(dest => dest.ServiceType, opt => opt.MapFrom(src => src.Area.AreaType.AreaTypeName));
+            CreateMap<BookingDetail, RoomPerformanceDTO>()
+                .ForMember(dest => dest.RoomName, opt => opt.MapFrom(src => src.Area.Room.RoomName));
+            CreateMap<BookingDetail, RoomServicePerformanceDTO>()
+                .ForMember(dest => dest.RoomName, opt => opt.MapFrom(src => src.Area.Room.RoomName))
+                .ForMember(dest => dest.ServiceType, opt => opt.MapFrom(src => src.Area.AreaType.AreaTypeName));
 
         }
     }
