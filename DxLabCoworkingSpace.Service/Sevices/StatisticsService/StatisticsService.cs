@@ -17,15 +17,18 @@ namespace DxLabCoworkingSpace
 
         public async Task<StudentRevenueDTO> GetRevenueByStudentGroup(string period, int? year = null, int? month = null, int? week = null)
         {
-            var bookingDetails = await _unitOfWork.BookingDetailRepository
+            // Lấy toàn bộ dữ liệu để tính TotalRevenue
+            var allBookingDetails = await _unitOfWork.BookingDetailRepository
                 .GetAllWithInclude(
                     bd => bd.Booking,
                     bd => bd.Booking.User
                 );
 
-            bookingDetails = ApplyPeriodFilter(bookingDetails.AsQueryable(), period, year, month, week).ToList();
+            // Lấy dữ liệu đã lọc để tính StudentRevenue
+            var filteredBookingDetails = ApplyPeriodFilter(allBookingDetails.AsQueryable(), period, year, month, week).ToList();
 
-            if (!bookingDetails.Any())
+            // Nếu không có dữ liệu lọc, trả về 0
+            if (!filteredBookingDetails.Any() && !allBookingDetails.Any())
             {
                 return new StudentRevenueDTO
                 {
@@ -35,8 +38,11 @@ namespace DxLabCoworkingSpace
                 };
             }
 
-            var totalRevenue = bookingDetails.Sum(bd => bd.Price);
-            var studentRevenue = bookingDetails
+            // Tổng doanh thu của toàn bộ hệ thống
+            var totalRevenue = allBookingDetails.Sum(bd => bd.Price);
+
+            // Doanh thu từ sinh viên trong khoảng thời gian lọc
+            var studentRevenue = filteredBookingDetails
                 .Where(bd => bd.Booking.User != null && IsStudent(bd.Booking.User))
                 .Sum(bd => bd.Price);
 
@@ -79,9 +85,8 @@ namespace DxLabCoworkingSpace
                         throw new ArgumentException("Cần cung cấp Year, Month, và Week cho period 'tuần'");
                     startDate = GetFirstDayOfMonth(year.Value, month.Value).AddDays((week.Value - 1) * 7);
                     endDate = startDate.AddDays(7);
-                    // Đảm bảo không vượt quá cuối tháng
                     var lastDayOfMonth = new DateTime(year.Value, month.Value, 1).AddMonths(1).AddDays(-1);
-                    if (endDate > lastDayOfMonth) endDate = lastDayOfMonth.AddDays(1); // Đến hết ngày cuối tháng
+                    if (endDate > lastDayOfMonth) endDate = lastDayOfMonth.AddDays(1);
                     break;
 
                 case "tháng":
@@ -110,7 +115,6 @@ namespace DxLabCoworkingSpace
             return user.RoleId == 3; // Role Student
         }
 
-        // Hàm tính ngày đầu tiên của tháng
         private static DateTime GetFirstDayOfMonth(int year, int month)
         {
             return new DateTime(year, month, 1);
