@@ -8,7 +8,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/bookinghistory")]
     [ApiController]
-    //[Authorize(Roles = "Staff")]
+    [Authorize(Roles = "Staff")]
     public class StaffBookingHistoryController : ControllerBase
     {
         private readonly IRoomService _roomService;
@@ -49,6 +49,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     BookingId = b.BookingId,
                     UserName = b.User?.FullName, 
+                    UserEmail = b.User?.Email,
                     BookingCreatedDate = b.BookingCreatedDate,
                     TotalPrice = b.Price,
                     TotalBookingDetail = b.BookingDetails.Count,
@@ -122,6 +123,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     BookingId = booking.BookingId,
                     UserName = booking.User?.FullName,
+                    UserEmail = booking.User?.Email,
                     BookingCreatedDate = booking.BookingCreatedDate,
                     TotalPrice = booking.Price,
                     Details = filteredDetails.Select(bd =>
@@ -159,7 +161,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         {
                             BookingDetailId = bd.BookingDetailId,
                             Position = positionDisplay,
-                            AreaName = areaName,
+                            AreaName = areaName,                      
                             AreaTypeName = areaTypeName,
                             RoomName = roomName,
                             SlotNumber = bd.Slot?.SlotNumber,

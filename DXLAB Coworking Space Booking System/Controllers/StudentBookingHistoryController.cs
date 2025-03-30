@@ -8,7 +8,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/studentbookinghistory")]
     [ApiController]
-    //[Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student")]
     public class StudentBookingHistoryController : ControllerBase
     {
         private readonly IRoomService _roomService;
@@ -35,11 +35,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 // Lấy UserId từ claims
-                //var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
-                //if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                //{
-                //    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
-                //}
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                }
 
                 // lấy tất cả booking
                 var allBookings = await _bookingService.GetAllWithInclude(
@@ -48,8 +48,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     );
 
                 // Lọc booking theo UserId trong bộ nhớ
-                //var bookings = allBookings.Where(b => b.UserId == userId).ToList();
-                var bookings = allBookings.Where(b => b.UserId == 3).ToList();
+                var bookings = allBookings.Where(b => b.UserId == userId).ToList();
 
                 if (!bookings.Any())
                 {
@@ -60,6 +59,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     BookingId = b.BookingId,
                     UserName = b.User?.FullName,
+                    UserEmail = b.User?.Email,
                     BookingCreatedDate = b.BookingCreatedDate,
                     TotalPrice = b.Price,
                     TotalBookingDetail = b.BookingDetails.Count,
@@ -81,11 +81,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 // Lấy UserId từ claims
-                //var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
-                //if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                //{
-                //    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
-                //}
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                }
 
                 // Lấy tất cả booking với các liên kết
                 var allBookings = await _bookingService.GetAllWithInclude(
@@ -94,8 +94,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 );
 
                 // Lọc booking theo BookingId và UserId trong bộ nhớ
-                //var booking = allBookings.FirstOrDefault(b => b.BookingId == bookingId && b.UserId == userId);
-                var booking = allBookings.FirstOrDefault(b => b.BookingId == bookingId && b.UserId == 3);
+                var booking = allBookings.FirstOrDefault(b => b.BookingId == bookingId && b.UserId == userId);
 
                 if (booking == null)
                 {
@@ -143,6 +142,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     BookingId = booking.BookingId,
                     UserName = booking.User?.FullName,
+                    UserEmail = booking.User?.Email,
                     BookingCreatedDate = booking.BookingCreatedDate,
                     TotalPrice = booking.Price,
                     Details = filteredDetails.Select(bd =>
