@@ -260,7 +260,7 @@ namespace DxLabCoworkingSpace
 
                 entity.Property(e => e.BatchNumber).HasMaxLength(50);
 
-                entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
+                
 
                 entity.HasOne(d => d.Area)
                     .WithMany(p => p.UsingFacilities)

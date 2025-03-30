@@ -18,6 +18,8 @@ namespace DxLabCoworkingSpace
         public DateTime ExpiredTime { get; set; }
         public int Quantity { get; set; }
         public DateTime ImportDate { get; set; }
+        public int FacilityCategory { get; set; }
+        public int Size { get; set; }
 
         public virtual ICollection<FacilitiesStatus> FacilitiesStatuses { get; set; }
         public virtual ICollection<UsingFacility> UsingFacilities { get; set; }

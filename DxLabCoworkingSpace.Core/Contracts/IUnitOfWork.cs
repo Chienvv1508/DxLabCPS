@@ -22,6 +22,8 @@ namespace DxLabCoworkingSpace
         IGenericRepository<Booking> BookingRepository { get; }
         IGenericRepository<BookingDetail> BookingDetailRepository { get; }
         IGenericRepository<UsingFacility> UsingFacilityRepository { get; }
+        IGenericRepository<FacilitiesStatus> FacilitiesStatusRepository { get; }
+
         DbContext Context { get; }
         Task CommitAsync();
         Task RollbackAsync();

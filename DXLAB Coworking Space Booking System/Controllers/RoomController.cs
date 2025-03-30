@@ -157,8 +157,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
                 return BadRequest(response);
             }
-
-
             var roomNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("roomName", StringComparison.OrdinalIgnoreCase));
             if (roomNameOp != null)
             {
