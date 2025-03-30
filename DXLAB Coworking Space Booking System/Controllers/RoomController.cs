@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +32,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDto)
         {
 
@@ -55,7 +57,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
-
                 //check size
                 int areas_totalSize = 0;
                 var areaTypeList = await _areaTypeService.GetAll();
@@ -64,7 +65,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 int inputIndividual = 0;
                 foreach (var area in roomDto.Area_DTO)
                 {
-
                     var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
                     if (areatype != null)
                     {
@@ -80,11 +80,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             }    
                             individualArea = new Area();
                             individualArea = _mapper.Map<Area>(area);
-                            individualArea.AreaType = areatype;
-                            
+                            individualArea.AreaType = areatype;   
                         }
-                            
-
                     }
                     else
                     {
@@ -99,9 +96,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(response1);
                 }
 
-
                 //check arename
-
                 var areaList = roomDto.Area_DTO;
                 var areaNameList = new List<string>();
                 //var araeExistedList = await _areaService.GetAll();
@@ -113,13 +108,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         return BadRequest(response1);
                     }
                     areaNameList.Add(area.AreaName);
-                   
                 }
 
-
                 var room = _mapper.Map<Room>(roomDto);
-                //T hêm position
-              
+                
+                //Thêm position
                     if (individualArea != null)
                     {
                     var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == individualArea.AreaTypeId);
@@ -156,6 +149,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPatch("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<Room> patchDoc)
         {
             if (patchDoc == null)
@@ -176,12 +170,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
             }
 
-
-
-
-
-
-
             var roomFromDb = await _roomService.Get(r => r.RoomId == id);
             if (roomFromDb == null)
             {
@@ -189,10 +177,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return NotFound(response);
             }
 
-            
-
             patchDoc.ApplyTo(roomFromDb, ModelState);  
-
             
             if (!ModelState.IsValid)
             {
@@ -222,13 +207,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             await _roomService.Update(roomFromDb);
             var response2 = new ResponseDTO<object>(200, $"Cập nhập thành công phòng {id}!", null);
             return Ok(response2);
-
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RoomDTO>>> GetAllRooms()
-        {
-            
+        {    
             var rooms = await _roomService.GetAll();
            
             foreach(var r in rooms)
@@ -237,16 +220,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     var areaType = await _areaTypeService.Get(x => x.AreaTypeId == a.AreaTypeId);
                     a.AreaType = areaType;
-
-                }
-                
+                }   
             }
             var roomDtos = _mapper.Map<IEnumerable<RoomDTO>>(rooms);
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDtos);
             return Ok(response);
         }
-
-        
+       
         [HttpGet("{id}")]
         public async Task<ActionResult<RoomDTO>> GetRoomById(int id)
         {
@@ -260,7 +240,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var areaType = await _areaTypeService.Get(x => x.AreaTypeId == a.AreaTypeId);
                 a.AreaType = areaType;
-
             }
             var roomDto = _mapper.Map<RoomDTO>(room);
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDto);
