@@ -8,7 +8,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/bookinghistory")]
     [ApiController]
-    [Authorize(Roles = "Staff")]
+    //[Authorize(Roles = "Staff")]
     public class StaffBookingHistoryController : ControllerBase
     {
         private readonly IRoomService _roomService;
@@ -164,7 +164,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             RoomName = roomName,
                             SlotNumber = bd.Slot?.SlotNumber,
                             CheckinTime = bd.CheckinTime,
-                            CheckoutTime = bd.CheckoutTime
+                            CheckoutTime = bd.CheckoutTime,
+                            Status = bd.Status
                         };
                     }).ToList()
                 };

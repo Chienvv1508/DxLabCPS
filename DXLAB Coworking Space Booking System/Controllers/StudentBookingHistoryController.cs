@@ -8,7 +8,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/studentbookinghistory")]
     [ApiController]
-    [Authorize(Roles = "Student")]
+    //[Authorize(Roles = "Student")]
     public class StudentBookingHistoryController : ControllerBase
     {
         private readonly IRoomService _roomService;
@@ -35,11 +35,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 // Lấy UserId từ claims
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                {
-                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
-                }
+                //var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                //if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                //{
+                //    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                //}
 
                 // lấy tất cả booking
                 var allBookings = await _bookingService.GetAllWithInclude(
@@ -48,7 +48,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     );
 
                 // Lọc booking theo UserId trong bộ nhớ
-                var bookings = allBookings.Where(b => b.UserId == userId).ToList();
+                //var bookings = allBookings.Where(b => b.UserId == userId).ToList();
+                var bookings = allBookings.Where(b => b.UserId == 3).ToList();
 
                 if (!bookings.Any())
                 {
@@ -80,11 +81,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 // Lấy UserId từ claims
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
-                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                {
-                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
-                }
+                //var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                //if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                //{
+                //    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                //}
 
                 // Lấy tất cả booking với các liên kết
                 var allBookings = await _bookingService.GetAllWithInclude(
@@ -93,7 +94,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 );
 
                 // Lọc booking theo BookingId và UserId trong bộ nhớ
-                var booking = allBookings.FirstOrDefault(b => b.BookingId == bookingId && b.UserId == userId);
+                //var booking = allBookings.FirstOrDefault(b => b.BookingId == bookingId && b.UserId == userId);
+                var booking = allBookings.FirstOrDefault(b => b.BookingId == bookingId && b.UserId == 3);
 
                 if (booking == null)
                 {
@@ -183,7 +185,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             RoomName = roomName,
                             SlotNumber = bd.Slot?.SlotNumber,
                             CheckinTime = bd.CheckinTime,
-                            CheckoutTime = bd.CheckoutTime
+                            CheckoutTime = bd.CheckoutTime,
+                            Price = bd.Price,
+                            Status = bd.Status
+
                         };
                     }).ToList()
                 };
