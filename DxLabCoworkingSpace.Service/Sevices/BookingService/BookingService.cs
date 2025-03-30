@@ -38,14 +38,14 @@ namespace DxLabCoworkingSpace
             return await _unitOfWork.BookingRepository.GetAll();
         }
 
-        public Task<IEnumerable<Booking>> GetAll(Expression<Func<Booking, bool>> expression)
+        public async Task<IEnumerable<Booking>> GetAll(Expression<Func<Booking, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.BookingRepository.GetAll(expression);
         }
 
-        public Task<IEnumerable<Booking>> GetAllWithInclude(params Expression<Func<Booking, object>>[] includes)
+        public async Task<IEnumerable<Booking>> GetAllWithInclude(params Expression<Func<Booking, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.BookingRepository.GetAllWithInclude(includes);
         }
 
         public async Task<Booking> GetById(int id)
@@ -53,9 +53,9 @@ namespace DxLabCoworkingSpace
             return await _unitOfWork.BookingRepository.GetById(id);
         }
 
-        public Task<Booking> GetWithInclude(Expression<Func<Booking, bool>> expression, params Expression<Func<Booking, object>>[] includes)
+        public async Task<Booking> GetWithInclude(Expression<Func<Booking, bool>> expression, params Expression<Func<Booking, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.BookingRepository.GetWithInclude(expression, includes);
         }
 
         public async Task Update(Booking entity)
