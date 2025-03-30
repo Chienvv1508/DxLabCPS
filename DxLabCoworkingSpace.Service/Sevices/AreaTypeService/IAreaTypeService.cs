@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IAreaTypeService : IGenericService<AreaType>
+    public interface IAreaTypeService : IFaciStatusService<AreaType>
     {
         public Task<object> GetAreaTypeForAddRoom();
        

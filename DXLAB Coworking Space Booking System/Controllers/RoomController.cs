@@ -12,7 +12,7 @@ using Thirdweb;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/room")]
     [ApiController]
     public class RoomController : ControllerBase
     {
@@ -163,8 +163,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
                 return BadRequest(response);
             }
-
-
             var roomNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("roomName", StringComparison.OrdinalIgnoreCase));
             if (roomNameOp != null)
             {
@@ -175,25 +173,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(response);
                 }
             }
-
-
-
-
-
-
-
             var roomFromDb = await _roomService.Get(r => r.RoomId == id);
             if (roomFromDb == null)
             {
                 var response = new ResponseDTO<object>(404, $"Không tìm thấy phòng có id {id}!", null);
                 return NotFound(response);
             }
-
-            
-
             patchDoc.ApplyTo(roomFromDb, ModelState);  
-
-            
             if (!ModelState.IsValid)
             {
                 var allErrors = ModelState
@@ -264,6 +250,46 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             var roomDto = _mapper.Map<RoomDTO>(room);
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDto);
+            return Ok(response);
+        }
+
+        [HttpGet("area")]
+        public async Task<IActionResult> GetAllAreas()
+        {
+            var areas = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
+            if (!areas.Any())
+            {
+                return NotFound( new ResponseDTO<object>(404, "Không tìm thấy khu vực nào!", null));
+            }
+
+            var areaDtos = _mapper.Map<IEnumerable<AreaDTO>>(areas);
+
+            var responseData = areas.Select(a => new
+            {
+                AreaId = a.AreaId,
+                AreaName = a.AreaName
+            }).ToList();
+
+            var response = new ResponseDTO<object>(200, "Lấy tất cả khu vực thành công", responseData);
+            return Ok(response);
+        }
+
+        [HttpGet("area/{id}")]
+        public async Task<IActionResult> GetAreaById(int id)
+        {
+            var area = await _areaService.Get(a => a.AreaId == id);
+            if (area == null)
+            {
+                return NotFound(new ResponseDTO<object>(404, $"Không tìm thấy khu vực có id {id}!", null));
+            }
+
+            var responseData = new
+            {
+                AreaId = area.AreaId,
+                AreaName = area.AreaName
+            };
+
+            var response = new ResponseDTO<object>(200, "Lấy khu vực thành công", responseData);
             return Ok(response);
         }
     }

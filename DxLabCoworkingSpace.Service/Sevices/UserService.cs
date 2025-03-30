@@ -37,7 +37,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-         async Task<User> IGenericService<User>.GetById(int id)
+         async Task<User> IFaciStatusService<User>.GetById(int id)
         {
             return await _unitOfWork.UserRepository.GetById(id);
         }
@@ -53,7 +53,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task IGenericService<User>.Delete(int id)
+        async Task IFaciStatusService<User>.Delete(int id)
         {
             throw new NotImplementedException();
         }

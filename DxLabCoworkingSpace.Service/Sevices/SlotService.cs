@@ -82,7 +82,7 @@ namespace DxLabCoworkingSpace
             }
         }
 
-        async Task IGenericService<Slot>.Add(Slot entity)
+        async Task IFaciStatusService<Slot>.Add(Slot entity)
         {
             var existingSlots = await _unitOfWork.SlotRepository.GetAll();
             if (existingSlots.Any(s => s.StartTime < entity.EndTime && s.EndTime > entity.StartTime))
@@ -93,7 +93,7 @@ namespace DxLabCoworkingSpace
             await _unitOfWork.SlotRepository.Add(entity);
             await _unitOfWork.CommitAsync();
         }
-        async Task<IEnumerable<Slot>> IGenericService<Slot>.GetAll()
+        async Task<IEnumerable<Slot>> IFaciStatusService<Slot>.GetAll()
         {
             var a = await _unitOfWork.SlotRepository.GetAll();
             return a;
@@ -106,7 +106,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task<Slot> IGenericService<Slot>.GetById(int id)
+        async Task<Slot> IFaciStatusService<Slot>.GetById(int id)
         {
             return await _unitOfWork.SlotRepository.GetById(id);
         }
@@ -118,11 +118,11 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task IGenericService<Slot>.Update(Slot entity)
+        async Task IFaciStatusService<Slot>.Update(Slot entity)
         {
             throw new NotImplementedException();
         }
-        async Task IGenericService<Slot>.Delete(int id)
+        async Task IFaciStatusService<Slot>.Delete(int id)
         {
             throw new NotImplementedException();
         }
