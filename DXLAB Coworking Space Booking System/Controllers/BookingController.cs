@@ -486,7 +486,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 }
 
                 var areaTypeGroup = areaTypes.GroupBy(x => x.AreaCategory);
-                List<KeyValuePair<int, List<AreaTypeDTO>>> result = new List<KeyValuePair<int, List<AreaTypeDTO>>>();
+                List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>> result = new List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>>();
                 foreach (var group in areaTypeGroup)
                 {
                     List<AreaTypeDTO> areaTypeDTOs = new List<AreaTypeDTO>();
@@ -511,7 +511,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                         aretypeCategory.CategoryDescription = _configuration["Group:Description"];
                         aretypeCategory.Image = _configuration["Group:Images"];
                     }
-                    KeyValuePair<int, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<int, List<AreaTypeDTO>>(group.Key, areaTypeDTOs);
+                    KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>(aretypeCategory, areaTypeDTOs);
                     result.Add(keyValuePair);
                 }
                 var response1 = new ResponseDTO<object>(200, "Trả thành công", result);
