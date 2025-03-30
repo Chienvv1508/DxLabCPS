@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System
 {
     [Route("api/booking")]
     [ApiController]
+    [Authorize(Roles = "Student")]
     public class BookingController : ControllerBase
     {
         private readonly IRoomService _roomService;
@@ -29,7 +31,6 @@ namespace DXLAB_Coworking_Space_Booking_System
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromBody] BookingDTO bookingDTO)
         {
-
             // Thêm kiểm tra giới hạn 2 tuần
             var maxBookingDate = DateTime.Now.Date.AddDays(14); // 2 tuần từ hôm nay
             var outOfRangeDates = bookingDTO.bookingTimes.Where(x => x.BookingDate.Date > maxBookingDate);
@@ -42,7 +43,6 @@ namespace DXLAB_Coworking_Space_Booking_System
             var roomId = bookingDTO.RoomId;
             var areaTypeId = bookingDTO.AreaTypeId;
             var bookingDates = bookingDTO.bookingTimes;
-
 
             //Check RoomId
             Room room = await _roomService.GetRoomWithAllInClude(x => x.RoomId == bookingDTO.RoomId);
@@ -57,7 +57,6 @@ namespace DXLAB_Coworking_Space_Booking_System
             {
                 var reponse = new ResponseDTO<object>(400, "Trong phòng không có khu vực nào có loại khu vực như đã nhập!", null);
                 return BadRequest(reponse);
-
             }
             //Check Ngày
             var wrongDte = bookingDTO.bookingTimes.Where(x => x.BookingDate.Date < DateTime.Now.Date);
@@ -97,19 +96,21 @@ namespace DXLAB_Coworking_Space_Booking_System
             //        }
             //        slotList.Add(slot);
             //    }
-
-
             //}
 
+            // Lấy UserId từ token
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+            }
 
             Booking booking = new Booking();
             List<BookingDetail> bookingDetails = new List<BookingDetail>();
-
             foreach (var dte in bookingDates)
             {
-                booking.UserId = 6;
-                booking.BookingCreatedDate = dte.BookingDate;
-               
+                booking.UserId = userId;
+                booking.BookingCreatedDate = dte.BookingDate;        
                 // Tạo ma trận
                 Dictionary<int, int[]> searchMatrix =  await CreateSearchMatrix(areasInRoom, dte.BookingDate.Date);
                 int[] slotArray = new int[dte.SlotId.Count];
@@ -129,8 +130,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 {
                     var allSlot = await _slotService.GetAll();
                     if (areasInRoom.First().AreaType.AreaCategory == 1)
-                    {
-                        
+                    {          
                         foreach (var item in findPositionResult.Item3)
                         {
                             for(int i = 0; i < item.Value.Length; i++)
@@ -157,10 +157,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                             }
                         }
                     }
-
                     else
-                    {
-                       
+                    {     
                         foreach (var item in findPositionResult.Item3)
                         {
                             for (int i = 0; i < item.Value.Length; i++)
@@ -187,11 +185,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                                 bookingDetails.Add(bookingDetail);
                             }
                         }
-
-                    }
-                       
-                }
-                
+                    }       
+                }      
             }
 
             // Tính TotalPrice
@@ -275,7 +270,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                     else
                         continue;
                 }
-
                 if (find)
                 {
                     var bestFitPos = filterPos.OrderBy(x => x.sizeOfFrag).FirstOrDefault();
@@ -289,7 +283,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                 }
                 else return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(false, "Lỗi khi đặt phòng", null);
             }
-
             return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(true, "", dictResult);
         }
         
@@ -305,18 +298,15 @@ namespace DXLAB_Coworking_Space_Booking_System
                     currentGroup.Add(arr[i]);
                 }
                 else
-                {
-                    
+                {        
                     result.Add(currentGroup.ToArray());
                     currentGroup = new List<int> { arr[i] };
                 }
             }
-
             if (currentGroup.Count > 0)
             {
                 result.Add(currentGroup.ToArray());
             }
-
             return result.ToArray();
         }
         // area ở đây đã lấy được list pos
@@ -330,9 +320,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if(areasInRoom.FirstOrDefault().AreaType.AreaCategory == 1)
                 {
                     var individualArea = areasInRoom.FirstOrDefault();
-
-                    
-
                     foreach(var pos in individualArea.Positions)
                     {
                         int[] slotNumber = listOfSlot.Select(x => x.SlotNumber).ToArray();
@@ -342,11 +329,9 @@ namespace DXLAB_Coworking_Space_Booking_System
                         dict.Add(keyValuePair.Key, keyValuePair.Value);
                     }
                     return dict;
-
                 }
                 else
-                {
-                    
+                {            
                     foreach (var are in areasInRoom)
                     {
                         int[] slotNumber = listOfSlot.Select(x => x.SlotNumber).ToArray();
@@ -358,7 +343,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                     return dict;
                 }
             }
-
             return null;
         }
 
@@ -382,7 +366,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                     }
                     keyValuePair.Value[i] = 1;
                 }
-
             }else
             {
                 //Cá nhân lấy areaid
@@ -398,7 +381,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                 }
             }
             return keyValuePair;
-
         }
 
         //[HttpPost("test")]
@@ -451,14 +433,10 @@ namespace DXLAB_Coworking_Space_Booking_System
                     }
                     var response = new AvailableSlotResponseDTO() { SlotId = slot.SlotId, SlotNumber = slot.SlotNumber, AvailableSlot = areaType.Size - bookedPos };
                     availableSlotResponseDTOs.Add(response);
-
                 }
-
             }
             else
             {
-
-
                 foreach (var slot in slots)
                 {
                     int availblePos = 0;
@@ -471,12 +449,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                     }
                     var response = new AvailableSlotResponseDTO() { SlotId = slot.SlotId, SlotNumber = slot.SlotNumber, AvailableSlot = areasInRoom.Count() - bookedPos };
                     availableSlotResponseDTOs.Add(response);
-
                 }
-
             }
-
-
             return Ok(new ResponseDTO<List<AvailableSlotResponseDTO>>(200, "ok", availableSlotResponseDTOs));
         }
 
@@ -529,7 +503,6 @@ namespace DXLAB_Coworking_Space_Booking_System
                 var response1 = new ResponseDTO<object>(500, "Lỗi khi đặt phòng", ex.Message);
                 return StatusCode(500,response1);
             }
-          
         }
     }
 
@@ -539,7 +512,4 @@ namespace DXLAB_Coworking_Space_Booking_System
         public int[] slotNums { get; set; }
         public int sizeOfFrag { get; set; }
     }
-
-
-    
 }

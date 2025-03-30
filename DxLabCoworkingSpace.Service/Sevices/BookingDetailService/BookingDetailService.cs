@@ -44,7 +44,7 @@ namespace DxLabCoworkingSpace
         }
 
       
-
+    
         public async Task<IEnumerable<BookingDetail>> GetAllWithInclude(params Expression<Func<BookingDetail, object>>[] includes)
         {
                 return await _unitOfWork.BookingDetailRepository.GetAllWithInclude(includes);

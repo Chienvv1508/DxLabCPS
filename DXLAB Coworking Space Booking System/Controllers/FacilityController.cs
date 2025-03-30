@@ -6,6 +6,7 @@ using OfficeOpenXml;
 using System.Globalization;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Data.SqlClient.DataClassification;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -26,6 +27,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Add Facility From Excel File
         [HttpPost("importexcel")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacilityFromExcel(IFormFile file)
         {
             try
@@ -118,6 +120,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
        
         // Add New Facility
         [HttpPost("createfacility")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateFacility([FromBody] FacilitiesDTO facilityDto)
         {
             try
