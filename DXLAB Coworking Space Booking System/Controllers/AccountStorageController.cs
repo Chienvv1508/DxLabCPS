@@ -1,14 +1,16 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
-{
+{   
     [Route("api/accountstorage")]
     [ApiController]
+    [Authorize(Roles = "Admin")] 
     public class AccountStorageController : ControllerBase
     {
         private readonly IAccountService _accountService;

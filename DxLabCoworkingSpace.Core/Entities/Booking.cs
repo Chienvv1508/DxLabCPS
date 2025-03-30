@@ -15,7 +15,6 @@ namespace DxLabCoworkingSpace
         public int? UserId { get; set; }
         public DateTime BookingCreatedDate { get; set; }
         public decimal Price { get; set; }
-
         public virtual User? User { get; set; }
         public virtual ICollection<BookingDetail> BookingDetails { get; set; }
         public virtual ICollection<Notification> Notifications { get; set; }

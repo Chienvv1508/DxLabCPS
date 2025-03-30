@@ -12,7 +12,7 @@ namespace DxLabCoworkingSpace
         public int UserId { get; set; }
         [Required(ErrorMessage = "Email không được để trống.")]
         [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
-        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@fpt\.edu\.vn$", ErrorMessage = "Email phải thuộc miền @fpt.edu.vn.")]
+        //[RegularExpression(@"^[a-zA-Z0-9._%+-]+@fpt\.edu\.vn$", ErrorMessage = "Email phải thuộc miền @fpt.edu.vn.")]
         public string Email { get; set; } = null!;
 
         public string FullName { get; set; } = null!;
