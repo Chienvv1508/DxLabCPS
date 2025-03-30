@@ -9,9 +9,6 @@ namespace DxLabCoworkingSpace
         public int? FacilityId { get; set; }
         public string? BatchNumber { get; set; }
         public int Quantity { get; set; }
-        public decimal Price { get; set; }
-        public int Status { get; set; }
-        public int? RoomId { get; set; }
         public int? AreaId { get; set; }
 
         public virtual Area? Area { get; set; }

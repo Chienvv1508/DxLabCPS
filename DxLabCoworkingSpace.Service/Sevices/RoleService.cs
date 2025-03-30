@@ -17,17 +17,17 @@ namespace DxLabCoworkingSpace
             _unitOfWork = unitOfWork;   
         }
 
-        async Task IGenericService<Role>.Add(Role entity)
+        async Task IFaciStatusService<Role>.Add(Role entity)
         {
             throw new NotImplementedException();
         }
 
-        async Task<IEnumerable<Role>> IGenericService<Role>.GetAll()
+        async Task<IEnumerable<Role>> IFaciStatusService<Role>.GetAll()
         {
             return await _unitOfWork.RoleRepository.GetAll(r => r.RoleId == 2 || r.RoleId ==3);
         }
 
-        async Task<Role> IGenericService<Role>.GetById(int id)
+        async Task<Role> IFaciStatusService<Role>.GetById(int id)
         {
             return await _unitOfWork.RoleRepository.GetById(id);
         }
@@ -39,7 +39,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task IGenericService<Role>.Update(Role entity)
+        async Task IFaciStatusService<Role>.Update(Role entity)
         {
             throw new NotImplementedException();
         }
@@ -51,7 +51,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task IGenericService<Role>.Delete(int id)
+        async Task IFaciStatusService<Role>.Delete(int id)
         {
             throw new NotImplementedException();
         }

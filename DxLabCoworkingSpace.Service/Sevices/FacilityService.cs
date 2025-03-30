@@ -133,7 +133,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task<Facility> IGenericService<Facility>.GetById(int id)
+        async Task<Facility> IFaciStatusService<Facility>.GetById(int id)
         {
             return await _unitOfWork.FacilityRepository.GetById(id);
         }
@@ -149,7 +149,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task IGenericService<Facility>.Delete(int id)
+        async Task IFaciStatusService<Facility>.Delete(int id)
         {
             throw new NotImplementedException();
         }
