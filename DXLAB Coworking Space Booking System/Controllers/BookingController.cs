@@ -510,8 +510,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                         aretypeCategory.Title = _configuration["Group:Title"];
                         aretypeCategory.CategoryDescription = _configuration["Group:Description"];
                         aretypeCategory.Image = _configuration["Group:Images"];
-                    }    
-                    KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>(aretypeCategory, areaTypeDTOs);
+                    }
+                    KeyValuePair<int, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<int, List<AreaTypeDTO>>(group.Key, areaTypeDTOs);
                     result.Add(keyValuePair);
                 }
                 var response1 = new ResponseDTO<object>(200, "Trả thành công", result);
