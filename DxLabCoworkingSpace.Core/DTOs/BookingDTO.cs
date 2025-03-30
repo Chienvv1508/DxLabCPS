@@ -15,9 +15,6 @@ namespace DxLabCoworkingSpace
         public int AreaTypeId { get; set; }
         [Required(ErrorMessage ="Bắt buộc nhập thời gian đặt phòng")]
         public List<BookingTime> bookingTimes { get; set; }
-
-
-
     }
     public class BookingTime
     {
