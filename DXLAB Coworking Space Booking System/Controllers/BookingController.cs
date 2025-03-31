@@ -34,189 +34,218 @@ namespace DXLAB_Coworking_Space_Booking_System
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromBody] BookingDTO bookingDTO)
         {
-            // Thêm kiểm tra giới hạn 2 tuần
-            var maxBookingDate = DateTime.Now.Date.AddDays(14); // 2 tuần từ hôm nay
-            var outOfRangeDates = bookingDTO.bookingTimes.Where(x => x.BookingDate.Date > maxBookingDate);
-            if (outOfRangeDates.Any())
+            try
             {
-                return BadRequest(new ResponseDTO<object>(400, "Chỉ có thể đặt phòng trước tối đa 2 tuần!", null));
-            }
-
-            //Get Information
-            var roomId = bookingDTO.RoomId;
-            var areaTypeId = bookingDTO.AreaTypeId;
-            var bookingDates = bookingDTO.bookingTimes;
-
-            //Check RoomId
-            Room room = await _roomService.GetRoomWithAllInClude(x => x.RoomId == bookingDTO.RoomId);
-            if (room == null)
-            {
-                var reponse = new ResponseDTO<object>(400, "Không tìm thấy phòng cần đặt!", null);
-                return BadRequest(reponse);
-            }
-            //Check AraeTypeId
-            var areasInRoom = room.Areas.Where(x => x.AreaTypeId == areaTypeId);
-            if (!areasInRoom.Any())
-            {
-                var reponse = new ResponseDTO<object>(400, "Trong phòng không có khu vực nào có loại khu vực như đã nhập!", null);
-                return BadRequest(reponse);
-            }
-            //Check Ngày
-            var wrongDte = bookingDTO.bookingTimes.Where(x => x.BookingDate.Date < DateTime.Now.Date);
-            if (wrongDte.Any())
-            {
-                var reponse = new ResponseDTO<object>(400, "Ngày đặt bắt buộc lớn hơn hoặc bằng ngày hiện tại!", null);
-                return BadRequest(reponse);
-            }
-            List<Area> newAreaInRoom = new List<Area>();
-            //Get All Information
-            foreach (var ar in areasInRoom)
-            {
-                var x = await _areaService.GetWithInclude(x => x.AreaId == ar.AreaId, x => x.AreaType, x => x.Positions);
-                newAreaInRoom.Add(x);
-            }
-            areasInRoom = newAreaInRoom;
-
-            ////CheckSlot ngày hiện tại
-            //var currentDte = bookingDTO.bookingTimes.FirstOrDefault(x => x.BookingDate == DateTime.Now.Date);
-            //if (currentDte != null)
-            //{
-            //    var slots = currentDte.SlotId;
-            //    var slotListFromDb = await _slotService.GetAll();
-            //    if(!slotListFromDb.Any())
-            //    {
-            //        var reponse = new ResponseDTO<object>(400, "Lỗi khi đặt phòng", null);
-            //        return BadRequest(reponse);
-            //    }
-            //    List<Slot> slotList = new List<Slot>();
-            //    foreach(var item in slots)
-            //    {
-            //        var slot = slotListFromDb.FirstOrDefault(x => x.SlotId == item);
-            //        if(slot == null)
-            //        {
-            //            var reponse = new ResponseDTO<object>(400, "Không tồn tại slot", null);
-            //            return BadRequest(reponse);
-            //        }
-            //        slotList.Add(slot);
-            //    }
-            //}
-
-            // Lấy UserId từ token
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
-            }
-
-            Booking booking = new Booking();
-            List<BookingDetail> bookingDetails = new List<BookingDetail>();
-            foreach (var dte in bookingDates)
-            {
-                booking.UserId = userId;
-                booking.BookingCreatedDate = dte.BookingDate;
-                // Tạo ma trận
-                Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areasInRoom, dte.BookingDate.Date);
-                int[] slotArray = new int[dte.SlotId.Count];
-                for (int i = 0; i < slotArray.Length; i++)
+                // Thêm kiểm tra giới hạn 2 tuần
+                var maxBookingDate = DateTime.Now.Date.AddDays(14); // 2 tuần từ hôm nay
+                var outOfRangeDates = bookingDTO.bookingTimes.Where(x => x.BookingDate.Date > maxBookingDate);
+                if (outOfRangeDates.Any())
                 {
-                    var x = await _slotService.GetById(dte.SlotId[i]);
-                    slotArray[i] = x.SlotNumber;
+                    return BadRequest(new ResponseDTO<object>(400, "Chỉ có thể đặt phòng trước tối đa 2 tuần!", null));
                 }
-                int[][] slotJaggedMatrix = CreateSlotJaggedMatrix(slotArray);
-                Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPositionResult = findPosition(slotJaggedMatrix, searchMatrix);
-                if (findPositionResult.Item1 == false)
+
+                //Get Information
+                var roomId = bookingDTO.RoomId;
+                var areaTypeId = bookingDTO.AreaTypeId;
+                var bookingDates = bookingDTO.bookingTimes;
+
+                //Check RoomId
+                Room room = await _roomService.GetRoomWithAllInClude(x => x.RoomId == bookingDTO.RoomId);
+                if (room == null)
                 {
-                    var reponse = new ResponseDTO<object>(400, findPositionResult.Item2, null);
+                    var reponse = new ResponseDTO<object>(400, "Không tìm thấy phòng cần đặt!", null);
                     return BadRequest(reponse);
                 }
-                else
+                //Check AraeTypeId
+                var areasInRoom = room.Areas.Where(x => x.AreaTypeId == areaTypeId);
+                if (!areasInRoom.Any())
                 {
-                    var allSlot = await _slotService.GetAll();
-                    if (areasInRoom.First().AreaType.AreaCategory == 1)
+                    var reponse = new ResponseDTO<object>(400, "Trong phòng không có khu vực nào có loại khu vực như đã nhập!", null);
+                    return BadRequest(reponse);
+                }
+                //Check Ngày
+                var wrongDte = bookingDTO.bookingTimes.Where(x => x.BookingDate.Date < DateTime.Now.Date);
+                if (wrongDte.Any())
+                {
+                    var reponse = new ResponseDTO<object>(400, "Ngày đặt bắt buộc lớn hơn hoặc bằng ngày hiện tại!", null);
+                    return BadRequest(reponse);
+                }
+                List<Area> newAreaInRoom = new List<Area>();
+                //Get All Information
+                foreach (var ar in areasInRoom)
+                {
+                    var x = await _areaService.GetWithInclude(x => x.AreaId == ar.AreaId, x => x.AreaType, x => x.Positions);
+                    newAreaInRoom.Add(x);
+                }
+                areasInRoom = newAreaInRoom;
+
+                // Lấy UserId từ token
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                }
+
+                Booking booking = new Booking();
+                List<BookingDetail> bookingDetails = new List<BookingDetail>();
+
+                // Load dữ liệu cần thiết một lần trước vòng lặp
+                var allSlots = await _slotService.GetAll();
+                var allAreasWithDetails = await _areaService.GetAllWithInclude(a => a.Room, a => a.AreaType, a => a.Positions);
+                var filteredAreas = allAreasWithDetails.Where(a => areasInRoom.Select(ar => ar.AreaId).Contains(a.AreaId)).ToList();
+                var areaTypeIds = filteredAreas.Select(a => a.AreaTypeId).Distinct().ToList();
+                var areaTypes = await _areaTypeService.GetAll(at => areaTypeIds.Contains(at.AreaTypeId));
+
+                // Tạo lookup để tra cứu nhanh
+                var areaLookup = filteredAreas.ToDictionary(a => a.AreaId, a => a);
+                var areaTypeLookup = areaTypes.ToDictionary(at => at.AreaTypeId, at => at);
+
+                foreach (var dte in bookingDates)
+                {
+                    booking.UserId = userId;
+                    booking.BookingCreatedDate = dte.BookingDate;
+                    // Tạo ma trận
+                    Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areasInRoom, dte.BookingDate.Date);
+                    int[] slotArray = new int[dte.SlotId.Count];
+                    for (int i = 0; i < slotArray.Length; i++)
                     {
-                        foreach (var item in findPositionResult.Item3)
-                        {
-                            for (int i = 0; i < item.Value.Length; i++)
-                            {
-                                var bookingDetail = new BookingDetail();
-                                int id = item.Key;
-
-                                bookingDetail.PositionId = id;
-                                var slot = allSlot.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
-                                bookingDetail.SlotId = slot.SlotId;
-                                bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
-                                if (i == item.Value.Length - 1)
-                                {
-                                    bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
-                                }
-                                else
-                                    //bookingDetail.CheckoutTime = null;
-
-                                    bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value).AddMinutes(-10);
-                                var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
-                                var areaBook = areaBooks.FirstOrDefault(x => x.Positions.FirstOrDefault(x => x.PositionId == id) != null);
-                                bookingDetail.Price = areaBook.AreaType.Price;
-                                bookingDetails.Add(bookingDetail);
-                            }
-                        }
+                        var x = await _slotService.GetById(dte.SlotId[i]);
+                        slotArray[i] = x.SlotNumber;
+                    }
+                    int[][] slotJaggedMatrix = CreateSlotJaggedMatrix(slotArray);
+                    Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPositionResult = findPosition(slotJaggedMatrix, searchMatrix);
+                    if (findPositionResult.Item1 == false)
+                    {
+                        var reponse = new ResponseDTO<object>(400, findPositionResult.Item2, null);
+                        return BadRequest(reponse);
                     }
                     else
                     {
-                        foreach (var item in findPositionResult.Item3)
+                        var allSlot = await _slotService.GetAll();
+                        if (areasInRoom.First().AreaType.AreaCategory == 1)
                         {
-                            for (int i = 0; i < item.Value.Length; i++)
+                            foreach (var item in findPositionResult.Item3)
                             {
-                                var bookingDetail = new BookingDetail();
-                                int id = item.Key;
-
-                                bookingDetail.AreaId = id;
-
-                                var slot = allSlot.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
-                                bookingDetail.SlotId = slot.SlotId;
-                                bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
-                                if (i == item.Value.Length - 1)
+                                for (int i = 0; i < item.Value.Length; i++)
                                 {
-                                    bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
-                                }
-                                else
-                                    //bookingDetail.CheckoutTime = null;
+                                    var bookingDetail = new BookingDetail();
+                                    int id = item.Key;
 
-                                    bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value).AddMinutes(-10);
-                                var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType);
-                                var areaBook = areaBooks.FirstOrDefault(x => x.AreaId == id);
-                                bookingDetail.Price = areaBook.AreaType.Price;
-                                bookingDetails.Add(bookingDetail);
+                                    bookingDetail.PositionId = id;
+                                    var slot = allSlot.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
+                                    bookingDetail.SlotId = slot.SlotId;
+                                    bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
+                                    if (i == item.Value.Length - 1)
+                                    {
+                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
+                                    }
+                                    else
+                                        //bookingDetail.CheckoutTime = null;
+
+                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value).AddMinutes(-10);
+                                    var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
+                                    var areaBook = areaBooks.FirstOrDefault(x => x.Positions.FirstOrDefault(x => x.PositionId == id) != null);
+                                    bookingDetail.Price = areaBook.AreaType.Price;
+                                    bookingDetails.Add(bookingDetail);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            foreach (var item in findPositionResult.Item3)
+                            {
+                                for (int i = 0; i < item.Value.Length; i++)
+                                {
+                                    var bookingDetail = new BookingDetail();
+                                    int id = item.Key;
+
+                                    bookingDetail.AreaId = id;
+
+                                    var slot = allSlot.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
+                                    bookingDetail.SlotId = slot.SlotId;
+                                    bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
+                                    if (i == item.Value.Length - 1)
+                                    {
+                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
+                                    }
+                                    else
+                                        //bookingDetail.CheckoutTime = null;
+
+                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value).AddMinutes(-10);
+                                    var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType);
+                                    var areaBook = areaBooks.FirstOrDefault(x => x.AreaId == id);
+                                    bookingDetail.Price = areaBook.AreaType.Price;
+                                    bookingDetails.Add(bookingDetail);
+                                }
                             }
                         }
                     }
                 }
+
+                // Tính TotalPrice và lưu Booking
+                booking.Price = bookingDetails.Sum(br => br.Price);
+                booking.BookingDetails = bookingDetails;
+                await _bookingService.Add(booking);
+
+                // Chuẩn bị dữ liệu trả về giống GetStudentBookingHistoryDetail
+                var responseData = new
+                {
+                    BookingId = booking.BookingId,
+                    BookingCreatedDate = booking.BookingCreatedDate,
+                    TotalPrice = booking.Price,
+                    Details = bookingDetails.Select(bd =>
+                    {
+                        string positionDisplay = null;
+                        string areaName = null;
+                        string areaTypeName = null;
+                        string roomName = null;
+
+                        if (bd.AreaId.HasValue && areaLookup.TryGetValue(bd.AreaId.Value, out var areaFromAreaId))
+                        {
+                            areaName = areaFromAreaId.AreaName;
+                            positionDisplay = areaTypeLookup.TryGetValue(areaFromAreaId.AreaTypeId, out var areaType) ? areaType.AreaTypeName : "N/A";
+                            roomName = areaFromAreaId.Room?.RoomName;
+                            areaTypeName = positionDisplay;
+                        }
+                        else if (bd.PositionId.HasValue)
+                        {
+                            var areaFromPosition = areaLookup.Values.FirstOrDefault(a => a.Positions.Any(p => p.PositionId == bd.PositionId));
+                            if (areaFromPosition != null)
+                            {
+                                positionDisplay = areaFromPosition.Positions.FirstOrDefault(p => p.PositionId == bd.PositionId)?.PositionNumber.ToString() ?? "N/A";
+                                areaName = areaFromPosition.AreaName;
+                                areaTypeName = areaFromPosition.AreaTypeId != 0 && areaTypeLookup.TryGetValue(areaFromPosition.AreaTypeId, out var at) ? at.AreaTypeName : "N/A";
+                                roomName = areaFromPosition.Room?.RoomName;
+                            }
+                            else
+                            {
+                                positionDisplay = "N/A";
+                                areaName = "N/A";
+                                areaTypeName = "N/A";
+                                roomName = "N/A";
+                            }
+                        }
+
+                        var slot = allSlots.FirstOrDefault(s => s.SlotId == bd.SlotId);
+                        return new
+                        {
+                            BookingDetailId = bd.BookingDetailId,
+                            Position = positionDisplay,
+                            AreaName = areaName,
+                            AreaTypeName = areaTypeName,
+                            RoomName = roomName,
+                            SlotNumber = slot?.SlotNumber
+                        };
+                    }).ToList()
+                };
+
+                return Ok(new ResponseDTO<object>(200, "Đặt phòng thành công!", responseData));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi đặt phòng", ex.Message));
             }
 
-            // Tính TotalPrice
-            booking.Price = bookingDetails.Sum(br => br.Price);
-
-            booking.BookingDetails = bookingDetails;
-            await _bookingService.Add(booking);
-            //Tạo response trả về data
-            var responseData = new
-            {
-                BookingId = booking.BookingId,
-                UserId = booking.UserId,
-                BookingCreatedDate = booking.BookingCreatedDate,
-                TotalPrice = booking.Price,
-                Details = bookingDetails.Select(bd => new
-                {
-                    PositionId = bd.PositionId,
-                    AreaId = bd.AreaId,
-                    SlotId = bd.SlotId,
-                    CheckinTime = bd.CheckinTime,
-                    CheckoutTime = bd.CheckoutTime,
-                    Price = bd.Price
-                }).ToList()
-            };
-
-            var response = new ResponseDTO<object>(200, "Đặt phòng thành công!", responseData);
-            return Ok(response);
         }
 
         private Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, int[]> searchMatrix)
