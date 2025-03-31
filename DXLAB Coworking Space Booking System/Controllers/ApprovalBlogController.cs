@@ -20,7 +20,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("pending")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetPendingBlogs()
         {
             try
@@ -54,7 +54,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("approved")]
-        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetApprovedBlogs()
         {
             try
@@ -88,7 +87,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPut("approve/{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ApproveBlog(int id)
         {
             try
@@ -123,7 +122,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPut("cancel/{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CancelBlog(int id)
         {
             try
@@ -158,7 +157,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetById(int id)
         {
             try
@@ -192,7 +190,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteApprovedBlog(int id)
         {
             try

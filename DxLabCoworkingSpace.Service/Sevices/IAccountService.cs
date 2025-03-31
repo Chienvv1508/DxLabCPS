@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IAccountService : IGenericService<User>
+    public interface IAccountService : IFaciStatusService<User>
     {
         Task<IEnumerable<User>> GetUsersByRoleName(string roleName);
         Task AddFromExcel(List<User> users);

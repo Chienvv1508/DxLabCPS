@@ -42,9 +42,6 @@ namespace DxLabCoworkingSpace
         {
             return await _unitOfWork.BookingDetailRepository.GetAll(expression);
         }
-
-      
-
         public async Task<IEnumerable<BookingDetail>> GetAllWithInclude(params Expression<Func<BookingDetail, object>>[] includes)
         {
                 return await _unitOfWork.BookingDetailRepository.GetAllWithInclude(includes);
@@ -54,15 +51,11 @@ namespace DxLabCoworkingSpace
         public async Task<BookingDetail> GetById(int id)
         {
             return await _unitOfWork.BookingDetailRepository.GetById(id);
-
-
         }
 
-       
-
-        public Task<BookingDetail> GetWithInclude(Expression<Func<BookingDetail, bool>> expression, params Expression<Func<BookingDetail, object>>[] includes)
+        public async Task<BookingDetail> GetWithInclude(Expression<Func<BookingDetail, bool>> expression, params Expression<Func<BookingDetail, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.BookingDetailRepository.GetWithInclude(expression, includes);
         }
 
         public async Task Update(BookingDetail entity)

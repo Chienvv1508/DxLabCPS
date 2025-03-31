@@ -6,6 +6,7 @@ using OfficeOpenXml;
 using System.Globalization;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Data.SqlClient.DataClassification;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -16,16 +17,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         private readonly IFacilityService _facilityService;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IFaciStatusService _facilityStatusSerive;
 
-        public FacilityController(IFacilityService facilityService, IMapper mapper, IUnitOfWork unitOfWork)
+        public FacilityController(IFacilityService facilityService, IMapper mapper, IUnitOfWork unitOfWork, IFaciStatusService faciStatusService)
         {
             _facilityService = facilityService;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
+            _facilityStatusSerive = faciStatusService;
         }
 
         // Add Facility From Excel File
         [HttpPost("importexcel")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacilityFromExcel(IFormFile file)
         {
             try
@@ -41,6 +45,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
                 var facilities = new List<Facility>();
+                var facilitySatusList = new List<FacilitiesStatus>();
                 using (var stream = new MemoryStream())
                 {
                     await file.CopyToAsync(stream);
@@ -94,11 +99,36 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 Quantity = quantity,
                                 ImportDate = import
                             });
+                            var faci = new Facility
+                            {
+                                BatchNumber = worksheet.Cells[row, 1].Value?.ToString() ?? "",
+                                FacilityDescription = worksheet.Cells[row, 2].Value?.ToString(),
+                                Cost = cost,
+                                ExpiredTime = expired,
+                                Quantity = quantity,
+                                ImportDate = import
+                            };
+                            var facilityStatus = _mapper.Map<FacilitiesStatus>(faci);
+                            facilitySatusList.Add(facilityStatus);
+
                         }
                     }
                 }
 
                 await _facilityService.AddFacilityFromExcel(facilities);
+                foreach(var item in facilitySatusList)
+                {
+                    var existedFaciStatus = await _facilityStatusSerive.Get(x => x.FailityId == item.FailityId && x.Status == 1 && x.BatchNumber == item.BatchNumber);
+                    if(existedFaciStatus == null)
+                    await _facilityStatusSerive.Add(item);
+                    else
+                    {
+                        existedFaciStatus.Quantity += item.Quantity;
+                        await _facilityStatusSerive.Update(item);
+
+                    }   
+                }
+                
                 var facilityDtos = _mapper.Map<IEnumerable<FacilitiesDTO>>(facilities);
                 return Created("", new ResponseDTO<IEnumerable<FacilitiesDTO>>(200, $"{facilities.Count} facility đã được thêm thành công!", facilityDtos));
             }
@@ -118,6 +148,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
        
         // Add New Facility
         [HttpPost("createfacility")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateFacility([FromBody] FacilitiesDTO facilityDto)
         {
             try

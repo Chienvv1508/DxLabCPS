@@ -9,5 +9,6 @@ namespace DxLabCoworkingSpace
 {
     public interface IStatisticsService
     {
+        Task<StudentRevenueDTO> GetRevenueByStudentGroup(string period, int? year = null, int? month = null, int? week = null);
     }
 }

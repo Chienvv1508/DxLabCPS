@@ -41,12 +41,12 @@ namespace DxLabCoworkingSpace
 
         public async Task<IEnumerable<AreaType>> GetAll(Expression<Func<AreaType, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeRepository.GetAll(expression);
         }
 
-        public Task<AreaType> GetById(int id)
+        public async Task<AreaType> GetById(int id)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeRepository.GetById(id);
         }
 
         public async Task Update(AreaType entity)
@@ -60,14 +60,14 @@ namespace DxLabCoworkingSpace
             return listAreaTypeResult;
         }
 
-        public Task<IEnumerable<AreaType>> GetAllWithInclude(params Expression<Func<AreaType, object>>[] includes)
+        public async Task<IEnumerable<AreaType>> GetAllWithInclude(params Expression<Func<AreaType, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeRepository.GetAllWithInclude(includes);
         }
 
-        public Task<AreaType> GetWithInclude(Expression<Func<AreaType, bool>> expression, params Expression<Func<AreaType, object>>[] includes)
+        public async Task<AreaType> GetWithInclude(Expression<Func<AreaType, bool>> expression, params Expression<Func<AreaType, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeRepository.GetWithInclude(expression, includes);
         }
     }
 }

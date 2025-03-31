@@ -10,11 +10,13 @@ using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/account")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
@@ -87,10 +89,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 return BadRequest(new ResponseDTO<object>(400, ex.Message, null));
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new ResponseDTO<object>(403, ex.Message, null)); // Từ chối nếu cố thêm Admin
-            }
             catch (InvalidOperationException ex)
             {
                 return Conflict(new ResponseDTO<object>(409, ex.Message, null));
@@ -132,10 +130,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var accountDto = _mapper.Map<AccountDTO>(user);
                 return Ok(new ResponseDTO<AccountDTO>(200, "Tài khoản được lấy thành công!", accountDto));
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new ResponseDTO<object>(403, ex.Message, null)); // Từ chối nếu cố thêm Admin
-            }
             catch (Exception ex)
             {
                 return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi truy xuất tài khoản: {ex.Message}", null));
@@ -151,10 +145,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var users = (await _accountService.GetUsersByRoleName(roleName)).ToList();
                 var accountDTOs = _mapper.Map<IEnumerable<AccountDTO>>(users);
                 return Ok(new ResponseDTO<IEnumerable<AccountDTO>>(200, $"Người dùng với RoleName: {roleName} được lấy thành công!", accountDTOs));
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new ResponseDTO<object>(403, ex.Message, null));
             }
             catch (InvalidOperationException ex)
             {
@@ -192,10 +182,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var updatedDto = _mapper.Map<AccountDTO>(updatedUser);
                 return Ok(new ResponseDTO<AccountDTO>(200, "Role của người dùng đã được cập nhật thành công!", updatedDto));
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new ResponseDTO<object>(403, ex.Message, null));
-            }
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new ResponseDTO<object>(400, ex.Message, null));
@@ -214,10 +200,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 await _accountService.SoftDelete(id);
                 return Ok(new ResponseDTO<object>(200, $"Tài khoản với ID: {id} đã được lưu vào Bin Storage!", null));
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new ResponseDTO<object>(403, ex.Message, null)); // Từ chối nếu là Admin
             }
             catch (InvalidOperationException ex)
             {

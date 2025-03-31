@@ -47,9 +47,9 @@ namespace DxLabCoworkingSpace
             return x.Where(expression);
         }
 
-        public Task<Area> GetById(int id)
+        public async Task<Area> GetById(int id)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaRepository.GetById(id);
         }
         public async Task<IEnumerable<Area>> GetAllWithInclude(params Expression<Func<Area, object>>[] includes)
         {

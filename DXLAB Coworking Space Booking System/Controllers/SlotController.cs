@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
@@ -18,6 +19,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
         // API Generate slot
         [HttpPost("create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateSlots([FromBody] SlotGenerationRequest request)
         {
             if (!ModelState.IsValid)

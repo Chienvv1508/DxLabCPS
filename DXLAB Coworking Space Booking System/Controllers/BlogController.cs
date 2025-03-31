@@ -9,6 +9,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/blog")]
     [ApiController]
+    [Authorize(Roles = "Staff")] 
     public class BlogController : ControllerBase
     {
         private readonly IBlogService _blogService;
@@ -21,7 +22,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "Staff")]
         public async Task<IActionResult> Create([FromForm] BlogRequestDTO blogRequestDTO)
         {
             if (!ModelState.IsValid)
@@ -32,9 +32,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 var blog = _mapper.Map<Blog>(blogRequestDTO);
-                var userId = 2; // Hardcode
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                }
                 blog.UserId = userId;
-                // Không cần set BlogCreatedDate và Status vì BlogService đã xử lý
 
                 // Đảm bảo thư mục images tồn tại
                 var imagesDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
@@ -105,7 +108,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("list/{status}")]
-        //[Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetBlogsByStatus(string status)
         {
             if (!Enum.TryParse<BlogDTO.BlogStatus>(status, true, out var blogStatus))
@@ -115,7 +117,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
-                var userId = 2; // Hardcode
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                }
+
                 var blogs = await _blogService.GetAllWithUser(b => b.Status == (int)blogStatus && b.UserId == userId);
                 var blogDtos = _mapper.Map<IEnumerable<BlogDTO>>(blogs);
 
@@ -145,7 +152,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPut("edit-cancelled/{id}")]
-        //[Authorize(Roles = "Staff")]
         public async Task<IActionResult> EditCancelledBlog(int id, [FromForm] BlogRequestDTO blogRequestDTO)
         {
             if (!ModelState.IsValid)
@@ -159,6 +165,20 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 if (existingBlog == null)
                 {
                     return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
+                }
+
+                // Lấy UserId từ token
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null)
+                {
+                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                }
+                var userId = int.Parse(userIdClaim.Value);
+
+                // Kiểm tra nếu blog không thuộc về user hiện tại
+                if (existingBlog.UserId != userId)
+                {
+                    return Forbid();
                 }
 
                 var updatedBlog = _mapper.Map<Blog>(blogRequestDTO);
@@ -235,7 +255,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetById(int id)
         {
             try
@@ -244,6 +263,20 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 if (blog == null)
                 {
                     return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
+                }
+
+                // Lấy UserId từ token
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null)
+                {
+                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                }
+                var userId = int.Parse(userIdClaim.Value);
+
+                // Kiểm tra nếu blog không thuộc về user hiện tại
+                if (blog.UserId != userId)
+                {
+                    return Forbid();
                 }
 
                 var blogDto = _mapper.Map<BlogDTO>(blog);

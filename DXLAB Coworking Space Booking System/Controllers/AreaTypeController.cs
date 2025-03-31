@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/areatype")]
     [ApiController]
     public class AreaTypeController : ControllerBase
     {
@@ -21,6 +22,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateAreaType([FromBody] AreaTypeDTO areTypeDto)
         {
             var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName);
@@ -72,8 +74,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
                 return StatusCode(500, response);
             }
-
-
         }
 
         [HttpGet]
@@ -95,15 +95,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     var response = new ResponseDTO<object>(200, "Lấy thành công", areaTypesDTO);
                     return Ok(response);
                 }
-                
-               
             }
             catch (Exception ex)
             {
                 var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
                 return StatusCode(500, response);
             }
-
         }
 
         [HttpGet("areatypeforselection")]
@@ -121,10 +118,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
                 return StatusCode(500, response);
             }
-
         }
 
         [HttpPatch("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<AreaType> patchDoc)
         {
             try
@@ -141,7 +138,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         "price",
                         "images",
                         "isDeleted"
-
             };
                 var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
                 if(areaTypeNameOp != null)
@@ -154,7 +150,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     }
                 }
                 
-
                 foreach (var operation in patchDoc.Operations)
                 {
                     if (!allowedPaths.Contains(operation.path))
@@ -164,8 +159,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     }
                 }
 
-
-
                 var areaTypeFromDb = await _areaTypeService.Get(x => x.AreaTypeId == id);
                 if (areaTypeFromDb == null)
                 {
@@ -174,7 +167,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 patchDoc.ApplyTo(areaTypeFromDb, ModelState);
-
 
                 if (!ModelState.IsValid)
                 {
@@ -209,11 +201,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var response = new ResponseDTO<object>(01, "Lỗi khi cập nhập dữ liệu!", null);
                 return StatusCode(500, response);
-
             }
-
-
         }
-
     }
 }
