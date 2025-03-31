@@ -9,6 +9,6 @@ namespace DxLabCoworkingSpace
 {
     public interface IBookingDetailService : IFaciStatusService<BookingDetail>
     {
-
+        Task UpdateStatus(int bookingDetailId, int status);
     }
 }

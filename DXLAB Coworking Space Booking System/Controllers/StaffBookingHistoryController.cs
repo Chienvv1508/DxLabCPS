@@ -49,6 +49,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     BookingId = b.BookingId,
                     UserName = b.User?.FullName, 
+                    UserEmail = b.User?.Email,
                     BookingCreatedDate = b.BookingCreatedDate,
                     TotalPrice = b.Price,
                     TotalBookingDetail = b.BookingDetails.Count,
@@ -122,6 +123,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     BookingId = booking.BookingId,
                     UserName = booking.User?.FullName,
+                    UserEmail = booking.User?.Email,
                     BookingCreatedDate = booking.BookingCreatedDate,
                     TotalPrice = booking.Price,
                     Details = filteredDetails.Select(bd =>
@@ -159,7 +161,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         {
                             BookingDetailId = bd.BookingDetailId,
                             Position = positionDisplay,
-                            AreaName = areaName,
+                            AreaName = areaName,                      
                             AreaTypeName = areaTypeName,
                             RoomName = roomName,
                             SlotNumber = bd.Slot?.SlotNumber,
@@ -175,9 +177,112 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
                 var response = new ResponseDTO<object>(500, "Lỗi khi lấy chi tiết booking", ex.Message);
                 return StatusCode(500, response);
+            }
+        }
+
+        [HttpPost("checkin/{bookingDetailId}")]
+        public async Task<IActionResult> CheckIn(int bookingDetailId)
+        {
+            try
+            {
+                var bookingDetail = await _bookDetailService.GetWithInclude(
+                    bd => bd.BookingDetailId == bookingDetailId,
+                    bd => bd.Slot,
+                    bd => bd.Booking
+                );
+
+                if (bookingDetail == null)
+                {
+                    return NotFound(new ResponseDTO<object>(404, $"Không tìm thấy BookingDetail với ID {bookingDetailId}!", null));
+                }
+
+                if (bookingDetail.Status == 1) // 1 = CheckedIn
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Booking này đã được check-in!", null));
+                }
+
+                if (bookingDetail.Status == 2) // 2 = Completed
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Booking này đã hoàn thành, không thể check-in!", null));
+                }
+
+                var currentTime = DateTime.Now;
+                var slotEndTime = bookingDetail.Slot?.EndTime ?? TimeSpan.Zero; // Xử lý null cho TimeSpan?
+                var bookingDate = bookingDetail.CheckinTime.Date;
+                var slotEndDateTime = bookingDate + slotEndTime;
+
+                if (currentTime < bookingDetail.CheckinTime)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, $"Chưa đến thời gian check-in ({bookingDetail.CheckinTime})!", null));
+                }
+
+                if (currentTime >= bookingDetail.CheckoutTime)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, $"Đã quá thời gian check-in, hiện tại là thời gian check-out hoặc nghỉ ({bookingDetail.CheckoutTime} - {slotEndDateTime})!", null));
+                }
+
+                await _bookDetailService.UpdateStatus(bookingDetailId, 1); // 1 = CheckedIn
+
+                return Ok(new ResponseDTO<object>(200, $"Check-in thành công cho BookingDetail {bookingDetailId}!", null));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi thực hiện check-in", ex.Message));
+            }
+        }
+
+        [HttpPost("checkout/{bookingDetailId}")]
+        public async Task<IActionResult> CheckOut(int bookingDetailId)
+        {
+            try
+            {
+                var bookingDetail = await _bookDetailService.GetWithInclude(
+                    bd => bd.BookingDetailId == bookingDetailId,
+                    bd => bd.Slot,
+                    bd => bd.Booking
+                );
+
+                if (bookingDetail == null)
+                {
+                    return NotFound(new ResponseDTO<object>(404, $"Không tìm thấy BookingDetail với ID {bookingDetailId}!", null));
+                }
+
+                if (bookingDetail.Status == 0) // 0 = Pending
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Booking này chưa được check-in, không thể check-out!", null));
+                }
+
+                if (bookingDetail.Status == 2) // 2 = Completed
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Booking này đã hoàn thành!", null));
+                }
+
+                var currentTime = DateTime.Now;
+                var slotEndTime = bookingDetail.Slot?.EndTime ?? TimeSpan.Zero; // Xử lý null cho TimeSpan?
+                var bookingDate = bookingDetail.CheckoutTime.Date;
+                var slotEndDateTime = bookingDate + slotEndTime;
+
+                if (currentTime < bookingDetail.CheckoutTime)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, $"Chưa đến thời gian check-out ({bookingDetail.CheckoutTime})!", null));
+                }
+
+                if (currentTime > slotEndDateTime)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, $"Đã quá thời gian check-out, hiện tại là thời gian nghỉ ({slotEndDateTime})!", null));
+                }
+
+                await _bookDetailService.UpdateStatus(bookingDetailId, 2); // 2 = Completed
+
+                //Console.WriteLine($"Thông báo: BookingDetail {bookingDetailId} đã check-out vào {currentTime}. User: {bookingDetail.Booking.User?.FullName}, Email: {bookingDetail.Booking.User?.Email}");
+
+                return Ok(new ResponseDTO<object>(200, $"Check-out thành công cho BookingDetail {bookingDetailId}!", null));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi thực hiện check-out", ex.Message));
             }
         }
     }

@@ -63,5 +63,19 @@ namespace DxLabCoworkingSpace
             await _unitOfWork.BookingDetailRepository.Update(entity);
             await _unitOfWork.CommitAsync();
         }
+
+        public async Task UpdateStatus(int bookingDetailId, int status)
+        {
+            // Status: 0 = Pending, 1 = CheckedIn, 2 = Completed
+            var bookingDetail = await _unitOfWork.BookingDetailRepository.GetById(bookingDetailId);
+            if (bookingDetail == null)
+            {
+                throw new Exception($"Không tìm thấy BookingDetail với ID {bookingDetailId}");
+            }
+
+            bookingDetail.Status = status; // Cập nhật trực tiếp giá trị int
+            await _unitOfWork.BookingDetailRepository.Update(bookingDetail);
+            await _unitOfWork.CommitAsync();
+        }
     }
 }
