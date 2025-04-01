@@ -20,7 +20,7 @@ namespace DxLabCoworkingSpace
         public async Task Add(User entity)
         {
             await _unitOfWork.UserRepository.Add(entity);
-            _unitOfWork.CommitAsync();
+            await _unitOfWork.CommitAsync();
         }
 
         public async Task<User> Get(Expression<Func<User, bool>> expression)
@@ -47,7 +47,7 @@ namespace DxLabCoworkingSpace
         }
         public async Task<User> GetWithInclude(Expression<Func<User, bool>> expression, params Expression<Func<User, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.UserRepository.GetWithInclude(expression, includes);
         }
         public async Task Update(User entity)
         {
