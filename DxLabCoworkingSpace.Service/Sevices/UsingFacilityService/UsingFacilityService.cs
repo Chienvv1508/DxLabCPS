@@ -70,13 +70,11 @@ namespace DxLabCoworkingSpace
 
         public async Task<IEnumerable<UsingFacility>> GetAllWithInclude(Expression<Func<UsingFacility, bool>> expression, params Expression<Func<UsingFacility, object>>[] includes)
         {
-            // Lấy danh sách chưa lọc
+            
             var data = await _unitOfWork.UsingFacilityRepository.GetAllWithInclude(includes);
 
-            // Chuyển đổi sang IQueryable để có thể áp dụng Where trước khi thực thi
             var query = data.AsQueryable().Where(expression);
 
-            // Thực thi truy vấn
             return query.ToList();
         }
 

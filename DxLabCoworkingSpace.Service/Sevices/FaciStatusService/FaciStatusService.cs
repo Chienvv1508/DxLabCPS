@@ -48,6 +48,15 @@ namespace DxLabCoworkingSpace
             return await _unitOfWork.FacilitiesStatusRepository.GetAllWithInclude(includes);
         }
 
+        public async Task<IEnumerable<FacilitiesStatus>> GetAllWithInclude(Expression<Func<FacilitiesStatus, bool>> expression, params Expression<Func<FacilitiesStatus, object>>[] includes)
+        {
+            var data = await _unitOfWork.FacilitiesStatusRepository.GetAllWithInclude(includes);
+
+            var query = data.AsQueryable().Where(expression);
+
+            return query.ToList();
+        }
+
         public async Task<FacilitiesStatus> GetById(int id)
         {
             return await _unitOfWork.FacilitiesStatusRepository.GetById(id);

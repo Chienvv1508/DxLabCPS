@@ -116,13 +116,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                var faciStatusList = await _facilityStatusService.GetAll(x => x.Status == 0 || x.Status == 1);
-                var response = new ResponseDTO<object>(200, "Lấy thành công", faciStatusList);
+                var faciStatusList = await _facilityStatusService.GetAllWithInclude(x => ((x.Status == 0 || x.Status == 1) && x.Quantity >= 0), x => x.Facility);
+                var faciDTOs = _mapper.Map<List<FaciStatusDTO>>(faciStatusList);
+                
+                var response = new ResponseDTO<object>(200, "Lấy thành công", faciDTOs);
                 return Ok(response);
             }
             catch(Exception ex)
             {
-                var response = new ResponseDTO<object>(500, "Lỗi DB!", null);
+                var response = new ResponseDTO<object>(500, ex.Message + ex.StackTrace, null);
                 return StatusCode(500, response);
                     
             }

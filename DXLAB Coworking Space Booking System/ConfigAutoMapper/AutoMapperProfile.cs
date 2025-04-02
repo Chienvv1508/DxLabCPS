@@ -87,6 +87,9 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(dest => dest.RoomName, opt => opt.MapFrom(src => src.Area.Room.RoomName))
                 .ForMember(dest => dest.ServiceType, opt => opt.MapFrom(src => src.Area.AreaType.AreaTypeName));
 
+            CreateMap<FacilitiesStatus, FaciStatusDTO>()
+                .ForMember(d => d.FacilityName, opt => opt.MapFrom(s => s.Facility.FacilityTitle));
+
         }
     }
 }
