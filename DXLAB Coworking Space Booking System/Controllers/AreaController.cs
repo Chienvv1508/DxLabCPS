@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[area]")]
     [ApiController]
     public class AreaController : ControllerBase
     {
