@@ -25,8 +25,9 @@ namespace DxLabCoworkingSpace
         public async Task Add(UsingFacility entity)
         {
           await _unitOfWork.UsingFacilityRepository.Add(entity);
+         
             
-            await _unitOfWork.CommitAsync();  
+          await _unitOfWork.CommitAsync();  
         }
         public async Task Add(UsingFacility entity, int status)
         {

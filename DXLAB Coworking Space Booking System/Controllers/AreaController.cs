@@ -96,12 +96,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     ImportDate = faciAddDTO.ImportDate
                 };
 
-                    await _usingFaclytyService.Add(newUsingFacility);
+                    await _usingFaclytyService.Add(newUsingFacility,status);
                
                 
 
 
-                var reponse1 = new ResponseDTO<object>(400, "Thêm thiết bị thành công", null);
+                var reponse1 = new ResponseDTO<object>(200, "Thêm thiết bị thành công", null);
                 return Ok(reponse1);
             }
             catch(Exception ex)
