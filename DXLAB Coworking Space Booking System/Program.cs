@@ -12,6 +12,7 @@ using Hangfire;
 using Hangfire.MemoryStorage;
 using Nethereum.ABI.Model;
 using System.IO;
+using DxLabCoworkingSpace.Service.Sevices.Blockchain;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -147,6 +148,7 @@ builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
 
 //// Đăng ký LabBookingJobService
 builder.Services.AddScoped<ILabBookingJobService, LabBookingJobService>();
+builder.Services.AddScoped<IUserTokenService, UserTokenService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 //// Thêm Hangfire với MemoryStorage
