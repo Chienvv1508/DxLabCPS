@@ -116,7 +116,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                var faciStatusList = _facilityStatusService.GetAll(x => (x.Status == 0 || x.Status == 1) && x.Quantity > 0);
+                var faciStatusList = await _facilityStatusService.GetAll(x => x.Status == 0 || x.Status == 1);
                 var response = new ResponseDTO<object>(200, "Lấy thành công", faciStatusList);
                 return Ok(response);
             }
