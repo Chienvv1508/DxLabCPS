@@ -16,9 +16,9 @@ namespace DxLabCoworkingSpace
         private readonly IUnitOfWork _unitOfWork;
         private readonly string _contractAddress;
 
-        public LabBookingCrawlerService(string providerUrl, string contractAddress, string contractAbi, IUnitOfWork unitOfWork)
+        public LabBookingCrawlerService(string providerCrawl, string contractAddress, string contractAbi, IUnitOfWork unitOfWork)
         {
-            _web3 = new Web3(providerUrl);
+            _web3 = new Web3(providerCrawl);
             _contractAddress = contractAddress;
             _contract = _web3.Eth.GetContract(contractAbi, contractAddress);
             _unitOfWork = unitOfWork;

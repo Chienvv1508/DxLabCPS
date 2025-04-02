@@ -76,12 +76,12 @@ var issuer = builder.Configuration.GetSection("Jwt")["Issuer"];
 var audience = builder.Configuration.GetSection("Jwt")["Audience"];
 
 // Đọc các giá trị từ configuration
-var providerUrl = builder.Configuration.GetSection("Network")["ProviderUrl"];
+var providerCrawl = builder.Configuration.GetSection("Network")["providerCrawl"];
 var contractAddress = builder.Configuration.GetSection("ContractAddresses:Sepolia:LabBookingSystem").Value;
 
 // Kiểm tra giá trị null
-if (string.IsNullOrEmpty(providerUrl))
-    throw new Exception("ProviderUrl is missing in appsettings.json");
+if (string.IsNullOrEmpty(providerCrawl))
+    throw new Exception("providerCrawl is missing in appsettings.json");
 if (string.IsNullOrEmpty(contractAddress))
     throw new Exception("ContractAddress is missing in appsettings.json");
 
@@ -140,7 +140,7 @@ builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 //// Đăng ký LabBookingCrawlerService với các giá trị từ configuration
 builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
     new LabBookingCrawlerService(
-        providerUrl,
+        providerCrawl,
         contractAddress,
         contractAbi,
         sp.GetRequiredService<IUnitOfWork>()

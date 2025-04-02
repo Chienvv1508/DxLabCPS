@@ -22,7 +22,7 @@ namespace DxLabCoworkingSpace.Service.Sevices.Blockchain
         public UserTokenService(IConfiguration configuration)
         {
             var privateKey = configuration["PrivateKeyBlockchain:PRIVATE_KEY"];
-            var rpcUrl = configuration["Network:ProviderUrl"];
+            var rpcUrl = configuration["Network:providerCrawl"];
             _labBookingContractAddress = configuration["ContractAddresses:Sepolia:LabBookingSystem"];
             _fptContractAddress = configuration["ContractAddresses:Sepolia:FPTCurrency"];
             _labBookingContractAbi = File.ReadAllText("Contracts/LabBookingSystem.json");

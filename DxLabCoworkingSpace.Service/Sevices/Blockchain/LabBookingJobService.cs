@@ -14,9 +14,7 @@ namespace DxLabCoworkingSpace
     {
         private readonly ILabBookingCrawlerService _crawler;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IConfiguration _configuration; // Thêm IConfiguration
-        private readonly string _deploymentsPath = "Contracts/deployments.json";
-        private readonly string _labBookingSystemAbiPath = "Contracts/LabBookingSystem.json";
+        private readonly IConfiguration _configuration;
 
         public LabBookingJobService(IUnitOfWork unitOfWork, ILabBookingCrawlerService crawler, IConfiguration configuration)
         {
@@ -25,9 +23,16 @@ namespace DxLabCoworkingSpace
             _configuration = configuration;
         }
 
+        // Phương thức này sẽ được gọi khi ứng dụng khởi động để lập lịch job
         public void ScheduleBookingLogJob()
         {
-            RecurringJob.AddOrUpdate("booking-log-job", () => RunBookingLogJobAsync(), "*/15 * * * * *", TimeZoneInfo.FindSystemTimeZoneById("America/New_York"));
+            RecurringJob.AddOrUpdate(
+                "booking-log-job", // ID của job
+                () => RunBookingLogJobAsync(), // Phương thức chạy job
+                "*/5 * * * * *", // Cron expression: mỗi 15 giây
+                TimeZoneInfo.FindSystemTimeZoneById("America/New_York") // Timezone
+            );
+            Console.WriteLine("Booking log job scheduled.");
         }
 
         public async Task RunBookingLogJobAsync()
@@ -36,39 +41,31 @@ namespace DxLabCoworkingSpace
             try
             {
                 var lastBlockRecord = await _unitOfWork.ContractCrawlRepository.Get(c => c.ContractName == "LabBookingSystem");
-
-                // Đọc ContractAddresses từ appsettings.json
                 var contractAddresses = _configuration.GetSection("ContractAddresses:Sepolia").Get<ContractAddresses>();
 
-                var deploymentsJson = File.ReadAllText(_deploymentsPath);
-                var deployments = JsonSerializer.Deserialize<Dictionary<string, Deployment>>(deploymentsJson);
+                int fromBlock = lastBlockRecord != null ? int.Parse(lastBlockRecord.LastBlock) : 0;
 
-                int fromBlock = 0;
+               
+                //if (lastBlockRecord == null)
+                //{
+                //    fromBlock = 0; // Bắt đầu từ block 0
+                //    await _unitOfWork.ContractCrawlRepository.Add(new ContractCrawl
+                //    {
+                //        ContractName = "LabBookingSystem",
+                //        ContractAddress = contractAddresses.LabBookingSystem,
+                //        LastBlock = fromBlock.ToString()
+                //    });
+                //    await _unitOfWork.CommitAsync();
+                //}
+                //else
+                //{
+                //    fromBlock = int.Parse(lastBlockRecord.LastBlock);
+                //}
 
-                if (lastBlockRecord == null)
-                {
-                    fromBlock = (await _crawler.GetDeploymentBlockAsync(deployments["sepolia"].TransactionHash))
-                        ?? deployments["sepolia"].BlockNumber;
-                    await _unitOfWork.ContractCrawlRepository.Add(new ContractCrawl
-                    {
-                        ContractName = "LabBookingSystem",
-                        ContractAddress = contractAddresses.LabBookingSystem,
-                        LastBlock = fromBlock.ToString()
-                    });
-                    await _unitOfWork.CommitAsync();
-                }
-                else if (int.Parse(lastBlockRecord.LastBlock) < deployments["sepolia"].BlockNumber)
-                {
-                    fromBlock = deployments["sepolia"].BlockNumber;
-                    lastBlockRecord.LastBlock = fromBlock.ToString();
-                    await _unitOfWork.CommitAsync();
-                }
-                else
-                {
-                    fromBlock = int.Parse(lastBlockRecord.LastBlock);
-                }
 
                 var latestBlock = await _crawler.GetLatestBlockNumberAsync();
+                Console.WriteLine($"{fromBlock}");
+                Console.WriteLine($"{latestBlock}");
                 if (latestBlock.HasValue)
                 {
                     await _crawler.CrawlBookingEventsAsync(fromBlock, latestBlock.Value);
@@ -91,12 +88,5 @@ namespace DxLabCoworkingSpace
     {
         public string LabBookingSystem { get; set; }
         public string FPTCurrency { get; set; }
-    }
-
-    public class Deployment
-    {
-        public string LabBookingSystem { get; set; }
-        public string TransactionHash { get; set; }
-        public int BlockNumber { get; set; }
     }
 }
