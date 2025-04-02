@@ -21,6 +21,7 @@ namespace DxLabCoworkingSpace
         public virtual DbSet<Blog> Blogs { get; set; } = null!;
         public virtual DbSet<Booking> Bookings { get; set; } = null!;
         public virtual DbSet<BookingDetail> BookingDetails { get; set; } = null!;
+        public virtual DbSet<ContractCrawl> ContractCrawls { get; set; } = null!;
         public virtual DbSet<FacilitiesStatus> FacilitiesStatuses { get; set; } = null!;
         public virtual DbSet<Facility> Facilities { get; set; } = null!;
         public virtual DbSet<Image> Images { get; set; } = null!;
@@ -126,6 +127,19 @@ namespace DxLabCoworkingSpace
                     .HasForeignKey(d => d.SlotId)
                     .HasConstraintName("FK_BookingDetails_Slots")
                     .OnDelete(DeleteBehavior.Restrict); 
+            });
+
+            modelBuilder.Entity<ContractCrawl>(entity =>
+            {
+                entity.HasKey(e => e.ContractCrawlId);
+
+                entity.ToTable("ContractCrawl");
+
+                entity.Property(e => e.ContractAddress).HasMaxLength(50);
+
+                entity.Property(e => e.ContractName).HasMaxLength(50);
+
+                entity.Property(e => e.LastBlock).HasMaxLength(50);
             });
 
             modelBuilder.Entity<FacilitiesStatus>(entity =>

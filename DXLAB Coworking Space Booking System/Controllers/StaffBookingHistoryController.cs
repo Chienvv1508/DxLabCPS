@@ -276,8 +276,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 await _bookDetailService.UpdateStatus(bookingDetailId, 2); // 2 = Completed
 
-                //Console.WriteLine($"Thông báo: BookingDetail {bookingDetailId} đã check-out vào {currentTime}. User: {bookingDetail.Booking.User?.FullName}, Email: {bookingDetail.Booking.User?.Email}");
-
                 return Ok(new ResponseDTO<object>(200, $"Check-out thành công cho BookingDetail {bookingDetailId}!", null));
             }
             catch (Exception ex)

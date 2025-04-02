@@ -24,6 +24,7 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<BookingDetail> _bookingDetailRepository;
         private IGenericRepository<UsingFacility> _usingRepository;
         private IGenericRepository<FacilitiesStatus> _facilityStatusRepository;
+        private IGenericRepository<ContractCrawl> _contractCrawlRepository;
         public UnitOfWork(DxLabSystemContext dbContext) 
         {
             _dbContext = dbContext;
@@ -38,9 +39,9 @@ namespace DxLabCoworkingSpace
         public IGenericRepository<Area> AreaRepository => _areaRepository ?? new GenericRepository<Area>(_dbContext);
         public IGenericRepository<Booking> BookingRepository => _bookingRepository ?? new GenericRepository<Booking>(_dbContext);
         public IGenericRepository<BookingDetail> BookingDetailRepository => _bookingDetailRepository ?? new GenericRepository<BookingDetail>(_dbContext);
-
         public IGenericRepository<UsingFacility> UsingFacilityRepository => _usingRepository ?? new GenericRepository<UsingFacility>(_dbContext);
         public IGenericRepository<FacilitiesStatus> FacilitiesStatusRepository => _facilityStatusRepository ?? new GenericRepository<FacilitiesStatus>(_dbContext);
+        public IGenericRepository<ContractCrawl> ContractCrawlRepository => _contractCrawlRepository ?? new GenericRepository<ContractCrawl>(_dbContext);
         public DbContext Context => _dbContext;
 
         public async Task CommitAsync()
