@@ -93,10 +93,9 @@ namespace DxLabCoworkingSpace
             await _unitOfWork.SlotRepository.Add(entity);
             await _unitOfWork.CommitAsync();
         }
-        async Task<IEnumerable<Slot>> GetAll()
+        public async Task<IEnumerable<Slot>> GetAll()
         {
-            var a = await _unitOfWork.SlotRepository.GetAll();
-            return a;
+            return await _unitOfWork.SlotRepository.GetAll();
         }
         public async Task<Slot> Get(Expression<Func<Slot, bool>> expression)
         {
@@ -126,12 +125,6 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-
-        Task<IEnumerable<Slot>> IGenericeService<Slot>.GetAll()
-        {
-            throw new NotImplementedException();
-        }
-
         Task IGenericeService<Slot>.Add(Slot entity)
         {
             throw new NotImplementedException();

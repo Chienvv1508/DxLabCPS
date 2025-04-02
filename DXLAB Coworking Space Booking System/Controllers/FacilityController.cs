@@ -29,7 +29,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Add Facility From Excel File
         [HttpPost("importexcel")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacilityFromExcel(IFormFile file)
         {
             try
@@ -108,11 +108,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 return BadRequest(new ResponseDTO<object>(400, "Loại thiết bị nhập sai!", null));
                             }
 
-                           
-                            
-                            
-
-
                             facilities.Add(new Facility
                             {
                                 BatchNumber = worksheet.Cells[row, 1].Value?.ToString() ?? "",
@@ -134,9 +129,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                                             }
                                                         }
                              });
-                           
-
-
                         }
                     }
                 }
@@ -199,7 +191,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
         }
 
-        // Get All Account
+        // Get All 
         [HttpGet]
         public async Task<IActionResult> GetAllFacilities()
         {

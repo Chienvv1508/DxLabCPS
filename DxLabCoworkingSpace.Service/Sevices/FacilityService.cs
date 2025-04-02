@@ -63,7 +63,7 @@ namespace DxLabCoworkingSpace
                 var dto = new FacilitiesDTO
                 {
                     BatchNumber = facility.BatchNumber,
-                    FacilityDescription = facility.FacilityTitle,
+                    FacilityTitle = facility.FacilityTitle,
                     Cost = facility.Cost,
                     Size = facility.Size,
                     FacilityCategory = facility.FacilityCategory,

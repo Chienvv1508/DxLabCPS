@@ -15,7 +15,7 @@ namespace DxLabCoworkingSpace
         [Required(ErrorMessage = "BatchNumber không được để trống!")]
         [StringLength(50, ErrorMessage ="BatchNumber không quá 50 ký tự.")]
         public string BatchNumber { get; set; } = null!;
-        public string? FacilityDescription { get; set; }
+        public string? FacilityTitle { get; set; }
 
         [Range(1, double.MaxValue, ErrorMessage = "Cost phải lớn hơn 0")]
         public decimal Cost { get; set; }

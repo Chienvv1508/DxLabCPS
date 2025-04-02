@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost("faci")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFaciToArea(int areaid, int status,FaciAddDTO faciAddDTO)
         {
             try
@@ -96,11 +98,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     ImportDate = faciAddDTO.ImportDate
                 };
 
-                    await _usingFaclytyService.Add(newUsingFacility);
-               
-                
-
-
+                await _usingFaclytyService.Add(newUsingFacility);
                 var reponse1 = new ResponseDTO<object>(400, "Thêm thiết bị thành công", null);
                 return Ok(reponse1);
             }

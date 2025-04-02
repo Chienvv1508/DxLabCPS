@@ -9,7 +9,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/blog")]
     [ApiController]
-    [Authorize(Roles = "Staff")] 
+     
     public class BlogController : ControllerBase
     {
         private readonly IBlogService _blogService;
@@ -22,6 +22,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Create([FromForm] BlogRequestDTO blogRequestDTO)
         {
             if (!ModelState.IsValid)
@@ -152,6 +153,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPut("edit-cancelled/{id}")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> EditCancelledBlog(int id, [FromForm] BlogRequestDTO blogRequestDTO)
         {
             if (!ModelState.IsValid)

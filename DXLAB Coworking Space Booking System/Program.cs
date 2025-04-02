@@ -126,6 +126,8 @@ builder.Services.AddScoped<ISlotService, SlotService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
+builder.Services.AddScoped<IFaciStatusService, FaciStatusService>();
+builder.Services.AddScoped<IUsingFacilytyService, UsingFacilityService>();
 builder.Services.AddScoped<IBlogService, BlogService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IAreaTypeService, AreaTypeService>();
