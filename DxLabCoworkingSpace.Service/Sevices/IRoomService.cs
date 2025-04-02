@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IRoomService : IFaciStatusService<Room>
+    public interface IRoomService : IGenericeService<Room>
     {
         Task<bool> PatchRoomAsync(int id, JsonPatchDocument<Room> patchDoc);
         Task<Room> GetRoomWithAllInClude(Expression<Func<Room, bool>> expression);

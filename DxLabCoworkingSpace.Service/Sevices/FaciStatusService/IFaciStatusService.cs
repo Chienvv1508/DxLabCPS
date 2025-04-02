@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IFaciStatusService : IFaciStatusService<FacilitiesStatus>
+    public interface IFaciStatusService : IGenericeService<FacilitiesStatus>
     {
     }
 }
