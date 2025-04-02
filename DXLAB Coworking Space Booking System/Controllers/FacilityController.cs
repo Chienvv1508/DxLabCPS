@@ -29,7 +29,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Add Facility From Excel File
         [HttpPost("importexcel")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacilityFromExcel(IFormFile file)
         {
             try
@@ -185,6 +185,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 var facility = _mapper.Map<Facility>(facilityDto);
+                facility.FacilitiesStatuses.Add(new FacilitiesStatus { BatchNumber = facility.BatchNumber , ImportDate = facility.ImportDate,
+                Quantity = facility.Quantity, Status = 0
+                
+                });
                 await _facilityService.Add(facility);
                 var resultDto = _mapper.Map<FacilitiesDTO>(facility);
                 return Created("", new ResponseDTO<FacilitiesDTO>(200, "Facility đã được thêm thành công!", resultDto));

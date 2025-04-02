@@ -63,14 +63,14 @@ namespace DxLabCoworkingSpace
                 var dto = new FacilitiesDTO
                 {
                     BatchNumber = facility.BatchNumber,
-                    FacilityDescription = facility.FacilityTitle,
+                    FacilityTitle = facility.FacilityTitle,
                     Cost = facility.Cost,
                     Size = facility.Size,
                     FacilityCategory = facility.FacilityCategory,
                     ExpiredTime = facility.ExpiredTime,
                     Quantity = facility.Quantity,
                     ImportDate = facility.ImportDate,
-                    FacilitiesStatus = facility.FacilitiesStatuses.ToList()
+                    //FacilitiesStatus = facility.FacilitiesStatuses.ToList()
                 };
 
                 var validationContext = new ValidationContext(dto);
@@ -110,7 +110,7 @@ namespace DxLabCoworkingSpace
             {
                 throw new ArgumentException("Ngày hết hạn phải lớn hơn ngày nhập");
             }
-            var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber);
+            var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate);
             if (existingFacility != null)
             {
                 throw new InvalidOperationException("BatchNumber đã tồn tại!");
