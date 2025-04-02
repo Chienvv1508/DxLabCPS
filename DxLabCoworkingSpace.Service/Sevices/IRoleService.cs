@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IRoleSevice : IFaciStatusService<Role>
+    public interface IRoleSevice : IGenericeService<Role>
     {
 
     }

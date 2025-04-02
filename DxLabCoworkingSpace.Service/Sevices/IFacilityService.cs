@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 { 
-    public interface IFacilityService : IFaciStatusService<Facility>
+    public interface IFacilityService : IGenericeService<Facility>
     {
         Task AddFacilityFromExcel(List<Facility> facilities);
     }

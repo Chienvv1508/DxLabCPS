@@ -29,7 +29,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Add Facility From Excel File
         [HttpPost("importexcel")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacilityFromExcel(IFormFile file)
         {
             try
@@ -45,7 +45,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
                 var facilities = new List<Facility>();
-                var facilitySatusList = new List<FacilitiesStatus>();
+              
                 using (var stream = new MemoryStream())
                 {
                     await file.CopyToAsync(stream);
@@ -56,8 +56,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                         for (int row = 2; row <= rowCount; row++)
                         {
-                            string expiredTimeText = worksheet.Cells[row, 4].Text?.Trim() ?? "";
-                            string importDateText = worksheet.Cells[row, 6].Text?.Trim() ?? "";
+                            string expiredTimeText = worksheet.Cells[row, 6].Text?.Trim() ?? "";
+                            string importDateText = worksheet.Cells[row, 8].Text?.Trim() ?? "";
 
                             if (string.IsNullOrEmpty(expiredTimeText))
                             {
@@ -85,49 +85,75 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 return BadRequest(new ResponseDTO<object>(400, "Cost không hợp lệ!", null));
                             }
 
-                            if (!int.TryParse(worksheet.Cells[row, 5].Value?.ToString(), out int quantity))
+                            if (!int.TryParse(worksheet.Cells[row, 7].Value?.ToString(), out int quantity))
                             {
                                 return BadRequest(new ResponseDTO<object>(400, "Quantity không hợp lệ!", null));
                             }
 
+                            if (!int.TryParse(worksheet.Cells[row, 4].Value?.ToString(), out int size))
+                            {
+                                return BadRequest(new ResponseDTO<object>(400, "Size không hợp lệ!", null));
+                            }
+                            //0-ghe 1-ban
+                            if (!int.TryParse(worksheet.Cells[row, 5].Value?.ToString(), out int facilityCategory))
+                            {
+                                return BadRequest(new ResponseDTO<object>(400, "Loại thiết bị không hợp lệ!", null));
+                            }
+                            if(size < 0)
+                            {
+                                return BadRequest(new ResponseDTO<object>(400, "Size phải => 0!", null));
+                            }
+                            if (facilityCategory <0 && facilityCategory > 1)
+                            {
+                                return BadRequest(new ResponseDTO<object>(400, "Loại thiết bị nhập sai!", null));
+                            }
+
+                           
+                            
+                            
+
+
                             facilities.Add(new Facility
                             {
                                 BatchNumber = worksheet.Cells[row, 1].Value?.ToString() ?? "",
-                                FacilityDescription = worksheet.Cells[row, 2].Value?.ToString(),
+                                FacilityTitle = worksheet.Cells[row, 2].Value?.ToString(),
                                 Cost = cost,
                                 ExpiredTime = expired,
                                 Quantity = quantity,
-                                ImportDate = import
-                            });
-                            var faci = new Facility
-                            {
-                                BatchNumber = worksheet.Cells[row, 1].Value?.ToString() ?? "",
-                                FacilityDescription = worksheet.Cells[row, 2].Value?.ToString(),
-                                Cost = cost,
-                                ExpiredTime = expired,
-                                Quantity = quantity,
-                                ImportDate = import
-                            };
-                            var facilityStatus = _mapper.Map<FacilitiesStatus>(faci);
-                            facilitySatusList.Add(facilityStatus);
+                                ImportDate = import,
+                                Size = size,
+                                FacilityCategory = facilityCategory,
+                                FacilitiesStatuses = new List<FacilitiesStatus> 
+                                                        {
+                                                            new FacilitiesStatus
+                                                            {
+                                                                BatchNumber = worksheet.Cells[row, 1].Value?.ToString(),
+                                                                Quantity = quantity,
+                                                                Status = 0,
+                                                                ImportDate = import
+                                                            }
+                                                        }
+                             });
+                           
+
 
                         }
                     }
                 }
 
                 await _facilityService.AddFacilityFromExcel(facilities);
-                foreach(var item in facilitySatusList)
-                {
-                    var existedFaciStatus = await _facilityStatusSerive.Get(x => x.FailityId == item.FailityId && x.Status == 1 && x.BatchNumber == item.BatchNumber);
-                    if(existedFaciStatus == null)
-                    await _facilityStatusSerive.Add(item);
-                    else
-                    {
-                        existedFaciStatus.Quantity += item.Quantity;
-                        await _facilityStatusSerive.Update(item);
+                //foreach(var item in facilitySatusList)
+                //{
+                //    var existedFaciStatus = await _facilityStatusSerive.Get(x => x.FailityId == item.FailityId && x.Status == 1 && x.BatchNumber == item.BatchNumber);
+                //    if(existedFaciStatus == null)
+                //    await _facilityStatusSerive.Add(item);
+                //    else
+                //    {
+                //        existedFaciStatus.Quantity += item.Quantity;
+                //        await _facilityStatusSerive.Update(item);
 
-                    }   
-                }
+                //    }   
+                //}
                 
                 var facilityDtos = _mapper.Map<IEnumerable<FacilitiesDTO>>(facilities);
                 return Created("", new ResponseDTO<IEnumerable<FacilitiesDTO>>(200, $"{facilities.Count} facility đã được thêm thành công!", facilityDtos));

@@ -148,19 +148,20 @@ namespace DxLabCoworkingSpace
 
                 entity.ToTable("FacilitiesStatus");
 
-                entity.Property(e => e.FacilityStatusId).HasMaxLength(50);
+                entity.Property(f => f.FacilityStatusId)
+                 .ValueGeneratedOnAdd();
 
                 entity.Property(e => e.BatchNumber).HasMaxLength(50);
 
                 entity.HasOne(d => d.Facility)
                     .WithMany(p => p.FacilitiesStatuses)
-                    .HasForeignKey(d => new { d.FailityId, d.BatchNumber })
+                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
                     .HasConstraintName("FK_FacilitiesStatus_Facilities");
             });
 
             modelBuilder.Entity<Facility>(entity =>
             {
-                entity.HasKey(e => new { e.FacilityId, e.BatchNumber })
+                entity.HasKey(e => new { e.FacilityId, e.BatchNumber, e.ImportDate})
                     .HasName("PK_Facilities_1");
 
                 entity.Property(e => e.FacilityId).ValueGeneratedOnAdd();
@@ -283,7 +284,7 @@ namespace DxLabCoworkingSpace
 
                 entity.HasOne(d => d.Facility)
                     .WithMany(p => p.UsingFacilities)
-                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber })
+                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber,d.ImportDate })
                     .HasConstraintName("FK_UsingFacilities_Facilities");
             });
 
