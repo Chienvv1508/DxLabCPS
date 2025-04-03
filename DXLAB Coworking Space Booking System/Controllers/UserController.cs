@@ -100,7 +100,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     BigInteger fptBalance = 0;
 
                     // Cấp token bonus nếu là Student (RoleId = 3)
-                    if (user.RoleId == 3)
+                    if (user.RoleId == 3)   
                     {
                         // Kiểm tra WalletAddress trước khi gọi GrantTokenAsync
                         if (string.IsNullOrEmpty(user.WalletAddress))
@@ -114,8 +114,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         fptBalance = await _userTokenService.GetFptBalanceAsync(user.WalletAddress);
                     }
 
+                    // Chỉ cập nhật AccessToken, không cập nhật các trường khác
                     user.AccessToken = token;
-                    user.WalletAddress = userinfo.WalletAddress;
                     await _userService.Update(user);
 
                     var userDto = new UserDTO
