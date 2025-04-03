@@ -25,8 +25,9 @@ namespace DxLabCoworkingSpace
         public async Task Add(UsingFacility entity)
         {
           await _unitOfWork.UsingFacilityRepository.Add(entity);
+         
             
-            await _unitOfWork.CommitAsync();  
+          await _unitOfWork.CommitAsync();  
         }
         public async Task Add(UsingFacility entity, int status)
         {
@@ -69,13 +70,11 @@ namespace DxLabCoworkingSpace
 
         public async Task<IEnumerable<UsingFacility>> GetAllWithInclude(Expression<Func<UsingFacility, bool>> expression, params Expression<Func<UsingFacility, object>>[] includes)
         {
-            // Lấy danh sách chưa lọc
+            
             var data = await _unitOfWork.UsingFacilityRepository.GetAllWithInclude(includes);
 
-            // Chuyển đổi sang IQueryable để có thể áp dụng Where trước khi thực thi
             var query = data.AsQueryable().Where(expression);
 
-            // Thực thi truy vấn
             return query.ToList();
         }
 
@@ -92,6 +91,115 @@ namespace DxLabCoworkingSpace
         public async Task Update(UsingFacility entity)
         {
             await _unitOfWork.UsingFacilityRepository.Update(entity);
+        }
+
+        public async Task Update(RemovedFaciDTO removedFaciDTO)
+        {
+            try
+            {
+                if (removedFaciDTO.Quantity <= 0)
+                {
+                    throw new ArgumentException("Số lượng thiết bị cần thay đổi phải  > 0");
+                }
+                var listFaciInArea = await _unitOfWork.UsingFacilityRepository.GetAll(x => x.FacilityId == removedFaciDTO.FacilityId &&
+                 x.AreaId == removedFaciDTO.AreaId);
+                int quantity = 0;
+                foreach( var faci in listFaciInArea)
+                {
+                    quantity += faci.Quantity;
+                }
+                
+                if (quantity < removedFaciDTO.Quantity || removedFaciDTO.Quantity <= 0)
+                {
+                    throw new ArgumentException("Số lượng cần thay đổi lớn hơn số lượng thiết bị hiện có!");
+                }
+
+                listFaciInArea = listFaciInArea.OrderBy(x => x.ImportDate);
+                List<FacilitiesStatus> newFaciStatusList = new List<FacilitiesStatus>();
+                FacilitiesStatus faciStatus = null;
+                foreach (var item in listFaciInArea)
+                {
+                    if(removedFaciDTO.Quantity == 0)
+                    {
+                        break;
+                    }
+                    
+                    if(item.Quantity <= removedFaciDTO.Quantity)
+                    {
+                         _unitOfWork.UsingFacilityRepository.Delete(item);
+                        //Cập nhập status 1 là đã sử dụng, khi hồi mình chỉ hồi về đã sử dụng
+                        if(faciStatus == null)
+                        {
+                            faciStatus = await _unitOfWork.FacilitiesStatusRepository.Get(x => x.FacilityId == item.FacilityId
+                         && x.BatchNumber == item.BatchNumber && x.ImportDate == item.ImportDate && x.Status == removedFaciDTO.Status);
+                        }
+                       
+                        if (faciStatus != null)
+                        {
+                            faciStatus.Quantity += item.Quantity;
+
+                            await _unitOfWork.FacilitiesStatusRepository.Update(faciStatus);
+                        }
+                        else
+                        {
+                            var newFaciStatus = new FacilitiesStatus()
+                            {
+                                FacilityId = item.FacilityId,
+                                BatchNumber = item.BatchNumber,
+                                ImportDate = item.ImportDate,
+                                Quantity = item.Quantity,
+                                Status = removedFaciDTO.Status
+                            };
+                            newFaciStatusList.Add(newFaciStatus);
+                        }
+                        removedFaciDTO.Quantity -= item.Quantity;
+
+                    }
+                    else
+                    {
+                        item.Quantity -= removedFaciDTO.Quantity;
+                       await _unitOfWork.UsingFacilityRepository.Update(item);
+                        if (faciStatus == null)
+                        {
+                            faciStatus = await _unitOfWork.FacilitiesStatusRepository.Get(x => x.FacilityId == item.FacilityId
+                         && x.BatchNumber == item.BatchNumber && x.ImportDate == item.ImportDate && x.Status == removedFaciDTO.Status);
+                        }
+                        if (faciStatus != null)
+                        {
+                            faciStatus.Quantity +=  removedFaciDTO.Quantity;
+
+                            await _unitOfWork.FacilitiesStatusRepository.Update(faciStatus);
+                        }
+                        else
+                        {
+                            var newFaciStatus = new FacilitiesStatus()
+                            {
+                                FacilityId = item.FacilityId,
+                                BatchNumber = item.BatchNumber,
+                                ImportDate = item.ImportDate,
+                                Quantity = removedFaciDTO.Quantity,
+                                Status = removedFaciDTO.Status
+                            };
+                            newFaciStatusList.Add(newFaciStatus);
+                        }
+
+                        removedFaciDTO.Quantity = 0;
+
+
+                    }
+                }
+
+                foreach(var newStatus in newFaciStatusList)
+                {
+                    await _unitOfWork.FacilitiesStatusRepository.Add(newStatus);
+                }
+                await _unitOfWork.CommitAsync();
+
+
+            }catch(Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }

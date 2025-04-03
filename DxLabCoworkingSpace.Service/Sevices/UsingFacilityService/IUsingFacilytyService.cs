@@ -12,5 +12,6 @@ namespace DxLabCoworkingSpace
 
         public Task<IEnumerable<UsingFacility>> GetAllWithInclude(Expression<Func<UsingFacility, bool>> expression , params Expression<Func<UsingFacility, object>>[] includes);
         public Task Add(UsingFacility entity, int status);
+        Task Update(RemovedFaciDTO removedFaciDTO);
     }
 }

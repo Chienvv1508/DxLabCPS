@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.Data.SqlClient.DataClassification;
 using Microsoft.AspNetCore.Authorization;
 
+
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/facility")]
@@ -177,6 +178,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 var facility = _mapper.Map<Facility>(facilityDto);
+                facility.FacilitiesStatuses.Add(new FacilitiesStatus { BatchNumber = facility.BatchNumber , ImportDate = facility.ImportDate,
+                Quantity = facility.Quantity, Status = 0
+                
+                });
                 await _facilityService.Add(facility);
                 var resultDto = _mapper.Map<FacilitiesDTO>(facility);
                 return Created("", new ResponseDTO<FacilitiesDTO>(200, "Facility đã được thêm thành công!", resultDto));

@@ -1,5 +1,4 @@
-﻿using DxLabCoworkingSpace;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -27,10 +26,10 @@ namespace DxLabCoworkingSpace
             }
 
             var existingBatchNumbers = (await _unitOfWork.FacilityRepository.GetAll())
-                .Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), ImportDate = f.ImportDate })
+                .Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate })
                 .ToHashSet();
 
-            var batchNumbersInFile = facilities.Select(f =>new { BatchNumber = f.BatchNumber.Trim().ToLower(),ImportDate = f.ImportDate }).ToList();
+            var batchNumbersInFile = facilities.Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate }).ToList();
 
             var duplicateBatchNumbersInFile = batchNumbersInFile
                 .GroupBy(b => b)
@@ -70,7 +69,7 @@ namespace DxLabCoworkingSpace
                     ExpiredTime = facility.ExpiredTime,
                     Quantity = facility.Quantity,
                     ImportDate = facility.ImportDate,
-                    FacilitiesStatus = facility.FacilitiesStatuses.ToList()
+                    //FacilitiesStatus = facility.FacilitiesStatuses.ToList()
                 };
 
                 var validationContext = new ValidationContext(dto);
@@ -110,7 +109,7 @@ namespace DxLabCoworkingSpace
             {
                 throw new ArgumentException("Ngày hết hạn phải lớn hơn ngày nhập");
             }
-            var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber);
+            var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate);
             if (existingFacility != null)
             {
                 throw new InvalidOperationException("BatchNumber đã tồn tại!");
