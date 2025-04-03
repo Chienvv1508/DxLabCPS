@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IFaciStatusService<T> where T : class
+    public interface IGenericeService<T> where T : class
     {
         Task<T> Get(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> GetAll();

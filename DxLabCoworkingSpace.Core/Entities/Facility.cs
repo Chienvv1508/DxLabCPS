@@ -13,7 +13,7 @@ namespace DxLabCoworkingSpace
 
         public int FacilityId { get; set; }
         public string BatchNumber { get; set; } = null!;
-        public string? FacilityDescription { get; set; }
+        public string? FacilityTitle { get; set; }
         public decimal Cost { get; set; }
         public DateTime ExpiredTime { get; set; }
         public int Quantity { get; set; }

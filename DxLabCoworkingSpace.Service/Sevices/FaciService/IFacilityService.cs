@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IBookingService : IGenericeService<Booking>
+    public interface IFacilityService : IGenericeService<Facility>
     {
-
+        Task AddFacilityFromExcel(List<Facility> facilities);
     }
 }

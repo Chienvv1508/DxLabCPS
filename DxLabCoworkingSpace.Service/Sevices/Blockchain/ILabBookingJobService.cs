@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IBookingService : IGenericeService<Booking>
+    public interface ILabBookingJobService
     {
-
+        void ScheduleBookingLogJob();
+        Task RunBookingLogJobAsync();
     }
 }

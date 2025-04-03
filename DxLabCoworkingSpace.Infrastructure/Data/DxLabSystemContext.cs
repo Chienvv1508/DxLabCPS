@@ -21,6 +21,7 @@ namespace DxLabCoworkingSpace
         public virtual DbSet<Blog> Blogs { get; set; } = null!;
         public virtual DbSet<Booking> Bookings { get; set; } = null!;
         public virtual DbSet<BookingDetail> BookingDetails { get; set; } = null!;
+        public virtual DbSet<ContractCrawl> ContractCrawls { get; set; } = null!;
         public virtual DbSet<FacilitiesStatus> FacilitiesStatuses { get; set; } = null!;
         public virtual DbSet<Facility> Facilities { get; set; } = null!;
         public virtual DbSet<Image> Images { get; set; } = null!;
@@ -128,25 +129,39 @@ namespace DxLabCoworkingSpace
                     .OnDelete(DeleteBehavior.Restrict); 
             });
 
+            modelBuilder.Entity<ContractCrawl>(entity =>
+            {
+                entity.HasKey(e => e.ContractCrawlId);
+
+                entity.ToTable("ContractCrawl");
+
+                entity.Property(e => e.ContractAddress).HasMaxLength(50);
+
+                entity.Property(e => e.ContractName).HasMaxLength(50);
+
+                entity.Property(e => e.LastBlock).HasMaxLength(50);
+            });
+
             modelBuilder.Entity<FacilitiesStatus>(entity =>
             {
                 entity.HasKey(e => e.FacilityStatusId);
 
                 entity.ToTable("FacilitiesStatus");
 
-                entity.Property(e => e.FacilityStatusId).HasMaxLength(50);
+                entity.Property(f => f.FacilityStatusId)
+                 .ValueGeneratedOnAdd();
 
                 entity.Property(e => e.BatchNumber).HasMaxLength(50);
 
                 entity.HasOne(d => d.Facility)
                     .WithMany(p => p.FacilitiesStatuses)
-                    .HasForeignKey(d => new { d.FailityId, d.BatchNumber })
+                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
                     .HasConstraintName("FK_FacilitiesStatus_Facilities");
             });
 
             modelBuilder.Entity<Facility>(entity =>
             {
-                entity.HasKey(e => new { e.FacilityId, e.BatchNumber })
+                entity.HasKey(e => new { e.FacilityId, e.BatchNumber, e.ImportDate})
                     .HasName("PK_Facilities_1");
 
                 entity.Property(e => e.FacilityId).ValueGeneratedOnAdd();
@@ -269,7 +284,7 @@ namespace DxLabCoworkingSpace
 
                 entity.HasOne(d => d.Facility)
                     .WithMany(p => p.UsingFacilities)
-                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber })
+                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber,d.ImportDate })
                     .HasConstraintName("FK_UsingFacilities_Facilities");
             });
 

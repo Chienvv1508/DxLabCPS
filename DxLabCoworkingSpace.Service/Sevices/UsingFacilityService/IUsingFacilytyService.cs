@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IUsingFacilytyService:IFaciStatusService<UsingFacility>
+    public interface IUsingFacilytyService:IGenericeService<UsingFacility>
     {
 
         public Task<IEnumerable<UsingFacility>> GetAllWithInclude(Expression<Func<UsingFacility, bool>> expression , params Expression<Func<UsingFacility, object>>[] includes);
-        
+        public Task Add(UsingFacility entity, int status);
+        Task Update(RemovedFaciDTO removedFaciDTO);
     }
 }

@@ -13,10 +13,12 @@ namespace DxLabCoworkingSpace
         public int? FacilityId { get; set; }
         [Required(ErrorMessage ="Bạn bắt buộc nhập lô hàng")]
         public string? BatchNumber { get; set; }
+        [Required(ErrorMessage = "Bắt buộc nhập ngày nhập")]
+        public DateTime ImportDate { get; set; }
         [Required(ErrorMessage ="Bạn chưa nhập số lượng")]
         public int Quantity { get; set; }
-        public int FaciCategory { get; set; }
-        public int? AreaId { get; set; }
+        
+        
 
     }
 }

@@ -142,7 +142,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                                     else
                                         //bookingDetail.CheckoutTime = null;
 
-                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value).AddMinutes(-10);
+                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
                                     var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
                                     var areaBook = areaBooks.FirstOrDefault(x => x.Positions.FirstOrDefault(x => x.PositionId == id) != null);
                                     bookingDetail.Price = areaBook.AreaType.Price;
@@ -171,7 +171,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                                     else
                                         //bookingDetail.CheckoutTime = null;
 
-                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value).AddMinutes(-10);
+                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
                                     var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType);
                                     var areaBook = areaBooks.FirstOrDefault(x => x.AreaId == id);
                                     bookingDetail.Price = areaBook.AreaType.Price;

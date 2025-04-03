@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Numerics;
 using System.Text;
+using DxLabCoworkingSpace.Service.Sevices.Blockchain;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -16,11 +18,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     {
         private readonly IConfiguration _config;
         private IUserService _userService;
+        private IUserTokenService _userTokenService;
 
-        public UserController(IConfiguration config, IUserService userService)
+        public UserController(IConfiguration config, IUserService userService, IUserTokenService userTokenService)
         {
             _config = config;
             _userService = userService;
+            _userTokenService = userTokenService;
         }
 
         // Generate Token
@@ -53,7 +57,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(60),
+                expires: DateTime.UtcNow.AddMinutes(120),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -114,11 +118,36 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                     await _userService.Add(newUser);
 
-                    // Sử dụng GetWithInclude để load Role cho user mới
                     var savedUser = await _userService.GetWithInclude(x => x.UserId == newUser.UserId, u => u.Role);
                     if (savedUser == null || savedUser.Role == null)
                     {
                         return StatusCode(500, new ResponseDTO<object>(500, "Lỗi: Không thể load Role cho user mới!", null));
+                    }
+
+                    Console.WriteLine($"New user created: {savedUser.Email}, RoleId: {savedUser.RoleId}");
+                    string registerTransactionHash = null;
+                    string grantTransactionHash = null;
+                    BigInteger fptBalance = 0;
+
+                    if (savedUser.RoleId == 3) // Chỉ cấp token cho Student
+                    {
+                        var isStaff = false;
+                        Console.WriteLine("Registering user on blockchain...");
+                        registerTransactionHash = await _userTokenService.RegisterUserAsync(
+                            savedUser.WalletAddress,
+                            savedUser.Email,
+                            isStaff
+                        );
+
+                        // Cấp 50 FPT cho Student
+                        BigInteger bonusAmount = new BigInteger(50) * BigInteger.Pow(10, 18); // 50 FPT với 18 decimals
+                        Console.WriteLine("Granting token to student...");
+                        grantTransactionHash = await _userTokenService.GrantTokenAsync(
+                            savedUser.WalletAddress,
+                            bonusAmount
+                        );
+
+                        fptBalance = await _userTokenService.GetFptBalanceAsync(savedUser.WalletAddress);
                     }
 
                     var token = GenerateJwtToken(savedUser);
@@ -135,17 +164,25 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         Status = savedUser.Status
                     };
 
-                    var responseData = new { Token = token, User = userDto };
-                    return Ok(new ResponseDTO<object>(201, "Người dùng mới (Student) đã được tạo và xác thực thành công!", responseData));
+                    var responseData = new
+                    {
+                        Token = token,
+                        User = userDto,
+                        RegisterTransactionHash = registerTransactionHash ?? "N/A",
+                        GrantTransactionHash = grantTransactionHash ?? "N/A",
+                        FptBalance = fptBalance.ToString()
+                    };
+                    return Ok(new ResponseDTO<object>(201, "Người dùng mới (Student) đã được tạo, xác thực và cấp token thành công!", responseData));
                 }
                 else
                 {
-                    // Email thường không tồn tại trong hệ thống
+                    Console.WriteLine($"Email {userinfo.Email} does not end with @fpt.edu.vn");
                     return Unauthorized(new ResponseDTO<object>(401, "Email không tồn tại trong hệ thống!", null));
                 }
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error: {ex.Message}");
                 return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi xử lý người dùng: {ex.Message}", null));
             }
         }

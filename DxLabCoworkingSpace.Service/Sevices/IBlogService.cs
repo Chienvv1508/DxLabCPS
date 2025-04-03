@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IBlogService : IFaciStatusService<Blog>
+    public interface IBlogService : IGenericeService<Blog>
     {
         Task EditCancelledBlog(int id, Blog updatedBlog);
         Task ApproveBlog(int id);

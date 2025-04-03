@@ -1,5 +1,4 @@
-﻿using DxLabCoworkingSpace;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -27,10 +26,10 @@ namespace DxLabCoworkingSpace
             }
 
             var existingBatchNumbers = (await _unitOfWork.FacilityRepository.GetAll())
-                .Select(f => f.BatchNumber.Trim().ToLower())
+                .Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate })
                 .ToHashSet();
 
-            var batchNumbersInFile = facilities.Select(f => f.BatchNumber.Trim().ToLower()).ToList();
+            var batchNumbersInFile = facilities.Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate }).ToList();
 
             var duplicateBatchNumbersInFile = batchNumbersInFile
                 .GroupBy(b => b)
@@ -40,7 +39,7 @@ namespace DxLabCoworkingSpace
 
             if (duplicateBatchNumbersInFile.Any())
             {
-                throw new InvalidOperationException("BatchNumber bị trùng trong file!");
+                throw new InvalidOperationException("BatchNumber, ImportDate bị trùng trong file!");
             }
 
             var duplicateBatchNumbersInDB = batchNumbersInFile
@@ -49,7 +48,7 @@ namespace DxLabCoworkingSpace
 
             if (duplicateBatchNumbersInDB.Any())
             {
-                throw new InvalidOperationException("BatchNumber đã tồn tại trong database!");
+                throw new InvalidOperationException("BatchNumber, ImportDate đã tồn tại trong database!");
             }
 
             var validationErrors = new List<string>();
@@ -63,11 +62,14 @@ namespace DxLabCoworkingSpace
                 var dto = new FacilitiesDTO
                 {
                     BatchNumber = facility.BatchNumber,
-                    FacilityDescription = facility.FacilityDescription,
+                    FacilityTitle = facility.FacilityTitle,
                     Cost = facility.Cost,
+                    Size = facility.Size,
+                    FacilityCategory = facility.FacilityCategory,
                     ExpiredTime = facility.ExpiredTime,
                     Quantity = facility.Quantity,
-                    ImportDate = facility.ImportDate
+                    ImportDate = facility.ImportDate,
+                    //FacilitiesStatus = facility.FacilitiesStatuses.ToList()
                 };
 
                 var validationContext = new ValidationContext(dto);
@@ -107,7 +109,7 @@ namespace DxLabCoworkingSpace
             {
                 throw new ArgumentException("Ngày hết hạn phải lớn hơn ngày nhập");
             }
-            var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber);
+            var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate);
             if (existingFacility != null)
             {
                 throw new InvalidOperationException("BatchNumber đã tồn tại!");
@@ -133,7 +135,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task<Facility> IFaciStatusService<Facility>.GetById(int id)
+        async Task<Facility> GetById(int id)
         {
             return await _unitOfWork.FacilityRepository.GetById(id);
         }
@@ -149,10 +151,19 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-        async Task IFaciStatusService<Facility>.Delete(int id)
+        async Task Delete(int id)
         {
             throw new NotImplementedException();
         }
 
+        Task<Facility> IGenericeService<Facility>.GetById(int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task IGenericeService<Facility>.Delete(int id)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
