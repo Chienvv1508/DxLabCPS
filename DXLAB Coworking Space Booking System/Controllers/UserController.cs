@@ -143,10 +143,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     var newUser = new User
                     {
                         Email = userinfo.Email,
+                        WalletAddress = userinfo.WalletAddress,
                         FullName = userinfo.FullName,
                         RoleId = 3, // RoleId = 3 cho Student
-                        Status = true,
-                        WalletAddress = userinfo.WalletAddress
+                        Status = true
                     };
 
                     await _userService.Add(newUser);

@@ -92,7 +92,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year && date.Month < DateTime.Now.Month))
+                if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year))
                 {
                     var sums = await _sumaryExpenseService.GetAll(x => x.SumaryDate.Year == date.Year);
                     return Ok(new ResponseDTO<object>(200, "Lấy dữ liệu thành công", sums));
