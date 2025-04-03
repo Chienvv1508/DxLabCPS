@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace.Service.Sevices.Blockchain
@@ -22,11 +23,28 @@ namespace DxLabCoworkingSpace.Service.Sevices.Blockchain
         public UserTokenService(IConfiguration configuration)
         {
             var privateKey = configuration["PrivateKeyBlockchain:PRIVATE_KEY"];
-            var rpcUrl = configuration["Network:providerCrawl"];
+            var rpcUrl = configuration["Network:providerCrawl"] ;
             _labBookingContractAddress = configuration["ContractAddresses:Sepolia:LabBookingSystem"];
             _fptContractAddress = configuration["ContractAddresses:Sepolia:FPTCurrency"];
-            _labBookingContractAbi = File.ReadAllText("Contracts/LabBookingSystem.json");
-            _fptContractAbi = File.ReadAllText("Contracts/FPTCurrency.json");
+
+            string labBookingPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "LabBookingSystem.json");
+            string fptPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "FPTCurrency.json");
+
+            if (!File.Exists(labBookingPath))
+                throw new FileNotFoundException($"LabBookingSystem ABI file not found at {labBookingPath}");
+            if (!File.Exists(fptPath))
+                throw new FileNotFoundException($"FPTCurrency ABI file not found at {fptPath}");
+
+            // Đọc và trích xuất ABI từ file
+            var labBookingJson = File.ReadAllText(labBookingPath);
+            var fptJson = File.ReadAllText(fptPath);
+
+            // Parse JSON và lấy phần abi
+            using var labBookingDoc = JsonDocument.Parse(labBookingJson);
+            using var fptDoc = JsonDocument.Parse(fptJson);
+
+            _labBookingContractAbi = labBookingDoc.RootElement.GetProperty("abi").GetRawText();
+            _fptContractAbi = fptDoc.RootElement.GetProperty("abi").GetRawText();
 
             var account = new Account(privateKey);
             _web3 = new Web3(account, rpcUrl);
