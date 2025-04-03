@@ -136,8 +136,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                        "areaTypeName",
                         "areaDescription",
                         "price",
-                        "images",
-                        "isDeleted"
+                        "images"
+                        
             };
                 var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
                 if(areaTypeNameOp != null)
