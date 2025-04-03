@@ -52,6 +52,7 @@ namespace DxLabCoworkingSpace
         public async Task Update(AreaType entity)
         {
             await _unitOfWork.AreaTypeRepository.Update(entity);
+            await _unitOfWork.CommitAsync();
         }
         public async Task<object> GetAreaTypeForAddRoom()
         {
