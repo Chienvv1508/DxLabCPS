@@ -84,6 +84,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                     var token = GenerateJwtToken(user);
                     user.AccessToken = token;
+                    user.WalletAddress = userinfo.WalletAddress;
                     await _userService.Update(user);
 
                     var userDto = new UserDTO
