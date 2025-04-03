@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
-
+using Microsoft.AspNetCore.Authorization;   
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,12 +29,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         [HttpPost("faci")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AddFaciToArea(int areaid, int status,FaciAddDTO faciAddDTO)
+        public async Task<IActionResult> AddFaciToArea(int areaid, int status, FaciAddDTO faciAddDTO)
         {
             try
             {
-                
-                var areaInRoom = await _areaService.GetWithInclude(x => x.AreaId == areaid,x => x.AreaType);
+
+                var areaInRoom = await _areaService.GetWithInclude(x => x.AreaId == areaid, x => x.AreaType);
                 if (areaInRoom == null)
                 {
                     var reponse = new ResponseDTO<object>(404, "Không tìm thấy khu vực. Vui lòng nhập lại khu vực", null);
@@ -48,9 +48,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
                 var usingFacilities = await _usingFaclytyService.GetAllWithInclude(x => x.AreaId == areaid, x => x.Facility);
                 int numberOfPosition = 0;
-                foreach(var faci in usingFacilities)
+                foreach (var faci in usingFacilities)
                 {
-                    if(faci.Facility.FacilityCategory == 1)
+                    if (faci.Facility.FacilityCategory == 1)
                     {
                         numberOfPosition += faci.Facility.Size;
                     }
@@ -63,7 +63,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     var reponse = new ResponseDTO<object>(400, "Thông tin thiết bị nhập sai. Vui lòng nhập lại", null);
                     return BadRequest(reponse);
                 }
-                if(fullInfoOfFaci.FacilityCategory == 1)
+                if (fullInfoOfFaci.FacilityCategory == 1)
                 {
                     if (areaInRoom.AreaType.Size - numberOfPosition < faciAddDTO.Quantity)
                     {
@@ -77,13 +77,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var faciInStatus = await _facilityStatusService.Get(x => x.FacilityId == faciAddDTO.FacilityId && x.BatchNumber == faciAddDTO.BatchNumber
                 && x.ImportDate == faciAddDTO.ImportDate && x.Status == status);
 
-                if(faciInStatus == null)
+                if (faciInStatus == null)
                 {
                     string tt = status == 0 ? "Mới" : "Đã sử dụng";
                     var reponse = new ResponseDTO<object>(400, $"Với trạng thái {tt} hiện không có thiết bị này", null);
                     return BadRequest(reponse);
                 }
-                if(faciInStatus.Quantity < faciAddDTO.Quantity)
+                if (faciInStatus.Quantity < faciAddDTO.Quantity)
                 {
                     string tt = status == 0 ? "Mới" : "Đã sử dụng";
                     var reponse = new ResponseDTO<object>(400, $"Với trạng thái {tt} hiện không có đủ {faciAddDTO.Quantity} thiết bị", null);
@@ -100,20 +100,20 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     ImportDate = faciAddDTO.ImportDate
                 };
 
-                    await _usingFaclytyService.Add(newUsingFacility,status);
-               
-                
+                await _usingFaclytyService.Add(newUsingFacility, status);
+
+
 
 
                 var reponse1 = new ResponseDTO<object>(200, "Thêm thiết bị thành công", null);
                 return Ok(reponse1);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 var reponse = new ResponseDTO<object>(400, "Thêm thiết bị lỗi", null);
                 return BadRequest(reponse);
             }
-            
+
         }
         [HttpGet("faciall")]
         public async Task<IActionResult> GetAllFaci()
@@ -122,20 +122,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var faciStatusList = await _facilityStatusService.GetAllWithInclude(x => ((x.Status == 0 || x.Status == 1) && x.Quantity >= 0), x => x.Facility);
                 var faciDTOs = _mapper.Map<List<FaciStatusDTO>>(faciStatusList);
-                
+
                 var response = new ResponseDTO<object>(200, "Lấy thành công", faciDTOs);
                 return Ok(response);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 var response = new ResponseDTO<object>(500, ex.Message + ex.StackTrace, null);
                 return StatusCode(500, response);
-                    
+
             }
-            
+
         }
 
         [HttpPost("faciremoving")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RemoveFaciFromArea([FromBody] RemovedFaciDTO removedFaciDTO)
         {
             try

@@ -238,7 +238,5 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
         }
 
-        //Update Facility
-
     }
 }
