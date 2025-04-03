@@ -1,5 +1,4 @@
-﻿using DxLabCoworkingSpace;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -27,10 +26,10 @@ namespace DxLabCoworkingSpace
             }
 
             var existingBatchNumbers = (await _unitOfWork.FacilityRepository.GetAll())
-                .Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), ImportDate = f.ImportDate })
+                .Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate })
                 .ToHashSet();
 
-            var batchNumbersInFile = facilities.Select(f =>new { BatchNumber = f.BatchNumber.Trim().ToLower(),ImportDate = f.ImportDate }).ToList();
+            var batchNumbersInFile = facilities.Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate }).ToList();
 
             var duplicateBatchNumbersInFile = batchNumbersInFile
                 .GroupBy(b => b)

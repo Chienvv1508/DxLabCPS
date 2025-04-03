@@ -78,6 +78,9 @@ namespace DxLabCoworkingSpace
             }
         }
 
-       
+        public void Delete(T entity)
+        {
+            _entitySet.Remove(entity);
+        }
     }
 }

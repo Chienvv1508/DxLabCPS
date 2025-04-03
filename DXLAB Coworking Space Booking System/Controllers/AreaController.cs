@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
-    [Route("api/[area]")]
+    [Route("api/area")]
     [ApiController]
     public class AreaController : ControllerBase
     {
@@ -14,14 +15,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         private readonly IFaciStatusService _facilityStatusService;
         private readonly IMapper _mapper;
         private readonly IFacilityService _facilityService;
+        private readonly IRoomService _roomService;
 
-        public AreaController(IAreaService areaService, IUsingFacilytyService usingFacilytyService, IFaciStatusService faciStatusService, IMapper mapper, IFacilityService facilityService)
+        public AreaController(IAreaService areaService, IUsingFacilytyService usingFacilytyService, IFaciStatusService faciStatusService, IMapper mapper, IFacilityService facilityService, IRoomService roomService)
         {
             _usingFaclytyService = usingFacilytyService;
             _facilityStatusService = faciStatusService;
             _areaService = areaService;
             _mapper = mapper;
             _facilityService = facilityService;
+            _roomService = roomService;
         }
 
         [HttpPost("faci")]
@@ -111,7 +114,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             
         }
-        [HttpGet("getFaci")]
+        [HttpGet("faciall")]
         public async Task<IActionResult> GetAllFaci()
         {
             try
@@ -130,5 +133,60 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             
         }
+
+        [HttpPost("faciremoving")]
+        public async Task<IActionResult> RemoveFaciFromArea([FromBody] RemovedFaciDTO removedFaciDTO)
+        {
+            try
+            {
+                var existedFaciInArea = await _usingFaclytyService.Get(x => x.FacilityId == removedFaciDTO.FacilityId &&
+                 x.AreaId == removedFaciDTO.AreaId
+                 );
+                if (existedFaciInArea == null)
+                {
+                    var response = new ResponseDTO<object>(400, "Không thấy thiết bị hoặc phòng tương ứng. Vui lòng nhập lại", null);
+                    return BadRequest(response);
+                }
+
+                await _usingFaclytyService.Update(removedFaciDTO);
+
+                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công", null));
+
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi database", null));
+            }
+           
+        }
+
+        [HttpGet("areainroom")]
+        public async Task<IActionResult> GetAreasInRoom(int roomId)
+        {
+            var room = await _roomService.Get(x => x.RoomId == roomId);
+            if(room == null)
+            {
+                var response = new ResponseDTO<object>(400, "Bạn nhập phòng không tồn tại", null);
+                return BadRequest(response);
+
+            }
+            List<AreaGetDTO> areaDTOs = _mapper.Map<List<AreaGetDTO>>(room.Areas);
+            var response1 = new ResponseDTO<object>(200, "Danh sách phòng", areaDTOs);
+            return Ok(response1);
+        }
+
+        [HttpGet("faciinare")]
+        public async Task<IActionResult> GetAllFaciInArea(int areaid)
+        {
+            var faciInArea = await _usingFaclytyService.GetAllWithInclude(x => x.AreaId == areaid, x =>x.Facility);
+            if(faciInArea == null)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Không có thiết bị nào trong khu vực", null));
+            }
+            List<FaciGetInAreaDTO> result = _mapper.Map<List<FaciGetInAreaDTO>>(faciInArea);
+                
+            return Ok(new ResponseDTO<object>(200, "Danh sách thiết bị: ", result));
+        }
+      
     }
 }

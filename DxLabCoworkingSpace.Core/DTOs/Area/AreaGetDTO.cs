@@ -5,9 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
-{ 
-    public interface IFacilityService : IGenericeService<Facility>
+{
+    public class AreaGetDTO
     {
-        Task AddFacilityFromExcel(List<Facility> facilities);
+        public int AreaId { get; set; }
+        public string AreaName { get; set; }
+
+       
     }
 }

@@ -92,5 +92,114 @@ namespace DxLabCoworkingSpace
         {
             await _unitOfWork.UsingFacilityRepository.Update(entity);
         }
+
+        public async Task Update(RemovedFaciDTO removedFaciDTO)
+        {
+            try
+            {
+                if (removedFaciDTO.Quantity <= 0)
+                {
+                    throw new ArgumentException("Số lượng thiết bị cần thay đổi phải  > 0");
+                }
+                var listFaciInArea = await _unitOfWork.UsingFacilityRepository.GetAll(x => x.FacilityId == removedFaciDTO.FacilityId &&
+                 x.AreaId == removedFaciDTO.AreaId);
+                int quantity = 0;
+                foreach( var faci in listFaciInArea)
+                {
+                    quantity += faci.Quantity;
+                }
+                
+                if (quantity < removedFaciDTO.Quantity || removedFaciDTO.Quantity <= 0)
+                {
+                    throw new ArgumentException("Số lượng cần thay đổi lớn hơn số lượng thiết bị hiện có!");
+                }
+
+                listFaciInArea = listFaciInArea.OrderBy(x => x.ImportDate);
+                List<FacilitiesStatus> newFaciStatusList = new List<FacilitiesStatus>();
+                FacilitiesStatus faciStatus = null;
+                foreach (var item in listFaciInArea)
+                {
+                    if(removedFaciDTO.Quantity == 0)
+                    {
+                        break;
+                    }
+                    
+                    if(item.Quantity <= removedFaciDTO.Quantity)
+                    {
+                         _unitOfWork.UsingFacilityRepository.Delete(item);
+                        //Cập nhập status 1 là đã sử dụng, khi hồi mình chỉ hồi về đã sử dụng
+                        if(faciStatus == null)
+                        {
+                            faciStatus = await _unitOfWork.FacilitiesStatusRepository.Get(x => x.FacilityId == item.FacilityId
+                         && x.BatchNumber == item.BatchNumber && x.ImportDate == item.ImportDate && x.Status == 1);
+                        }
+                       
+                        if (faciStatus != null)
+                        {
+                            faciStatus.Quantity += item.Quantity;
+
+                            await _unitOfWork.FacilitiesStatusRepository.Update(faciStatus);
+                        }
+                        else
+                        {
+                            var newFaciStatus = new FacilitiesStatus()
+                            {
+                                FacilityId = item.FacilityId,
+                                BatchNumber = item.BatchNumber,
+                                ImportDate = item.ImportDate,
+                                Quantity = item.Quantity,
+                                Status = 1
+                            };
+                            newFaciStatusList.Add(newFaciStatus);
+                        }
+                        removedFaciDTO.Quantity -= item.Quantity;
+
+                    }
+                    else
+                    {
+                        item.Quantity -= removedFaciDTO.Quantity;
+                       await _unitOfWork.UsingFacilityRepository.Update(item);
+                        if (faciStatus == null)
+                        {
+                            faciStatus = await _unitOfWork.FacilitiesStatusRepository.Get(x => x.FacilityId == item.FacilityId
+                         && x.BatchNumber == item.BatchNumber && x.ImportDate == item.ImportDate && x.Status == 1);
+                        }
+                        if (faciStatus != null)
+                        {
+                            faciStatus.Quantity +=  removedFaciDTO.Quantity;
+
+                            await _unitOfWork.FacilitiesStatusRepository.Update(faciStatus);
+                        }
+                        else
+                        {
+                            var newFaciStatus = new FacilitiesStatus()
+                            {
+                                FacilityId = item.FacilityId,
+                                BatchNumber = item.BatchNumber,
+                                ImportDate = item.ImportDate,
+                                Quantity = removedFaciDTO.Quantity,
+                                Status = 1
+                            };
+                            newFaciStatusList.Add(newFaciStatus);
+                        }
+
+                        removedFaciDTO.Quantity = 0;
+
+
+                    }
+                }
+
+                foreach(var newStatus in newFaciStatusList)
+                {
+                    await _unitOfWork.FacilitiesStatusRepository.Add(newStatus);
+                }
+                await _unitOfWork.CommitAsync();
+
+
+            }catch(Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
