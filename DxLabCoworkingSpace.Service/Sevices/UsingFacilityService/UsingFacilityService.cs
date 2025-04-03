@@ -131,7 +131,7 @@ namespace DxLabCoworkingSpace
                         if(faciStatus == null)
                         {
                             faciStatus = await _unitOfWork.FacilitiesStatusRepository.Get(x => x.FacilityId == item.FacilityId
-                         && x.BatchNumber == item.BatchNumber && x.ImportDate == item.ImportDate && x.Status == 1);
+                         && x.BatchNumber == item.BatchNumber && x.ImportDate == item.ImportDate && x.Status == removedFaciDTO.Status);
                         }
                        
                         if (faciStatus != null)
@@ -148,7 +148,7 @@ namespace DxLabCoworkingSpace
                                 BatchNumber = item.BatchNumber,
                                 ImportDate = item.ImportDate,
                                 Quantity = item.Quantity,
-                                Status = 1
+                                Status = removedFaciDTO.Status
                             };
                             newFaciStatusList.Add(newFaciStatus);
                         }
@@ -162,7 +162,7 @@ namespace DxLabCoworkingSpace
                         if (faciStatus == null)
                         {
                             faciStatus = await _unitOfWork.FacilitiesStatusRepository.Get(x => x.FacilityId == item.FacilityId
-                         && x.BatchNumber == item.BatchNumber && x.ImportDate == item.ImportDate && x.Status == 1);
+                         && x.BatchNumber == item.BatchNumber && x.ImportDate == item.ImportDate && x.Status == removedFaciDTO.Status);
                         }
                         if (faciStatus != null)
                         {
@@ -178,7 +178,7 @@ namespace DxLabCoworkingSpace
                                 BatchNumber = item.BatchNumber,
                                 ImportDate = item.ImportDate,
                                 Quantity = removedFaciDTO.Quantity,
-                                Status = 1
+                                Status = removedFaciDTO.Status
                             };
                             newFaciStatusList.Add(newFaciStatus);
                         }
