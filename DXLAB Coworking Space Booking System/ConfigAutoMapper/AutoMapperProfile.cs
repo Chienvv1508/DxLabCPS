@@ -63,7 +63,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<Room, RoomDTO>()
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
                     src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null))
-                .ForMember(dest => dest.Area_DTO, opt => opt.MapFrom(x => x.Areas != null ? x.Areas.Select(a => new AreaDTO { AreaName = a.AreaName, AreaTypeId = a.AreaTypeId, AreaTypeName = a.AreaType.AreaTypeName }) : null));
+                .ForMember(dest => dest.Area_DTO, opt => opt.MapFrom(x => x.Areas != null ? x.Areas.Select(a => new AreaDTO { AreaName = a.AreaName, AreaTypeId = a.AreaTypeId, AreaTypeName = a.AreaType != null? a.AreaType.AreaTypeName: null }) : null));
 
             CreateMap<AreaTypeDTO, AreaType>()
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
