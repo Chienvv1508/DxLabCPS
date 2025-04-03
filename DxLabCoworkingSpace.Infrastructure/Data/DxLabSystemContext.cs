@@ -32,6 +32,7 @@ namespace DxLabCoworkingSpace
         public virtual DbSet<Slot> Slots { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
         public virtual DbSet<UsingFacility> UsingFacilities { get; set; } = null!;
+        public virtual DbSet<SumaryExpense> SumaryExpenses { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

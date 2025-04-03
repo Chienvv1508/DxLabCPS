@@ -133,7 +133,7 @@ namespace DxLabCoworkingSpace
 
         public async Task<IEnumerable<Facility>> GetAll(Expression<Func<Facility, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.FacilityRepository.GetAll(expression);
         }
         async Task<Facility> GetById(int id)
         {

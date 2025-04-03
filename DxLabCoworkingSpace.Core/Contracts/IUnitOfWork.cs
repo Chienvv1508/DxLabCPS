@@ -23,6 +23,7 @@ namespace DxLabCoworkingSpace
         IGenericRepository<BookingDetail> BookingDetailRepository { get; }
         IGenericRepository<UsingFacility> UsingFacilityRepository { get; }
         IGenericRepository<FacilitiesStatus> FacilitiesStatusRepository { get; }
+        IGenericRepository<SumaryExpense> SumaryExpenseRepository { get; }
 
         DbContext Context { get; }
         Task CommitAsync();

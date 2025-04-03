@@ -1,4 +1,5 @@
 using DXLAB_Coworking_Space_Booking_System;
+using DxLabCoworkingSpac;
 using DxLabCoworkingSpace;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -110,6 +111,8 @@ builder.Services.AddScoped<IBookingDetailService, BookingDetailService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 builder.Services.AddScoped<IUsingFacilytyService, UsingFacilityService>();
 builder.Services.AddScoped<IFaciStatusService, FaciStatusService>();
+builder.Services.AddScoped<ISumaryExpenseService, SumaryExpenseService>();
+
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 
