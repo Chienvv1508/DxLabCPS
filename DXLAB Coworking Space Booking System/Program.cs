@@ -1,4 +1,5 @@
 using DXLAB_Coworking_Space_Booking_System;
+using DxLabCoworkingSpac;
 using DxLabCoworkingSpace;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -137,6 +138,10 @@ builder.Services.AddScoped<IAreaService, AreaService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IBookingDetailService, BookingDetailService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<IUsingFacilytyService, UsingFacilityService>();
+builder.Services.AddScoped<IFaciStatusService, FaciStatusService>();
+builder.Services.AddScoped<ISumaryExpenseService, SumaryExpenseService>();
+
 
 //// Đăng ký LabBookingCrawlerService với các giá trị từ configuration
 builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
