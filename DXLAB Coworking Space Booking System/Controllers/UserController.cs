@@ -86,9 +86,36 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         return StatusCode(500, new ResponseDTO<object>(500, "Lỗi: Người dùng chưa được gán Role!", null));
                     }
 
+                    Console.WriteLine($"User already exists: {user.Email}, RoleId: {user.RoleId}");
                     var token = GenerateJwtToken(user);
+
+                    // Cập nhật WalletAddress nếu nó là null
+                    if (string.IsNullOrEmpty(user.WalletAddress) && !string.IsNullOrEmpty(userinfo.WalletAddress))
+                    {
+                        user.WalletAddress = userinfo.WalletAddress;
+                        await _userService.Update(user);
+                    }
+
+                    string grantTransactionHash = null;
+                    BigInteger fptBalance = 0;
+
+                    // Cấp token bonus nếu là Student (RoleId = 3)
+                    if (user.RoleId == 3)   
+                    {
+                        // Kiểm tra WalletAddress trước khi gọi GrantTokenAsync
+                        if (string.IsNullOrEmpty(user.WalletAddress))
+                        {
+                            return BadRequest(new ResponseDTO<object>(400, "Lỗi: WalletAddress của người dùng không được để trống!", null));
+                        }
+
+                        BigInteger bonusAmount = new BigInteger(50) * BigInteger.Pow(10, 18); // 50 FPT với 18 decimals
+                        Console.WriteLine($"Granting token to existing Student...");
+                        grantTransactionHash = await _userTokenService.GrantTokenAsync(user.WalletAddress, bonusAmount);
+                        fptBalance = await _userTokenService.GetFptBalanceAsync(user.WalletAddress);
+                    }
+
+                    // Chỉ cập nhật AccessToken, không cập nhật các trường khác
                     user.AccessToken = token;
-                    user.WalletAddress = userinfo.WalletAddress;
                     await _userService.Update(user);
 
                     var userDto = new UserDTO
@@ -101,7 +128,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         Status = user.Status
                     };
 
-                    var responseData = new { Token = token, User = userDto };
+                    var responseData = new
+                    {
+                        Token = token,
+                        User = userDto,
+                        GrantTransactionHash = grantTransactionHash ?? "N/A",
+                        FptBalance = fptBalance.ToString()
+                    };
                     return Ok(new ResponseDTO<object>(200, "Người dùng đã được xác thực thành công!", responseData));
                 }
 
@@ -111,10 +144,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     var newUser = new User
                     {
                         Email = userinfo.Email,
+                        WalletAddress = userinfo.WalletAddress,
                         FullName = userinfo.FullName,
                         RoleId = 3, // RoleId = 3 cho Student
-                        Status = true,
-                        WalletAddress = userinfo.WalletAddress
+                        Status = true
                     };
 
                     await _userService.Add(newUser);
