@@ -20,7 +20,7 @@ namespace DxLabCoworkingSpace
         public async Task Add(User entity)
         {
             await _unitOfWork.UserRepository.Add(entity);
-            _unitOfWork.CommitAsync();
+            await _unitOfWork.CommitAsync();
         }
 
         public async Task<User> Get(Expression<Func<User, bool>> expression)
@@ -37,7 +37,7 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
-         async Task<User> IFaciStatusService<User>.GetById(int id)
+        public async Task<User> GetById(int id)
         {
             return await _unitOfWork.UserRepository.GetById(id);    
         }
@@ -47,14 +47,14 @@ namespace DxLabCoworkingSpace
         }
         public async Task<User> GetWithInclude(Expression<Func<User, bool>> expression, params Expression<Func<User, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.UserRepository.GetWithInclude(expression, includes);
         }
         public async Task Update(User entity)
         {
             await _unitOfWork.UserRepository.Update(entity);
             await _unitOfWork.CommitAsync();
         }
-        async Task IFaciStatusService<User>.Delete(int id)
+       public async Task Delete(int id)
         {
             throw new NotImplementedException();
         }

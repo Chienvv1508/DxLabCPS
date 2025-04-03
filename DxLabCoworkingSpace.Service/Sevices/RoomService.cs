@@ -49,7 +49,12 @@ namespace DxLabCoworkingSpace {
             throw new NotImplementedException();
      }
 
-    public Task<Room> GetById(int id)
+        public Task GetAreaDisctinctFaci(Func<Room, bool> value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Room> GetById(int id)
     {
         throw new NotImplementedException();
     }

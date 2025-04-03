@@ -15,14 +15,23 @@ namespace DxLabCoworkingSpace
         [Required(ErrorMessage = "BatchNumber không được để trống!")]
         [StringLength(50, ErrorMessage ="BatchNumber không quá 50 ký tự.")]
         public string BatchNumber { get; set; } = null!;
-        public string? FacilityDescription { get; set; }
+        public string? FacilityTitle { get; set; }
 
         [Range(1, double.MaxValue, ErrorMessage = "Cost phải lớn hơn 0")]
         public decimal Cost { get; set; }
         public DateTime ExpiredTime { get; set; }
+        [Required(ErrorMessage = "Size không được để trống!")]
+        [Range(0, int.MaxValue, ErrorMessage = "Size phải lớn hơn 0")]
+        public int Size { get; set; }
+        [Required(ErrorMessage = "Loại thiết bị không được để trống!")]
+        [Range(0, 1, ErrorMessage = "Loại thiết bị chỉ chọn ghế hoặc bàn")]
+        public int FacilityCategory { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Quantity phải lớn hơn 0")]
         public int Quantity { get; set; }
+        [Required(ErrorMessage = "Ngày nhập không được để trống!")]
         public DateTime ImportDate { get; set; }
+     
+        //public List<FacilitiesStatus> FacilitiesStatus { get; set; }
     }
 }

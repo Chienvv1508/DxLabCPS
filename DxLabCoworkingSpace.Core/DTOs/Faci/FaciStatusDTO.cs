@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpace
-{
-    public partial class FacilitiesStatus
+namespace DxLabCoworkingSpace { 
+    public class FaciStatusDTO
     {
-        
         public int FacilityStatusId { get; set; }
         public int? FacilityId { get; set; }
         public string? BatchNumber { get; set; }
@@ -14,6 +14,6 @@ namespace DxLabCoworkingSpace
         public int Quantity { get; set; }
         public DateTime ImportDate { get; set; }
 
-        public virtual Facility? Facility { get; set; }
+        public string FacilityName { get; set; }
     }
 }

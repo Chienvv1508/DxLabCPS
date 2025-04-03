@@ -59,13 +59,13 @@ namespace DxLabCoworkingSpace
 
             _entitySet.Add(entity);
        
-            await _dbContext.SaveChangesAsync();
+            //await _dbContext.SaveChangesAsync();
         }
 
         public async Task Update(T entity)
         {
             _entitySet.Update(entity);
-            await _dbContext.SaveChangesAsync();
+            //await _dbContext.SaveChangesAsync();
         }
 
         public async Task Delete(int id)
@@ -74,10 +74,13 @@ namespace DxLabCoworkingSpace
             if (entity != null)
             {
                 _entitySet.Remove(entity);
-                await _dbContext.SaveChangesAsync();
+                //await _dbContext.SaveChangesAsync();
             }
         }
 
-       
+        public void Delete(T entity)
+        {
+            _entitySet.Remove(entity);
+        }
     }
 }

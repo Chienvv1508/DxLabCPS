@@ -59,6 +59,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     BookingId = b.BookingId,
                     UserName = b.User?.FullName,
+                    UserEmail = b.User?.Email,
                     BookingCreatedDate = b.BookingCreatedDate,
                     TotalPrice = b.Price,
                     TotalBookingDetail = b.BookingDetails.Count,
@@ -141,6 +142,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     BookingId = booking.BookingId,
                     UserName = booking.User?.FullName,
+                    UserEmail = booking.User?.Email,
                     BookingCreatedDate = booking.BookingCreatedDate,
                     TotalPrice = booking.Price,
                     Details = filteredDetails.Select(bd =>
