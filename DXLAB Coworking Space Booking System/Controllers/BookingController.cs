@@ -449,12 +449,22 @@ namespace DXLAB_Coworking_Space_Booking_System
             }
             var bookingDetails = await _bookDetailService.GetAll(x => x.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date);
             var slots = await _slotService.GetAll();
+
+            // Lọc các slot còn hợp lệ dựa trên thời gian hiện tại
+            var currentDateTime = DateTime.Now;
+            var validSlots = slots.Where(slot =>
+            {
+                var slotStartTime = availableSlotRequestDTO.BookingDate.Date.Add(slot.StartTime.Value);
+                // Chỉ giữ lại slot nếu ngày đặt là hôm nay và slot chưa bắt đầu, hoặc ngày đặt là tương lai
+                return availableSlotRequestDTO.BookingDate.Date > DateTime.Now.Date || slotStartTime > currentDateTime;
+            }).ToList();
+
             List<AvailableSlotResponseDTO> availableSlotResponseDTOs = new List<AvailableSlotResponseDTO>();
             if (areaType.AreaCategory == 1)
             {
                 var individualArea = areasInRoom.FirstOrDefault();
                 individualArea = await _areaService.GetWithInclude(x => x.AreaId == individualArea.AreaId, x => x.Positions);
-                foreach (var slot in slots)
+                foreach (var slot in validSlots)
                 {
                     int availblePos = 0;
                     int bookedPos = 0;
@@ -470,7 +480,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             }
             else
             {
-                foreach (var slot in slots)
+                foreach (var slot in validSlots)
                 {
                     int availblePos = 0;
                     int bookedPos = 0;
