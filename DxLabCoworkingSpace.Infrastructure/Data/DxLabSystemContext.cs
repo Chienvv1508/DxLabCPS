@@ -48,6 +48,7 @@ namespace DxLabCoworkingSpace
         {
             modelBuilder.Entity<Area>(entity =>
             {
+                entity.Property(e => e.AreaDescription).HasMaxLength(255);
                 entity.Property(e => e.AreaName).HasMaxLength(250);
 
                 entity.HasOne(d => d.AreaType)
@@ -181,6 +182,11 @@ namespace DxLabCoworkingSpace
                 entity.Property(e => e.ImageUrl)
                     .HasMaxLength(255)
                     .HasColumnName("ImageURL");
+
+                entity.HasOne(d => d.Area)
+                    .WithMany(p => p.Images)
+                    .HasForeignKey(d => d.AreaId)
+                    .HasConstraintName("FK_Images_Areas");
 
                 entity.HasOne(d => d.AreaType)
                     .WithMany(p => p.Images)

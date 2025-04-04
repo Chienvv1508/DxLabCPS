@@ -56,27 +56,56 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(dest => dest.Images, opt => opt.Ignore());
 
             CreateMap<RoomDTO, Room>()
-           .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
-               src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null))
-           .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area { AreaName = a.AreaName, AreaTypeId = a.AreaTypeId }) : null));
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null))
+                .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area
+                    {
+                        AreaName = a.AreaName,
+                        AreaTypeId = a.AreaTypeId,
+                        Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
+                    }).ToList() : null));
+
+            CreateMap<RoomDTO, Room>()
+    .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null))
+    .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area
+    {
+        AreaName = a.AreaName,
+        AreaTypeId = a.AreaTypeId,
+        AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
+        Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
+    }).ToList() : null));
 
             CreateMap<Room, RoomDTO>()
-                .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
-                    src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null))
-                .ForMember(dest => dest.Area_DTO, opt => opt.MapFrom(x => x.Areas != null ? x.Areas.Select(a => new AreaDTO {AreaId = a.AreaId ,AreaName = a.AreaName, AreaTypeId = a.AreaTypeId, AreaTypeName = a.AreaType != null? a.AreaType.AreaTypeName: null }) : null));
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null))
+                .ForMember(dest => dest.Area_DTO, opt => opt.MapFrom(x => x.Areas != null ? x.Areas.Select(a => new AreaDTO
+                {
+                    AreaId = a.AreaId,
+                    AreaName = a.AreaName,
+                    AreaTypeId = a.AreaTypeId,
+                    AreaTypeName = a.AreaType != null ? a.AreaType.AreaTypeName : null,
+                    AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
+                    Images = a.Images != null ? a.Images.Select(i => i.ImageUrl).ToList() : null // Thêm ánh xạ Images
+                }).ToList() : null));
 
             CreateMap<AreaTypeDTO, AreaType>()
-            .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
-             src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null));
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null));
 
             CreateMap<AreaType, AreaTypeDTO>()
-                .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
-                    src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
 
-            CreateMap<AreaType, AreaDTO>().ReverseMap();
-            CreateMap<Area, AreaDTO>().ForMember(dest => dest.AreaTypeName, opt => opt.MapFrom(x => x.AreaType.AreaTypeName));
-            CreateMap<AreaDTO, Area>();
+            // Sửa ánh xạ AreaDTO -> Area
+            CreateMap<AreaDTO, Area>()
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null))
+                .ForMember(dest => dest.BookingDetails, opt => opt.Ignore())
+                .ForMember(dest => dest.Positions, opt => opt.Ignore())
+                .ForMember(dest => dest.UsingFacilities, opt => opt.Ignore())
+                .ForMember(dest => dest.AreaType, opt => opt.Ignore())
+                .ForMember(dest => dest.Room, opt => opt.Ignore());
 
+            CreateMap<Area, AreaDTO>()
+                .ForMember(dest => dest.AreaTypeName, opt => opt.MapFrom(x => x.AreaType != null ? x.AreaType.AreaTypeName : null))
+                .ForMember(dest => dest.AreaDescription, opt => opt.MapFrom(src => src.AreaDescription)) // Thêm ánh xạ AreaDescription
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
+            
             // Mapping cho thống kê
             CreateMap<Booking, StudentRevenueDTO>();
             CreateMap<BookingDetail, ServiceTypeDetailDTO>()
