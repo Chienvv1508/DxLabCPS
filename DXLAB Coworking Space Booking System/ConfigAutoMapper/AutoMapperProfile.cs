@@ -93,7 +93,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(x => x.AreaId, opt => opt.MapFrom(s => s.AreaId))
                 .ForMember(x => x.AreaName, opt => opt.MapFrom(s => s.AreaName));
             CreateMap<UsingFacility, FaciGetInAreaDTO>()
-                .ForMember(x => x.FacilityID, opt => opt.MapFrom(s => s.FacilityId))
+                .ForMember(x => x.FacilityId, opt => opt.MapFrom(s => s.FacilityId))
                 .ForMember(x => x.FacilityTitle, opt => opt.MapFrom(s => s.Facility.FacilityTitle));
 
         }
