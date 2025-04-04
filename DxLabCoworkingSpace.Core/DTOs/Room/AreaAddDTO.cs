@@ -15,6 +15,8 @@ namespace DxLabCoworkingSpace
         public string AreaTypeName { get; set; }
         [Required(ErrorMessage = "Số chỗ trong khu vực không được để trống.")]
         [Range(0, 40, ErrorMessage = "Số chỗ trong khu vực phải lớn hơn 0.")]
+        public string? AreaDescription { get; set; }
+        public List<String>? Images { get; set; }
         public int Size { get; set; }
     }
 }

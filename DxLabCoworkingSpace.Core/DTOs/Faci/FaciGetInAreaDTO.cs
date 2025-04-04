@@ -8,7 +8,7 @@ namespace DxLabCoworkingSpace
 {
     public class FaciGetInAreaDTO
     {
-        public int FacilityID { get; set; }
+        public int FacilityId { get; set; }
         public string FacilityTitle { get; set; }
 
         
