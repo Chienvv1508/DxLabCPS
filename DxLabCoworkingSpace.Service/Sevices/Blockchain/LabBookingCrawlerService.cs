@@ -24,72 +24,118 @@ namespace DxLabCoworkingSpace
             _unitOfWork = unitOfWork;
         }
 
-        private async Task SaveBookingEventAsync(string bookingId, int blockNumber, string transactionHash, string roomId, byte slot, string userAddress, long timestamp, string eventType, string refundAmount = null)
+        private async Task SaveBookingEventAsync(
+    string bookingId = null,
+    int blockNumber = 0,
+    string transactionHash = null,
+    string roomId = null,
+    byte slot = 0,
+    string userAddress = null,
+    long timestamp = 0,
+    string eventType = null,
+    string refundAmount = null,
+    string email = null,
+    bool? isStaff = null)
         {
-            // Kiểm tra xem sự kiện đã tồn tại chưa
-            var existingDetail = await _unitOfWork.BookingDetailRepository.GetWithInclude(
-                bd => bd.Booking != null && bd.Booking.BookingId.ToString() == bookingId && bd.Status == (eventType == "Created" ? 1 : eventType == "Cancelled" ? 0 : 2),
-                bd => bd.Booking
-            );
-
-            if (existingDetail == null)
+            if (eventType.StartsWith("User"))
             {
-                Console.WriteLine($"Saving new booking event with transactionHash: {transactionHash}");
-
-                // Tìm hoặc tạo user
+                // Xử lý sự kiện liên quan đến user
                 var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress == userAddress);
-                if (user == null && userAddress != null) // Đảm bảo userAddress không null
+                if (user == null && userAddress != null)
                 {
                     user = new User
                     {
-                        Email = $"{userAddress}@default.com",
+                        Email = email ?? $"{userAddress}@default.com",
                         FullName = "Unknown",
                         WalletAddress = userAddress,
-                        Status = true
+                        Status = eventType == "UserBlocked" ? false : true
                     };
                     await _unitOfWork.UserRepository.Add(user);
-                    await _unitOfWork.CommitAsync();
                 }
-
-                // Tạo Booking nếu chưa tồn tại
-                var booking = await _unitOfWork.BookingRepository.Get(b => b.BookingId.ToString() == bookingId);
-                if (booking == null)
+                else if (user != null)
                 {
-                    booking = new Booking
+                    if (eventType == "UserRegistered" && email != null)
                     {
-                        UserId = user?.UserId, // Có thể null nếu userAddress không có
-                        BookingCreatedDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime,
-                        Price = eventType == "Created" ? 100m : 0m
-                    };
-                    await _unitOfWork.BookingRepository.Add(booking);
-                    await _unitOfWork.CommitAsync();
+                        user.Email = email;
+                        user.Status = true;
+                    }
+                    else if (eventType == "UserBlocked")
+                    {
+                        user.Status = false;
+                    }
+                    else if (eventType == "UserUnblocked")
+                    {
+                        user.Status = true;
+                    }
+                    _unitOfWork.UserRepository.Update(user);
                 }
-
-                // Tạo BookingDetail
-                var bookingDetail = new BookingDetail
-                {
-                    Status = eventType switch
-                    {
-                        "Created" => 1,
-                        "Cancelled" => 0,
-                        "CheckedIn" => 2,
-                        _ => 1
-                    },
-                    CheckinTime = eventType == "CheckedIn" ? DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime : DateTime.MinValue,
-                    CheckoutTime = DateTime.MinValue,
-                    BookingId = booking.BookingId,
-                    SlotId = slot,
-                    AreaId = null,
-                    PositionId = null,
-                    Price = eventType == "Cancelled" && refundAmount != null ? decimal.Parse(refundAmount) : 100m
-                };
-
-                await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
                 await _unitOfWork.CommitAsync();
+                Console.WriteLine($"Processed {eventType} for user {userAddress}, txHash: {transactionHash}");
             }
             else
             {
-                Console.WriteLine($"Booking event with transactionHash: {transactionHash} already exists.");
+                // Xử lý sự kiện booking (giữ nguyên logic cũ)
+                var existingDetail = await _unitOfWork.BookingDetailRepository.GetWithInclude(
+                    bd => bd.Booking != null && bd.Booking.BookingId.ToString() == bookingId && bd.Status == (eventType == "Created" ? 1 : eventType == "Cancelled" ? 0 : 2),
+                    bd => bd.Booking
+                );
+
+                if (existingDetail == null)
+                {
+                    Console.WriteLine($"Saving new booking event with transactionHash: {transactionHash}");
+
+                    var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress == userAddress);
+                    if (user == null && userAddress != null)
+                    {
+                        user = new User
+                        {
+                            Email = $"{userAddress}@default.com",
+                            FullName = "Unknown",
+                            WalletAddress = userAddress,
+                            Status = true
+                        };
+                        await _unitOfWork.UserRepository.Add(user);
+                        await _unitOfWork.CommitAsync();
+                    }
+
+                    var booking = await _unitOfWork.BookingRepository.Get(b => b.BookingId.ToString() == bookingId);
+                    if (booking == null)
+                    {
+                        booking = new Booking
+                        {
+                            UserId = user?.UserId,
+                            BookingCreatedDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime,
+                            Price = eventType == "Created" ? 100m : 0m
+                        };
+                        await _unitOfWork.BookingRepository.Add(booking);
+                        await _unitOfWork.CommitAsync();
+                    }
+
+                    var bookingDetail = new BookingDetail
+                    {
+                        Status = eventType switch
+                        {
+                            "Created" => 1,
+                            "Cancelled" => 0,
+                            "CheckedIn" => 2,
+                            _ => 1
+                        },
+                        CheckinTime = eventType == "CheckedIn" ? DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime : DateTime.MinValue,
+                        CheckoutTime = DateTime.MinValue,
+                        BookingId = booking.BookingId,
+                        SlotId = slot,
+                        AreaId = null,
+                        PositionId = null,
+                        Price = eventType == "Cancelled" && refundAmount != null ? decimal.Parse(refundAmount) : 100m
+                    };
+
+                    await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
+                    await _unitOfWork.CommitAsync();
+                }
+                else
+                {
+                    Console.WriteLine($"Booking event with transactionHash: {transactionHash} already exists.");
+                }
             }
         }
 
@@ -97,9 +143,8 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-                // Xử lý sự kiện BookingCreated
-                // Xử lý sự kiện BookingCreated
-                var bookingCreatedEvent = _contract.GetEvent("BookingCreated"); // Lấy sự kiện từ contract
+                // BookingCreated
+                var bookingCreatedEvent = _contract.GetEvent("BookingCreated");
                 var bookingCreatedFilter = bookingCreatedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
                 var bookingCreatedLogs = await bookingCreatedEvent.GetAllChangesAsync<BookingCreatedEventDTO>(bookingCreatedFilter);
 
@@ -109,7 +154,6 @@ namespace DxLabCoworkingSpace
                     try
                     {
                         var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-
                         await SaveBookingEventAsync(
                             log.Event.BookingId,
                             (int)log.Log.BlockNumber.Value,
@@ -127,7 +171,7 @@ namespace DxLabCoworkingSpace
                     }
                 }
 
-                // Xử lý sự kiện BookingCancelled
+                // BookingCancelled
                 var bookingCancelledEvent = _contract.GetEvent("BookingCancelled");
                 var bookingCancelledFilter = bookingCancelledEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
                 var bookingCancelledLogs = await bookingCancelledEvent.GetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledFilter);
@@ -138,7 +182,6 @@ namespace DxLabCoworkingSpace
                     try
                     {
                         var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-
                         var refundAmount = Nethereum.Util.UnitConversion.Convert.FromWei(log.Event.RefundAmount).ToString();
                         await SaveBookingEventAsync(
                             log.Event.BookingId,
@@ -158,7 +201,7 @@ namespace DxLabCoworkingSpace
                     }
                 }
 
-                // Xử lý sự kiện BookingCheckedIn
+                // BookingCheckedIn
                 var bookingCheckedInEvent = _contract.GetEvent("BookingCheckedIn");
                 var bookingCheckedInFilter = bookingCheckedInEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
                 var bookingCheckedInLogs = await bookingCheckedInEvent.GetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInFilter);
@@ -169,7 +212,6 @@ namespace DxLabCoworkingSpace
                     try
                     {
                         var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-
                         await SaveBookingEventAsync(
                             log.Event.BookingId,
                             (int)log.Log.BlockNumber.Value,
@@ -184,6 +226,93 @@ namespace DxLabCoworkingSpace
                     catch (Exception decodeError)
                     {
                         Console.WriteLine($"Error processing BookingCheckedIn log: {decodeError.Message}");
+                    }
+                }
+
+                // UserBlocked
+                var userBlockedEvent = _contract.GetEvent("UserBlocked");
+                var userBlockedFilter = userBlockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
+                var userBlockedLogs = await userBlockedEvent.GetAllChangesAsync<UserBlockedEventDTO>(userBlockedFilter);
+
+                Console.WriteLine($"Found {userBlockedLogs.Count} UserBlocked logs.");
+                foreach (var log in userBlockedLogs)
+                {
+                    try
+                    {
+                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
+                        await SaveBookingEventAsync(
+                            null,
+                            (int)log.Log.BlockNumber.Value,
+                            log.Log.TransactionHash,
+                            null,
+                            0,
+                            log.Event.User,
+                            (long)block.Timestamp.Value,
+                            "UserBlocked"
+                        );
+                    }
+                    catch (Exception decodeError)
+                    {
+                        Console.WriteLine($"Error processing UserBlocked log: {decodeError.Message}");
+                    }
+                }
+
+                // UserRegistered
+                var userRegisteredEvent = _contract.GetEvent("UserRegistered");
+                var userRegisteredFilter = userRegisteredEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
+                var userRegisteredLogs = await userRegisteredEvent.GetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredFilter);
+
+                Console.WriteLine($"Found {userRegisteredLogs.Count} UserRegistered logs.");
+                foreach (var log in userRegisteredLogs)
+                {
+                    try
+                    {
+                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
+                        await SaveBookingEventAsync(
+                            null,
+                            (int)log.Log.BlockNumber.Value,
+                            log.Log.TransactionHash,
+                            null,
+                            0,
+                            log.Event.User,
+                            (long)block.Timestamp.Value,
+                            "UserRegistered",
+                            null,
+                            log.Event.Email,
+                            log.Event.IsStaff
+                        );
+                    }
+                    catch (Exception decodeError)
+                    {
+                        Console.WriteLine($"Error processing UserRegistered log: {decodeError.Message}");
+                    }
+                }
+
+                // UserUnblocked
+                var userUnblockedEvent = _contract.GetEvent("UserUnblocked");
+                var userUnblockedFilter = userUnblockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
+                var userUnblockedLogs = await userUnblockedEvent.GetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedFilter);
+
+                Console.WriteLine($"Found {userUnblockedLogs.Count} UserUnblocked logs.");
+                foreach (var log in userUnblockedLogs)
+                {
+                    try
+                    {
+                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
+                        await SaveBookingEventAsync(
+                            null,
+                            (int)log.Log.BlockNumber.Value,
+                            log.Log.TransactionHash,
+                            null,
+                            0,
+                            log.Event.User,
+                            (long)block.Timestamp.Value,
+                            "UserUnblocked"
+                        );
+                    }
+                    catch (Exception decodeError)
+                    {
+                        Console.WriteLine($"Error processing UserUnblocked log: {decodeError.Message}");
                     }
                 }
             }
@@ -266,5 +395,31 @@ namespace DxLabCoworkingSpace
     {
         [Parameter("bytes32", "bookingId", 1, true)]
         public string BookingId { get; set; }
+    }
+    [Event("UserBlocked")]
+    public class UserBlockedEventDTO : IEventDTO
+    {
+        [Parameter("address", "user", 1, true)]
+        public string User { get; set; }
+    }
+
+    [Event("UserRegistered")]
+    public class UserRegisteredEventDTO : IEventDTO
+    {
+        [Parameter("address", "user", 1, true)]
+        public string User { get; set; }
+
+        [Parameter("string", "email", 2, false)]
+        public string Email { get; set; }
+
+        [Parameter("bool", "isStaff", 3, false)]
+        public bool IsStaff { get; set; }
+    }
+
+    [Event("UserUnblocked")]
+    public class UserUnblockedEventDTO : IEventDTO
+    {
+        [Parameter("address", "user", 1, true)]
+        public string User { get; set; }
     }
 }

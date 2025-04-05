@@ -79,6 +79,7 @@ namespace DxLabCoworkingSpace.Service.Sevices.Blockchain
                 if (receipt.Status.Value == 1)
                 {
                     Console.WriteLine("Register transaction confirmed");
+                    //Minttoken from new user
                     return transactionHash;
                 }
                 else
