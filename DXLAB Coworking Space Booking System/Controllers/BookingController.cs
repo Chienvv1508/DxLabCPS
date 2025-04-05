@@ -18,8 +18,9 @@ namespace DXLAB_Coworking_Space_Booking_System
         private readonly IAreaTypeService _areaTypeService;
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
+        private readonly IAreaTypeCategoryService _areaTypeCategoryService;
         public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService,
-            IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper, IConfiguration configuration)
+            IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper, IConfiguration configuration, IAreaTypeCategoryService areaTypeCategoryService)
         {
             _roomService = roomService;
             _slotService = slotService;
@@ -29,6 +30,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             _areaTypeService = areaTypeService;
             _mapper = mapper;
             _configuration = configuration;
+            _areaTypeCategoryService = areaTypeCategoryService;
         }
 
         [HttpPost]
@@ -498,7 +500,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpGet("categoryinroom")]
-        public async Task<IActionResult> GetAllAreaInRoom(int id)
+        public async Task<IActionResult> GetAllAreaCategoryInRoom(int id)
         {
             try
             {
@@ -525,6 +527,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                 }
 
                 var areaTypeGroup = areaTypes.GroupBy(x => x.AreaCategory);
+                var areaTypeCates =  await _areaTypeCategoryService.GetAllWithInclude(x => x.Images);
+                if (areaTypeCates == null) return NotFound(new ResponseDTO<object>(200,"Không tìm thấy thông tin phù hợp!", null));
                 List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>> result = new List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>>();
                 foreach (var group in areaTypeGroup)
                 {
@@ -534,23 +538,18 @@ namespace DXLAB_Coworking_Space_Booking_System
                         var areaType = _mapper.Map<AreaTypeDTO>(item);
                         areaTypeDTOs.Add(areaType);
                     }
-                    var aretypeCategory = new AreaTypeCategoryDTO();
-                    if (group.Key == 1)
+                    var aretypeCategory = areaTypeCates.FirstOrDefault(x => x.CategoryId == group.Key);
+                    if(aretypeCategory == null)
+                        return NotFound(new ResponseDTO<object>(200, "Không tìm thấy thông tin phù hợp!", null));
+                    var aretypeCategoryDTO = new AreaTypeCategoryDTO()
                     {
-                       
-                        aretypeCategory.CategoryId = 1;
-                        aretypeCategory.Title = _configuration["Individual:Title"];
-                        aretypeCategory.CategoryDescription = _configuration["Individual:Description"];
-                        aretypeCategory.Image = _configuration["Individual:Images"];
-                    }
-                    if(group.Key == 2)
-                    {
-                        aretypeCategory.CategoryId = 2;
-                        aretypeCategory.Title = _configuration["Group:Title"];
-                        aretypeCategory.CategoryDescription = _configuration["Group:Description"];
-                        aretypeCategory.Image = _configuration["Group:Images"];
-                    }
-                    KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>(aretypeCategory, areaTypeDTOs);
+                        CategoryId = aretypeCategory.CategoryId,
+                        Title = aretypeCategory.Title,
+                        CategoryDescription = aretypeCategory.CategoryDescription,
+                        Images = aretypeCategory.Images.Select(x => x.ImageUrl).ToList()
+
+                    };
+                    KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>(aretypeCategoryDTO, areaTypeDTOs);
                     result.Add(keyValuePair);
                 }
                 var response1 = new ResponseDTO<object>(200, "Trả thành công", result);

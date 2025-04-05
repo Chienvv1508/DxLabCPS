@@ -24,6 +24,7 @@ namespace DxLabCoworkingSpace
         IGenericRepository<UsingFacility> UsingFacilityRepository { get; }
         IGenericRepository<FacilitiesStatus> FacilitiesStatusRepository { get; }
         IGenericRepository<SumaryExpense> SumaryExpenseRepository { get; }
+        IGenericRepository<AreaTypeCategory> AreaTypeCategoryRepository { get; }
 
         IGenericRepository<ContractCrawl> ContractCrawlRepository { get; }
         DbContext Context { get; }
