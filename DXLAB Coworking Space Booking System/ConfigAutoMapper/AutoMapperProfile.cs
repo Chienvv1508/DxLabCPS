@@ -125,6 +125,13 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(x => x.FacilityId, opt => opt.MapFrom(s => s.FacilityId))
                 .ForMember(x => x.FacilityTitle, opt => opt.MapFrom(s => s.Facility.FacilityTitle));
 
+            CreateMap<AreaTypeCategoryDTO, AreaTypeCategory>()
+                .ForMember(x => x.Images, opt => 
+                    opt.MapFrom(src => src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null));
+            CreateMap<AreaTypeCategory, AreaTypeCategoryDTO>()
+               .ForMember(x => x.Images, opt =>
+                   opt.MapFrom(src => src.Images != null ? src.Images.Select(x => x.ImageUrl).ToList() : null));
+
         }
     }
 }

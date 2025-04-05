@@ -11,6 +11,11 @@ namespace DxLabCoworkingSpace
         public int CategoryId { get; set; }
         public string Title { get; set; }
         public string CategoryDescription { get; set; }
-        public string Image { get; set; }
+        public List<string> Images { get; set; }
+
+        public int Status { get; set; }
+
+
+
     }
 }
