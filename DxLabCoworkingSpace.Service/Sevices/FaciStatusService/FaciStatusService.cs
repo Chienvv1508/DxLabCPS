@@ -70,6 +70,7 @@ namespace DxLabCoworkingSpace
         public async Task Update(FacilitiesStatus entity)
         {
              await _unitOfWork.FacilitiesStatusRepository.Update(entity);
+            await _unitOfWork.CommitAsync();
         }
     }
 }
