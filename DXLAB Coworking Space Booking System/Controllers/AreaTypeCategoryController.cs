@@ -20,7 +20,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPost("newareatypecategory")]
-        public async Task<IActionResult> CreateAreaTypeCategory([FromBody] AreaTypeCategoryDTO areaTypeCategoryDTO)
+        public async Task<IActionResult> CreateAreaTypeCategory([FromForm] AreaTypeCategoryDTO areaTypeCategoryDTO)
         {
             var areaTypeCategory = _mapper.Map<AreaTypeCategory>(areaTypeCategoryDTO);
             await _areaTypeCategoryService.Add(areaTypeCategory);
