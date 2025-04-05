@@ -14,6 +14,7 @@ using Hangfire.MemoryStorage;
 using Nethereum.ABI.Model;
 using System.IO;
 using DxLabCoworkingSpace.Service.Sevices.Blockchain;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -163,7 +164,13 @@ builder.Services.AddHangfire(config => config
     .UseRecommendedSerializerSettings()
     .UseMemoryStorage()); // Dùng MemoryStorage
 
-builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer(options =>
+{
+    options.WorkerCount = 20;                  // Số lượng worker
+    options.Queues = new[] { "default" };      // Listening queues: 'default'
+    options.ShutdownTimeout = TimeSpan.FromSeconds(30); // Shutdown timeout
+    options.SchedulePollingInterval = TimeSpan.FromSeconds(30); // Schedule polling interval
+});
 
 // Cập nhật CORS
 builder.Services.AddCors(options =>
