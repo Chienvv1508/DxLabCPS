@@ -29,7 +29,7 @@ namespace DxLabCoworkingSpace
             RecurringJob.AddOrUpdate(
                 "booking-log-job", // ID của job
                 () => RunBookingLogJobAsync(), // Phương thức chạy job
-                "*/15 * * * * *", // Cron expression: mỗi 15 giây
+                "*/5 * * * * *", // Cron expression: mỗi 15 giây
                 TimeZoneInfo.FindSystemTimeZoneById("America/New_York") // Timezone
             );
             Console.WriteLine("Booking log job scheduled.");

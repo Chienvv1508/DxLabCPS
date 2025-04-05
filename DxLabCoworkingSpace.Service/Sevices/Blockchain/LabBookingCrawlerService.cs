@@ -98,7 +98,6 @@ namespace DxLabCoworkingSpace
             try
             {
                 // Xử lý sự kiện BookingCreated
-                // Xử lý sự kiện BookingCreated
                 var bookingCreatedEvent = _contract.GetEvent("BookingCreated"); // Lấy sự kiện từ contract
                 var bookingCreatedFilter = bookingCreatedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
                 var bookingCreatedLogs = await bookingCreatedEvent.GetAllChangesAsync<BookingCreatedEventDTO>(bookingCreatedFilter);
