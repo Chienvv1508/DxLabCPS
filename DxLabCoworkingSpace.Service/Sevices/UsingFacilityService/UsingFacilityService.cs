@@ -91,6 +91,7 @@ namespace DxLabCoworkingSpace
         public async Task Update(UsingFacility entity)
         {
             await _unitOfWork.UsingFacilityRepository.Update(entity);
+            await _unitOfWork.CommitAsync();
         }
 
         public async Task Update(RemovedFaciDTO removedFaciDTO)
