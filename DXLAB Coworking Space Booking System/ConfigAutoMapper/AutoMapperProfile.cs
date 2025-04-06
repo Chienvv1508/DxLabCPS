@@ -137,6 +137,20 @@ namespace DXLAB_Coworking_Space_Booking_System
                     opt.Ignore());
             CreateMap<AreaTypeCategoryForUpdateDTO, AreaTypeCategory>().ForMember(dest => dest.Images, opt => opt.Ignore()); ;
 
+            // Mapping cho ReportRequestDTO -> Report
+            CreateMap<ReportRequestDTO, Report>()
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.UserId, opt => opt.Ignore());
+
+            // Mapping cho Report -> ReportResponseDTO
+            CreateMap<Report, ReportResponseDTO>()
+    .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate.ToString("yyyy-MM-ddTHH:mm:ss")))
+    .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : "N/A"))
+    .ForMember(dest => dest.BookingDetailId, opt => opt.MapFrom(src => src.BookingDetailId))
+    .ForMember(dest => dest.Position, opt => opt.MapFrom(src => src.BookingDetail != null && src.BookingDetail.Position != null ? src.BookingDetail.Position.PositionNumber.ToString() : "N/A"))
+    .ForMember(dest => dest.AreaName, opt => opt.MapFrom(src => src.BookingDetail != null && src.BookingDetail.Area != null ? src.BookingDetail.Area.AreaName : "N/A"))
+    .ForMember(dest => dest.AreaTypeName, opt => opt.MapFrom(src => src.BookingDetail != null && src.BookingDetail.Area != null && src.BookingDetail.Area.AreaType != null ? src.BookingDetail.Area.AreaType.AreaTypeName : "N/A"))
+    .ForMember(dest => dest.RoomName, opt => opt.MapFrom(src => src.BookingDetail != null && src.BookingDetail.Area != null && src.BookingDetail.Area.Room != null ? src.BookingDetail.Area.Room.RoomName : "N/A"));
         }
     }
 }

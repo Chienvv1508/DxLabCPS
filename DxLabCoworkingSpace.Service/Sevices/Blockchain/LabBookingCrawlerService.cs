@@ -50,7 +50,7 @@ namespace DxLabCoworkingSpace
                         WalletAddress = userAddress,
                         Status = eventType == "UserBlocked" ? false : true
                     };
-                    await _unitOfWork.UserRepository.Add(user);
+                   // await _unitOfWork.UserRepository.Add(user);
                 }
                 else if (user != null)
                 {
@@ -67,7 +67,7 @@ namespace DxLabCoworkingSpace
                     {
                         user.Status = true;
                     }
-                    _unitOfWork.UserRepository.Update(user);
+                    //_unitOfWork.UserRepository.Update(user);
                 }
                 await _unitOfWork.CommitAsync();
                 Console.WriteLine($"Processed {eventType} for user {userAddress}, txHash: {transactionHash}");
@@ -94,8 +94,8 @@ namespace DxLabCoworkingSpace
                             WalletAddress = userAddress,
                             Status = true
                         };
-                        await _unitOfWork.UserRepository.Add(user);
-                        await _unitOfWork.CommitAsync();
+                        //await _unitOfWork.UserRepository.Add(user);
+                        //await _unitOfWork.CommitAsync();
                     }
 
                     var booking = await _unitOfWork.BookingRepository.Get(b => b.BookingId.ToString() == bookingId);
@@ -107,8 +107,8 @@ namespace DxLabCoworkingSpace
                             BookingCreatedDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime,
                             Price = eventType == "Created" ? 100m : 0m
                         };
-                        await _unitOfWork.BookingRepository.Add(booking);
-                        await _unitOfWork.CommitAsync();
+                        //await _unitOfWork.BookingRepository.Add(booking);
+                        //await _unitOfWork.CommitAsync();
                     }
 
                     var bookingDetail = new BookingDetail
@@ -129,8 +129,8 @@ namespace DxLabCoworkingSpace
                         Price = eventType == "Cancelled" && refundAmount != null ? decimal.Parse(refundAmount) : 100m
                     };
 
-                    await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
-                    await _unitOfWork.CommitAsync();
+                    //await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
+                    //await _unitOfWork.CommitAsync();
                 }
                 else
                 {

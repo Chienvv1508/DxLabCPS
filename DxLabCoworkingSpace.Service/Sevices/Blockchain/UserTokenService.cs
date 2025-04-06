@@ -10,7 +10,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpace.Service.Sevices.Blockchain
+namespace DxLabCoworkingSpace
 {
     public class UserTokenService : IUserTokenService
     {

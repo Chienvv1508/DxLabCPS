@@ -38,7 +38,7 @@ namespace DxLabCoworkingSpace
                 };
             }
 
-            // Tổng doanh thu của toàn bộ hệ thống
+            // Tổng doanh thu theo tời gian đã lọc
             var totalRevenue = filteredBookingDetails.Sum(bd => bd.Price);
 
             // Doanh thu từ sinh viên trong khoảng thời gian lọc
