@@ -20,9 +20,22 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPost("newareatypecategory")]
-        public async Task<IActionResult> CreateAreaTypeCategory([FromBody] AreaTypeCategoryDTO areaTypeCategoryDTO)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateAreaTypeCategory([FromForm] AreaTypeCategoryForAddDTO areaTypeCategoryDTO)
         {
             var areaTypeCategory = _mapper.Map<AreaTypeCategory>(areaTypeCategoryDTO);
+            var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images);
+            if(result.Item1 == false)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Lỗi nhập ảnh", null));
+            }
+            else
+            {
+               foreach(var i in result.Item2)
+                {
+                    areaTypeCategory.Images.Add(new Image() { ImageUrl = i});
+                }
+            }
             await _areaTypeCategoryService.Add(areaTypeCategory);
             return Ok();
         }
