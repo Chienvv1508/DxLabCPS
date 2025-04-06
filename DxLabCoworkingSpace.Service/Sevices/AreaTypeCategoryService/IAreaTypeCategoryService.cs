@@ -8,5 +8,6 @@ namespace DxLabCoworkingSpace
 {
     public interface IAreaTypeCategoryService : IGenericeService<AreaTypeCategory>
     {
+        Task updateAreaTypeCategory(int id, AreaTypeCategory updatedAreaTypeCategory);
     }
 }

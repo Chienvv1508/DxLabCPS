@@ -26,6 +26,7 @@ namespace DxLabCoworkingSpace
         IGenericRepository<SumaryExpense> SumaryExpenseRepository { get; }
         IGenericRepository<AreaTypeCategory> AreaTypeCategoryRepository { get; }
 
+        IGenericRepository<Image> ImageRepository { get; }
         IGenericRepository<ContractCrawl> ContractCrawlRepository { get; }
         DbContext Context { get; }
         Task CommitAsync();

@@ -10,6 +10,6 @@ namespace DxLabCoworkingSpace
     public interface IAreaTypeService : IGenericeService<AreaType>
     {
         public Task<object> GetAreaTypeForAddRoom();
-       
+
     }
 }

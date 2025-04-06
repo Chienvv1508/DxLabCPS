@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
 using DXLAB_Coworking_Space_Booking_System;
+using DxLabCoworkingSpace.Core.DTOs.Room;
 namespace DXLAB_Coworking_Space_Booking_System
 {
     public class AutoMapperProfile : Profile
@@ -134,6 +135,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<AreaTypeCategoryForAddDTO, AreaTypeCategory>()
                 .ForMember(x => x.Images, opt =>
                     opt.Ignore());
+            CreateMap<AreaTypeCategoryForUpdateDTO, AreaTypeCategory>().ForMember(dest => dest.Images, opt => opt.Ignore()); ;
 
         }
     }
