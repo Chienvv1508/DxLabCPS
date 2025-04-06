@@ -39,7 +39,7 @@ namespace DxLabCoworkingSpace
             }
 
             // Tổng doanh thu của toàn bộ hệ thống
-            var totalRevenue = allBookingDetails.Sum(bd => bd.Price);
+            var totalRevenue = filteredBookingDetails.Sum(bd => bd.Price);
 
             // Doanh thu từ sinh viên trong khoảng thời gian lọc
             var studentRevenue = filteredBookingDetails
