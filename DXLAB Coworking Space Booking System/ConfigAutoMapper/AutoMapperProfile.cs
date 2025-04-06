@@ -131,6 +131,9 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<AreaTypeCategory, AreaTypeCategoryDTO>()
                .ForMember(x => x.Images, opt =>
                    opt.MapFrom(src => src.Images != null ? src.Images.Select(x => x.ImageUrl).ToList() : null));
+            CreateMap<AreaTypeCategoryForAddDTO, AreaTypeCategory>()
+                .ForMember(x => x.Images, opt =>
+                    opt.Ignore());
 
             // Mapping cho ReportRequestDTO -> Report
             CreateMap<ReportRequestDTO, Report>()

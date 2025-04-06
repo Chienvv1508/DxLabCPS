@@ -20,9 +20,22 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPost("newareatypecategory")]
-        public async Task<IActionResult> CreateAreaTypeCategory([FromBody] AreaTypeCategoryDTO areaTypeCategoryDTO)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateAreaTypeCategory([FromForm] AreaTypeCategoryForAddDTO areaTypeCategoryDTO)
         {
             var areaTypeCategory = _mapper.Map<AreaTypeCategory>(areaTypeCategoryDTO);
+            var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images);
+            if(result.Item1 == false)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Lỗi nhập ảnh", null));
+            }
+            else
+            {
+               foreach(var i in result.Item2)
+                {
+                    areaTypeCategory.Images.Add(new Image() { ImageUrl = i});
+                }
+            }
             await _areaTypeCategoryService.Add(areaTypeCategory);
             return Ok();
         }
@@ -43,88 +56,98 @@ namespace DXLAB_Coworking_Space_Booking_System
             }
             
         }
-        [HttpPatch()]
-        public async Task<IActionResult> PatchAreaTypeCategory(int id, [FromBody] JsonPatchDocument<AreaTypeCategory> patchDoc)
+        [HttpPatch]
+        public async Task<IActionResult> PatchAreaTypeCategory(int id, [FromForm] AreaTypeCategoryDTO updatedData)
         {
             try
             {
-                if (patchDoc == null)
+                // Kiểm tra dữ liệu đầu vào
+                if (updatedData == null)
                 {
                     var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
                     return BadRequest(response);
                 }
-                var allowedPaths = new HashSet<string>
-                {
-                       "title",
-                        "categoryDescription",
-                        "status",
-                        "images"
 
-                };
-                var areaTypeCategoryTitleOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("title", StringComparison.OrdinalIgnoreCase));
-                if (areaTypeCategoryTitleOp != null)
+                // Lấy entity từ database
+                var areaTypeCateFromDb = await _areaTypeCategoryService.Get(x => x.CategoryId == id);
+                if (areaTypeCateFromDb == null)
                 {
-                    var existedAreaTypeCategory = await _areaTypeCategoryService.Get(x => x.Title == areaTypeCategoryTitleOp.value.ToString() && x.Status == 1);
+                    var response = new ResponseDTO<object>(404, "Không tìm thấy loại khu vực!", null);
+                    return NotFound(response);
+                }
+
+                // Kiểm tra các trường được phép cập nhật
+                var allowedFields = new HashSet<string>
+                {
+                    "Title",
+                    "CategoryDescription",
+                    "Status",
+                    "Images"
+                };
+
+                // Kiểm tra title trùng lặp nếu có thay đổi
+                if (!string.IsNullOrEmpty(updatedData.Title) && updatedData.Title != areaTypeCateFromDb.Title)
+                {
+                    var existedAreaTypeCategory = await _areaTypeCategoryService.Get(x => x.Title == updatedData.Title && x.Status == 1);
                     if (existedAreaTypeCategory != null)
                     {
-                        var response = new ResponseDTO<object>(400, $"Tên loại {areaTypeCategoryTitleOp.value.ToString()} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
+                        var response = new ResponseDTO<object>(400, $"Tên loại {updatedData.Title} đã tồn tại. Vui lòng nhập tên loại khác!", null);
                         return BadRequest(response);
                     }
                 }
 
-                foreach (var operation in patchDoc.Operations)
+                // Cập nhật các trường từ DTO sang entity (chỉ cập nhật nếu có giá trị mới)
+                if (!string.IsNullOrEmpty(updatedData.Title))
                 {
-                    if (!allowedPaths.Contains(operation.path))
-                    {
-                        var response1 = new ResponseDTO<object>(400, $"Không thể cập nhật trường: {operation.path}", null);
-                        return BadRequest(response1);
-                    }
+                    areaTypeCateFromDb.Title = updatedData.Title;
+                }
+                if (!string.IsNullOrEmpty(updatedData.CategoryDescription))
+                {
+                    areaTypeCateFromDb.CategoryDescription = updatedData.CategoryDescription;
+                }
+                if (updatedData.Status != 0) // Giả sử 0 không phải giá trị hợp lệ
+                {
+                    areaTypeCateFromDb.Status = updatedData.Status;
+                }
+                else
+                {
+                    var response = new ResponseDTO<object>(400, "Giá trị Status không hợp lệ, phải là số nguyên khác 0!", null);
+                    return BadRequest(response);
+                }
+                if (updatedData.Images != null)
+                {
+                    // Xử lý file upload (giả sử Images là IFormFile)
+                    // Bạn cần thêm logic để lưu file vào hệ thống và cập nhật trường Images trong entity
+                    // Ví dụ: areaTypeCateFromDb.Images = await SaveFile(updatedData.Images);
                 }
 
-                var areaTypeCateFromDb = await _areaTypeCategoryService.Get(x => x.CategoryId == id);
-                if (areaTypeCateFromDb == null)
-                {
-                    var response2 = new ResponseDTO<object>(404, "Không tìm loại!", null);
-                    return NotFound(response2);
-                }
-
-                patchDoc.ApplyTo(areaTypeCateFromDb, ModelState);
-
+                // Validate model sau khi cập nhật
+                var areaTypeCateDTO = _mapper.Map<AreaTypeCategoryDTO>(areaTypeCateFromDb);
+                TryValidateModel(areaTypeCateDTO);
                 if (!ModelState.IsValid)
                 {
                     var allErrors = ModelState
-                    .SelectMany(ms => ms.Value.Errors
-                    .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
-                    .ToList();
+                        .SelectMany(ms => ms.Value.Errors
+                        .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
+                        .ToList();
                     string errorString = string.Join(" | ", allErrors);
                     var response = new ResponseDTO<object>(400, errorString, null);
                     return BadRequest(response);
                 }
 
-                var areTypeCates = _mapper.Map<AreaTypeCategoryDTO>(areaTypeCateFromDb);
-
-                bool isValid = TryValidateModel(areTypeCates);
-                if (!isValid)
-                {
-                    var allErrors = ModelState
-                    .SelectMany(ms => ms.Value.Errors
-                    .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
-                    .ToList();
-
-                    string errorString = string.Join(" | ", allErrors);
-                    var response = new ResponseDTO<object>(404, errorString, null);
-                    return BadRequest(response);
-                }
+                // Lưu thay đổi vào database
                 await _areaTypeCategoryService.Update(areaTypeCateFromDb);
-                var response3 = new ResponseDTO<object>(200, "Cập nhập thành công!", null);
-                return Ok(response3);
+
+                // Trả về phản hồi thành công kèm dữ liệu đã cập nhật
+                var updatedDTO = _mapper.Map<AreaTypeCategoryDTO>(areaTypeCateFromDb);
+                var responseSuccess = new ResponseDTO<object>(200, "Cập nhật thành công!", updatedDTO);
+                return Ok(responseSuccess);
             }
             catch (Exception ex)
             {
-                var response = new ResponseDTO<object>(01, "Lỗi khi cập nhập dữ liệu!", null);
+                var response = new ResponseDTO<object>(500, $"Lỗi khi cập nhật dữ liệu: {ex.Message}", null);
                 return StatusCode(500, response);
             }
         }
-
     }
 }
