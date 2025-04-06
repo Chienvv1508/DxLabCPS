@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -53,9 +54,9 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<AreaTypeCategory> GetWithInclude(Expression<Func<AreaTypeCategory, bool>> expression, params Expression<Func<AreaTypeCategory, object>>[] includes)
+        public async Task<AreaTypeCategory> GetWithInclude(Expression<Func<AreaTypeCategory, bool>> expression, params Expression<Func<AreaTypeCategory, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeCategoryRepository.GetWithInclude(expression, includes);
         }
 
         public async Task Update(AreaTypeCategory entity)
@@ -64,48 +65,64 @@ namespace DxLabCoworkingSpace
             await _unitOfWork.CommitAsync();
         }
 
-        public async Task updateAreaTypeCategory(int id, AreaTypeCategory updatedAreaTypeCategory)
+        public async Task updateAreaTypeCategory(int id, AreaTypeCategory updatedAreaTypeCategory, List<IFormFile> newImages)
         {
-            var AreaTypeCategory = await GetWithInclude(b => b.CategoryId == id, x => x.Images);
-            Console.WriteLine(1);
-            if (AreaTypeCategory == null)
+            var areaTypeCategory = await GetWithInclude(b => b.CategoryId == id, x => x.Images);
+            if (areaTypeCategory == null)
             {
                 throw new Exception("Không tìm thấy AreaType");
             }
 
-
-
-            // Xóa các file ảnh vật lý trong wwwroot/images (nếu có)
-            if (AreaTypeCategory.Images != null && AreaTypeCategory.Images.Any())
+            // Xóa ảnh cũ
+            if (areaTypeCategory.Images != null && areaTypeCategory.Images.Any())
             {
-                foreach (var image in AreaTypeCategory.Images)
+                foreach (var image in areaTypeCategory.Images.ToList())
                 {
                     var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", image.ImageUrl.TrimStart('/'));
                     if (File.Exists(filePath))
                     {
                         File.Delete(filePath);
                     }
+                    _unitOfWork.Context.Set<Image>().Remove(image);
                 }
-
-                // Xóa các bản ghi ảnh trong cơ sở dữ liệu
-                _unitOfWork.Context.Set<Image>().RemoveRange(AreaTypeCategory.Images);
-                AreaTypeCategory.Images.Clear(); // Làm sạch danh sách ảnh trong bộ nhớ
+                areaTypeCategory.Images.Clear();
             }
-            Console.WriteLine(2);
 
-            // Cập nhật thông tin blog
-            AreaTypeCategory.Title = updatedAreaTypeCategory.Title;
-            AreaTypeCategory.CategoryDescription = updatedAreaTypeCategory.CategoryDescription;
-            // Thêm ảnh mới (nếu có)
-            if (AreaTypeCategory.Images != null)
+            // Thêm ảnh mới từ newImages
+            if (newImages != null && newImages.Any())
             {
-                AreaTypeCategory.Images = updatedAreaTypeCategory.Images.Select(img => new Image { ImageUrl = img.ImageUrl }).ToList();
+                var imagesDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
+                Directory.CreateDirectory(imagesDir);
+
+                foreach (var file in newImages)
+                {
+                    if (file.Length > 0)
+                    {
+                        if (!file.FileName.EndsWith(".jpg") && !file.FileName.EndsWith(".png"))
+                            throw new Exception("Chỉ chấp nhận file .jpg hoặc .png!");
+                        if (file.Length > 5 * 1024 * 1024)
+                            throw new Exception("File quá lớn, tối đa 5MB!");
+
+                        var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileNameWithoutExtension(file.FileName)}{Path.GetExtension(file.FileName)}";
+                        var filePath = Path.Combine(imagesDir, uniqueFileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        areaTypeCategory.Images.Add(new Image { ImageUrl = $"/images/{uniqueFileName}" });
+                    }
+                }
             }
-            Console.WriteLine(3);
-            await _unitOfWork.AreaTypeCategoryRepository.Update(AreaTypeCategory);
-            Console.WriteLine(4);
+
+            // Cập nhật thông tin khác
+            areaTypeCategory.Title = updatedAreaTypeCategory.Title;
+            areaTypeCategory.CategoryDescription = updatedAreaTypeCategory.CategoryDescription;
+
+            // Lưu thay đổi
+            await _unitOfWork.AreaTypeCategoryRepository.Update(areaTypeCategory);
             await _unitOfWork.CommitAsync();
-            Console.WriteLine(5);
         }
     }
 }

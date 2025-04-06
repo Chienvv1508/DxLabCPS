@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpace.Core.DTOs.Room
+namespace DxLabCoworkingSpace
 {
     public class AreaTypeCategoryForUpdateDTO
     {

@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
-using DxLabCoworkingSpace.Core.DTOs.Room;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -93,40 +92,13 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (!string.IsNullOrEmpty(updatedData.CategoryDescription))
                     areaTypeCateFromDb.CategoryDescription = updatedData.CategoryDescription;
 
-                if (updatedData.Status != 0) // Assuming 0 is invalid
+                if (updatedData.Status != 0)
                     areaTypeCateFromDb.Status = updatedData.Status;
                 else
                     return BadRequest(new ResponseDTO<object>(400, "Giá trị Status không hợp lệ, phải là số nguyên khác 0!", null));
 
-                // Handle image updates
-                var imagesDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
-                Directory.CreateDirectory(imagesDir); // Creates if it doesn't exist
-
-                if (updatedData.Images != null && updatedData.Images.Any())
-                {
-                    areaTypeCateFromDb.Images.Clear(); // Clear existing images (if that's the intent)
-                    foreach (var file in updatedData.Images)
-                    {
-                        if (file.Length > 0)
-                        {
-                            if (!file.FileName.EndsWith(".jpg") && !file.FileName.EndsWith(".png"))
-                                return BadRequest(new ResponseDTO<object>(400, "Chỉ chấp nhận file .jpg hoặc .png!", null));
-
-                            if (file.Length > 5 * 1024 * 1024)
-                                return BadRequest(new ResponseDTO<object>(400, "File quá lớn, tối đa 5MB!", null));
-
-                            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileNameWithoutExtension(file.FileName)}{Path.GetExtension(file.FileName)}";
-                            var filePath = Path.Combine(imagesDir, uniqueFileName);
-
-                            using (var stream = new FileStream(filePath, FileMode.Create))
-                            {
-                                await file.CopyToAsync(stream);
-                            }
-
-                            areaTypeCateFromDb.Images.Add(new Image { ImageUrl = $"/images/{uniqueFileName}" });
-                        }
-                    }
-                }
+                // Không xử lý ảnh ở đây, chỉ truyền danh sách file vào service
+                areaTypeCateFromDb.Images = null; // Đặt lại để service tự xử lý
 
                 // Validate updated entity
                 var areaTypeCateDTO = _mapper.Map<AreaTypeCategoryDTO>(areaTypeCateFromDb);
@@ -137,15 +109,11 @@ namespace DXLAB_Coworking_Space_Booking_System
                     return BadRequest(new ResponseDTO<object>(400, string.Join(" | ", errors), null));
                 }
 
-                // Update in database (ensure this method exists and is implemented)
-                await _areaTypeCategoryService.updateAreaTypeCategory(id, areaTypeCateFromDb); // Fixed method name casing
+                // Truyền cả updatedData.Images vào service
+                await _areaTypeCategoryService.updateAreaTypeCategory(id, areaTypeCateFromDb, updatedData.Images);
 
                 var updatedDTO = _mapper.Map<AreaTypeCategoryDTO>(areaTypeCateFromDb);
                 return Ok(new ResponseDTO<object>(200, "Cập nhật thành công!", updatedDTO));
-            }
-            catch (NotImplementedException ex)
-            {
-                return StatusCode(500, new ResponseDTO<object>(500, $"Phương thức chưa được triển khai: {ex.Message}", null));
             }
             catch (Exception ex)
             {
