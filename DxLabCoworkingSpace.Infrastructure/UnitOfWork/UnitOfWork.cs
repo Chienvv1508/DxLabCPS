@@ -26,6 +26,7 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<FacilitiesStatus> _facilityStatusRepository;
         private IGenericRepository<SumaryExpense> _sumaryExpenseRepository;
         private IGenericRepository<ContractCrawl> _contractCrawlRepository;
+        private IGenericRepository<Report> _reportRepository;
         private IGenericRepository<AreaTypeCategory> _areaTypeCategoryRepository { get; }
         public UnitOfWork(DxLabSystemContext dbContext) 
         {
@@ -46,6 +47,7 @@ namespace DxLabCoworkingSpace
         public IGenericRepository<SumaryExpense> SumaryExpenseRepository => _sumaryExpenseRepository ?? new GenericRepository<SumaryExpense>(_dbContext);
         public IGenericRepository<ContractCrawl> ContractCrawlRepository => _contractCrawlRepository ?? new GenericRepository<ContractCrawl>(_dbContext);
         public IGenericRepository<AreaTypeCategory> AreaTypeCategoryRepository => _areaTypeCategoryRepository ?? new GenericRepository<AreaTypeCategory>(_dbContext);
+        public IGenericRepository<Report> ReportRepository => _reportRepository ?? new GenericRepository<Report>(_dbContext);
         public DbContext Context => _dbContext;
 
         public async Task CommitAsync()

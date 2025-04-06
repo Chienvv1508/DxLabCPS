@@ -8,7 +8,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Numerics;
 using System.Text;
-using DxLabCoworkingSpace.Service.Sevices.Blockchain;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
