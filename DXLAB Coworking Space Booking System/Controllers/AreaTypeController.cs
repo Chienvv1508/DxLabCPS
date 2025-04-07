@@ -23,7 +23,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateAreaType([FromBody] AreaTypeDTO areTypeDto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateAreaType([FromForm] AreaTypeDTO areTypeDto, [FromForm] List<IFormFile> files)
         {
             var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName);
             if (existedAreaType != null)
@@ -36,6 +37,17 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 var areaType = _mapper.Map<AreaType>(areTypeDto);
+                var result = await ImageSerive.AddImage(files);
+                if (!result.Item1)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Lỗi nhập ảnh", null));
+                }
+
+                foreach (var imageUrl in result.Item2)
+                {
+                    areaType.Images.Add(new Image { ImageUrl = imageUrl });
+                }
+                areTypeDto.Images = new List<string>();
                 await _areaTypeService.Add(areaType);
                 areTypeDto = _mapper.Map<AreaTypeDTO>(areaType);
 
