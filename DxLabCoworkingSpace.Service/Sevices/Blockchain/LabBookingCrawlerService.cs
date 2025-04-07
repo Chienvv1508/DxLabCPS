@@ -18,7 +18,9 @@ namespace DxLabCoworkingSpace
 
         public LabBookingCrawlerService(string providerCrawl, string contractAddress, string contractAbi, IUnitOfWork unitOfWork)
         {
-            _web3 = new Web3(providerCrawl);
+            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            var client = new Nethereum.JsonRpc.Client.RpcClient(new Uri(providerCrawl), httpClient);
+            _web3 = new Web3(client);
             _contractAddress = contractAddress;
             _contract = _web3.Eth.GetContract(contractAbi, contractAddress);
             _unitOfWork = unitOfWork;
@@ -347,17 +349,27 @@ namespace DxLabCoworkingSpace
 
         public async Task<int?> GetLatestBlockNumberAsync()
         {
-            try
+            const int maxRetries = 3;
+            for (int i = 0; i < maxRetries; i++)
             {
-                var latestBlockNumber = await _web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
-                Console.WriteLine($"Latest Block Number: {latestBlockNumber.Value}");
-                return (int)latestBlockNumber.Value;
+                try
+                {
+                    var latestBlockNumber = await _web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+                    Console.WriteLine($"Latest Block Number: {latestBlockNumber.Value}");
+                    return (int)latestBlockNumber.Value;
+                }
+                catch (Exception error)
+                {
+                    Console.WriteLine($"Thử lại {i + 1}/{maxRetries} - Lỗi lấy block mới nhất: {error.Message}");
+                    if (i == maxRetries - 1)
+                    {
+                        Console.WriteLine("Hết số lần thử, trả về null.");
+                        return null;
+                    }
+                    await Task.Delay(2000 * (i + 1)); // Delay tăng dần: 2s, 4s, 6s
+                }
             }
-            catch (Exception error)
-            {
-                Console.WriteLine($"Error fetching the latest block number: {error.Message}");
-                return null;
-            }
+            return null;
         }
     }
 

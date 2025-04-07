@@ -168,8 +168,8 @@ builder.Services.AddHangfireServer(options =>
 {
     options.WorkerCount = 20;                  // Số lượng worker
     options.Queues = new[] { "default" };      // Listening queues: 'default'
-    options.ShutdownTimeout = TimeSpan.FromDays(1)/*FromSeconds(30)*/; // Shutdown timeout
-    options.SchedulePollingInterval = TimeSpan.FromDays(1)/*FromSeconds(30)*/; // Schedule polling interval
+    options.ShutdownTimeout = TimeSpan.FromHours(1)/*FromSeconds(30)*/; // Shutdown timeout
+    options.SchedulePollingInterval = TimeSpan.FromHours(1)/*FromSeconds(30)*/; // Schedule polling interval
 });
 
 // Cập nhật CORS
@@ -213,7 +213,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     using (var scope = app.Services.CreateScope())
     {
         var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
-        jobService.ScheduleBookingLogJob();
+        jobService.ScheduleJob();
     }
 });
 app.MapControllers();

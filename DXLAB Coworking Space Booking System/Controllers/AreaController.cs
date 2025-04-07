@@ -195,6 +195,5 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 
             return Ok(new ResponseDTO<object>(200, "Danh sách thiết bị: ", result));
         }
-      
     }
 }
