@@ -154,7 +154,7 @@ builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
 
 //// Đăng ký LabBookingJobService
 builder.Services.AddScoped<ILabBookingJobService, LabBookingJobService>();
-//builder.Services.AddScoped<IUserTokenService, UserTokenService>();
+builder.Services.AddScoped<IUserTokenService, UserTokenService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 //// Thêm Hangfire với MemoryStorage
