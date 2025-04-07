@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -24,6 +25,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPost("newareatypecategory")]
+        [Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> CreateAreaTypeCategory([FromForm] AreaTypeCategoryForAddDTO areaTypeCategoryDTO)
         {
@@ -44,6 +46,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpGet("allAreaTypeCategory")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllAreaTypeCategory()
         {
             try
@@ -60,6 +63,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPatch("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PatchAreaTypeCategory(int id, [FromForm] AreaTypeCategoryForUpdateDTO updatedData)
         {
             try
