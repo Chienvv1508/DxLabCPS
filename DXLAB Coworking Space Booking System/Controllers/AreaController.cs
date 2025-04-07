@@ -121,8 +121,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
 
         }
-        [HttpGet("faciall")]
-        public async Task<IActionResult> GetAllFaci()
+        [HttpGet("allfacistatus")]
+        public async Task<IActionResult> GetAllFaciStatus()
         {
             try
             {
@@ -140,6 +140,34 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
 
         }
+
+        [HttpGet("allusingfaci")]
+        public async Task<IActionResult> GetAllUsingFaci()
+        {
+            try
+            {
+                var usingFacilities = await _usingFaclytyService.GetAllWithInclude(
+                    x => true, 
+                    x => x.Area, 
+                    x => x.Facility 
+                );
+
+                if (!usingFacilities.Any())
+                {
+                    return Ok(new ResponseDTO<object>(200, "Không có dữ liệu UsingFacility", new List<UsingFacilityDTO>()));
+                }
+
+                var usingFacilityDTOs = _mapper.Map<List<UsingFacilityDTO>>(usingFacilities);
+
+                return Ok(new ResponseDTO<object>(200, "Lấy thành công danh sách UsingFacility", usingFacilityDTOs));
+            }
+            catch (Exception ex)
+            {
+                var response = new ResponseDTO<object>(500, ex.Message + ex.StackTrace, null);
+                return StatusCode(500, response);
+            }
+        }
+
 
         [HttpPost("faciremoving")]
         [Authorize(Roles = "Admin")]
