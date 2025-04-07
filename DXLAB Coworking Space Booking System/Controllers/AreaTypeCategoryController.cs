@@ -99,7 +99,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (updatedData.Status != 0)
                     areaTypeCateFromDb.Status = updatedData.Status;
                 else
-                    return BadRequest(new ResponseDTO<object>(400, "Giá trị Status không hợp lệ, phải là số nguyên khác 0!", null));
+                    areaTypeCateFromDb.Status = updatedData.Status;
 
                 // Không xử lý ảnh ở đây, chỉ truyền danh sách file vào service
                 areaTypeCateFromDb.Images = null; // Đặt lại để service tự xử lý
