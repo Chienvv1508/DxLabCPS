@@ -102,11 +102,17 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 await _usingFaclytyService.Add(newUsingFacility, status);
 
+                var responseData = new
+                {
+                    AreaName = newUsingFacility.Area.AreaName,
+                    FacilityId = newUsingFacility.FacilityId,
+                    BatchNumber = newUsingFacility.BatchNumber,
+                    ImportDate = newUsingFacility.ImportDate,
+                    Quantity = newUsingFacility.Quantity
+                };
 
 
-
-                var reponse1 = new ResponseDTO<object>(200, "Thêm thiết bị thành công", null);
-                return Ok(reponse1);
+                return Ok(new ResponseDTO<object>(200, "Thêm thiết bị thành công", responseData));
             }
             catch (Exception ex)
             {

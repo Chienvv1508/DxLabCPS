@@ -1,4 +1,4 @@
-﻿ using AutoMapper;
+﻿using AutoMapper;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -95,7 +95,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     BlogTitle = resultDto.BlogTitle,
                     BlogContent = resultDto.BlogContent,
                     BlogCreatedDate = resultDto.BlogCreatedDate,
-                    Status = resultDto.Status,
+                    Status = resultDto.Status,  
                     UserName = resultDto.UserName,
                     Images = resultDto.Images
                 };
