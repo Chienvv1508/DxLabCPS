@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -24,6 +25,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPost("newareatypecategory")]
+        [Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> CreateAreaTypeCategory([FromForm] AreaTypeCategoryForAddDTO areaTypeCategoryDTO)
         {
@@ -44,6 +46,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpGet("allAreaTypeCategory")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllAreaTypeCategory()
         {
             try
@@ -60,6 +63,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPatch("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PatchAreaTypeCategory(int id, [FromForm] AreaTypeCategoryForUpdateDTO updatedData)
         {
             try
@@ -95,7 +99,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (updatedData.Status != 0)
                     areaTypeCateFromDb.Status = updatedData.Status;
                 else
-                    return BadRequest(new ResponseDTO<object>(400, "Giá trị Status không hợp lệ, phải là số nguyên khác 0!", null));
+                    areaTypeCateFromDb.Status = updatedData.Status;
 
                 // Không xử lý ảnh ở đây, chỉ truyền danh sách file vào service
                 areaTypeCateFromDb.Images = null; // Đặt lại để service tự xử lý
