@@ -168,8 +168,8 @@ builder.Services.AddHangfireServer(options =>
 {
     options.WorkerCount = 20;                  // Số lượng worker
     options.Queues = new[] { "default" };      // Listening queues: 'default'
-    options.ShutdownTimeout = TimeSpan.FromHours(1)/*FromSeconds(30)*/; // Shutdown timeout
-    options.SchedulePollingInterval = TimeSpan.FromHours(1)/*FromSeconds(30)*/; // Schedule polling interval
+    options.ShutdownTimeout = TimeSpan.FromSeconds(10)/*FromSeconds(30)*/; // Shutdown timeout
+    options.SchedulePollingInterval = TimeSpan.FromSeconds(10)/*FromSeconds(30)*/; // Schedule polling interval
 });
 
 // Cập nhật CORS

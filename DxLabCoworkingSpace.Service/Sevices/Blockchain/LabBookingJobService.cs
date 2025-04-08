@@ -44,7 +44,7 @@ namespace DxLabCoworkingSpace
             _contractAddress = _configuration.GetSection("ContractAddresses:Sepolia")["FPTCurrency"]
                 ?? throw new ArgumentNullException("ContractAddresses:Sepolia:FPTCurrency not configured");
             _sepoliaRpcUrl = _configuration.GetSection("Network")["ProviderCrawl"]
-                ?? "https://sepolia.infura.io/v3/9d13fab540c243ca9514d4ab4fe7e9e1";
+                ?? "https://sepolia.infura.io/v3/027867a8ebd44bc192e7f7b33baf4b4e";
             string labBookingPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "LabBookingSystem.json");
             string fptPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "FPTCurrency.json");
 
@@ -65,47 +65,104 @@ namespace DxLabCoworkingSpace
         }
         public void ScheduleJob() 
         {
+            //RecurringJob.AddOrUpdate(
+            //    "booking-log-job",
+            //    () => RunBookingLogJobAsync(),
+            //    "*/30 * * * * *", // Chạy mỗi 30 giây
+            //    TimeZoneInfo.FindSystemTimeZoneById("America/New_York")
+            //);
+            //Console.WriteLine("Crawl job was scheduled!");
+
+            //RecurringJob.AddOrUpdate(
+            //    "minting-job",
+            //    () => ExecuteMintingJob(),
+            //    "0 0 * * *", // Chạy hàng ngày lúc 0h (nửa đêm) EST
+            //    TimeZoneInfo.FindSystemTimeZoneById("America/New_York")
+            //);
+            //Console.WriteLine("Minting job was scheduled!");
+         
             RecurringJob.AddOrUpdate(
                 "booking-log-job",
                 () => RunBookingLogJobAsync(),
-                "*/30 * * * * *", // Chạy mỗi 30 giây
-                TimeZoneInfo.FindSystemTimeZoneById("America/New_York")
+                "*/5 * * * * *", 
+                TimeZoneInfo.Local
             );
-            Console.WriteLine("Crawl job was scheduled!");
 
             RecurringJob.AddOrUpdate(
                 "minting-job",
                 () => ExecuteMintingJob(),
-                "0 0 * * *", // Chạy hàng ngày lúc 0h (nửa đêm) EST
-                TimeZoneInfo.FindSystemTimeZoneById("America/New_York")
+                "*/5 * * * * *", 
+                TimeZoneInfo.Local
             );
-            Console.WriteLine("Minting job was scheduled!");
+
+            Console.WriteLine("Jobs were scheduled!");
+
+            BackgroundJob.Enqueue(() => RunBookingLogJobAsync());
+            BackgroundJob.Enqueue(() => ExecuteMintingJob());
         }
 
         public async Task RunBookingLogJobAsync()
         {
             Console.WriteLine("Starting to crawl booking logs...");
+
             try
             {
                 var lastBlockRecord = await _unitOfWork.ContractCrawlRepository.Get(c => c.ContractName == "LabBookingSystem");
-                var contractAddresses = _configuration.GetSection("ContractAddresses:Sepolia").Get<ContractAddresses>();
-
                 int fromBlock = lastBlockRecord != null ? int.Parse(lastBlockRecord.LastBlock) : 0;
+
                 var latestBlock = await _crawler.GetLatestBlockNumberAsync();
-                Console.WriteLine($"{fromBlock}");
-                Console.WriteLine($"{latestBlock}");
-                if (latestBlock.HasValue)
+
+                if (!latestBlock.HasValue)
                 {
-                    await _crawler.CrawlBookingEventsAsync(fromBlock, latestBlock.Value);
-                    var contractCrawl = await _unitOfWork.ContractCrawlRepository.Get(c => c.ContractName == "LabBookingSystem");
-                    if (contractCrawl != null)
+                    Console.WriteLine("Could not get latest block.");
+                    return;
+                }
+
+                int toBlock = (int)latestBlock.Value;
+                const int batchSize = 500;
+                const int maxRetry = 3;
+
+                for (int i = fromBlock; i <= toBlock; i += batchSize)
+                {
+                    int batchFrom = i;
+                    int batchTo = Math.Min(i + batchSize - 1, toBlock);
+
+                    Console.WriteLine($"Crawling from block {batchFrom} to {batchTo}...");
+
+                    for (int retry = 1; retry <= maxRetry; retry++)
                     {
-                        contractCrawl.LastBlock = latestBlock.Value.ToString();
-                        Console.WriteLine($"Cập nhật LastBlock thành {contractCrawl.LastBlock}");
-                        await _unitOfWork.CommitAsync();
-                        Console.WriteLine("Đã lưu LastBlock vào database.");
+                        try
+                        {
+                            await _crawler.CrawlBookingEventsAsync(batchFrom, batchTo);
+
+                            // Cập nhật last block
+                            var contractCrawl = await _unitOfWork.ContractCrawlRepository.Get(c => c.ContractName == "LabBookingSystem");
+                            if (contractCrawl != null)
+                            {
+                                contractCrawl.LastBlock = batchTo.ToString();
+                                await _unitOfWork.CommitAsync();
+                                Console.WriteLine($"Update LastBlock: {batchTo}");
+                            }
+                            break; // Thành công, thoát retry loop
+                        }
+                        catch (RpcResponseException rpcEx)
+                        {
+                            Console.WriteLine($"RPC error (retry {retry}/{maxRetry}) for blocks {batchFrom}-{batchTo}: {rpcEx.Message}");
+                            if (retry == maxRetry)
+                            {
+                                Console.WriteLine($"Skip batch {batchFrom}-{batchTo} after {maxRetry} trys.");
+                            }
+                            await Task.Delay(1000);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Unexpected error from block {batchFrom} to {batchTo}: {ex.Message}");
+                            break;
+                        }
                     }
                 }
+
+                Console.WriteLine("Crawl successfully!");
             }
             catch (Exception error)
             {
@@ -126,7 +183,8 @@ namespace DxLabCoworkingSpace
             using var scope = _serviceProvider.CreateScope();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            var users = await unitOfWork.UserRepository.GetAll(u => u.Status == true);
+
+            var users = await unitOfWork.UserRepository.GetAll(u => u.Status == true && !string.IsNullOrEmpty(u.WalletAddress));
 
 
             var contract = web3.Eth.GetContract(_fptContractAbi, _contractAddress);
@@ -170,7 +228,7 @@ namespace DxLabCoworkingSpace
             var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
             int attempts = 0;
             const int maxAttempts = 30;
-
+                
             while (receipt == null && attempts < maxAttempts)
             {
                 await Task.Delay(1000);
