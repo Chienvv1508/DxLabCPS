@@ -9,6 +9,7 @@ using Hangfire;
 using Hangfire.MemoryStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Nethereum.ABI.FunctionEncoding;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.JsonRpc.Client;
@@ -179,14 +180,10 @@ namespace DxLabCoworkingSpace
             var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             var client = new RpcClient(new Uri(_sepoliaRpcUrl), httpClient);
             var web3 = new Web3(account, client);
-
             using var scope = _serviceProvider.CreateScope();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-
             var users = await unitOfWork.UserRepository.GetAll(u => u.Status == true && !string.IsNullOrEmpty(u.WalletAddress));
-
-
             var contract = web3.Eth.GetContract(_fptContractAbi, _contractAddress);
             var mintFunction = contract.GetFunction("mintForUser");
             var amountToMint = Nethereum.Util.UnitConversion.Convert.ToWei(100m);
@@ -195,32 +192,41 @@ namespace DxLabCoworkingSpace
             {
                 try
                 {
-                    var gasEstimate = await mintFunction.EstimateGasAsync(user.WalletAddress, amountToMint);
-                    var transactionHash = await mintFunction.SendTransactionAsync(
+                    var gasEstimate = await mintFunction.EstimateGasAsync(
+                        from: account.Address,
+                        gas: null,
+                        value: null,
+                        functionInput: new object[] { user.WalletAddress, amountToMint });
+
+                    var txHash = await mintFunction.SendTransactionAsync(
                         from: account.Address,
                         gas: gasEstimate,
                         value: new HexBigInteger(0),
-                        user.WalletAddress,
-                        amountToMint
-                    );
+                        functionInput: new object[] { user.WalletAddress, amountToMint });
 
-                    Console.WriteLine($"Mint transaction sent for user {user.WalletAddress}, TxHash: {transactionHash}");
+                    Console.WriteLine($"Tx sent for {user.WalletAddress}: {txHash}");
 
-                    var receipt = await WaitForReceipt(web3, transactionHash);
+                    var receipt = await WaitForReceipt(web3, txHash);
                     if (receipt?.Status.Value == 1)
-                    {
-                        Console.WriteLine($"Mint successful for user {user.WalletAddress}");
-                    }
+                        Console.WriteLine($"✅ Minted for {user.WalletAddress}");
                     else
-                        Console.WriteLine($"Mint failed for user {user.WalletAddress}");
+                        Console.WriteLine($"❌ Mint FAILED for {user.WalletAddress}");
+                }
+                catch (SmartContractRevertException revertEx)
+                {
+                    Console.WriteLine($"REVERT for {user.WalletAddress}: {revertEx.RevertMessage}");
+                }
+                catch (RpcResponseException rpcEx)
+                {
+                    Console.WriteLine($"RPC Error for {user.WalletAddress}: {rpcEx.Message}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error minting for user {user.WalletAddress}: {ex.Message}");
+                    Console.WriteLine($"Error for {user.WalletAddress}: {ex.Message}");
                 }
             }
 
-            Console.WriteLine($"Completed daily minting job at {DateTime.UtcNow}");
+            Console.WriteLine($"[MintingJob] End at {DateTime.UtcNow}");
         }
 
         public async Task<TransactionReceipt> WaitForReceipt(Web3 web3, string transactionHash)
