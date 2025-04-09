@@ -135,8 +135,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                        "areaTypeName",
                         "areaDescription",
-                        "price",
-                        "images"
+                        "price"
+                       
                         
             };
                 var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
@@ -201,6 +201,80 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var response = new ResponseDTO<object>(01, "Lỗi khi cập nhập dữ liệu!", null);
                 return StatusCode(500, response);
+            }
+        }
+
+
+        [HttpPost("newImage")]
+        public async Task<IActionResult> AddNewImage(int id, [FromForm] List<IFormFile> Images)
+        {
+
+            try
+            {
+                var areaTypeFromDb = await _areaTypeService.Get(x => x.AreaTypeId == id);
+                if (areaTypeFromDb == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
+                if (Images == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
+                var result = await ImageSerive.AddImage(Images);
+                if (result.Item1 == true)
+                {
+                    foreach (var i in result.Item2)
+                    {
+                        areaTypeFromDb.Images.Add(new Image() { ImageUrl = i });
+
+                    }
+                }
+                else
+                    return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
+
+                await _areaTypeService.Update(areaTypeFromDb);
+                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công", null));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
+            }
+        }
+
+
+        [HttpDelete("Images")]
+        public async Task<IActionResult> RemoveImage(int id, [FromBody] List<string> images)
+        {
+            try
+            {
+                var areaTypeFromDb = await _areaTypeService.GetWithInclude(x => x.AreaTypeId == id, x => x.Images);
+                if (areaTypeFromDb == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
+                if (images == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
+                var imageList = areaTypeFromDb.Images;
+                if (imageList.Count <= images.Count)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
+                }
+
+                foreach (var image in images)
+                {
+                    var item = imageList.FirstOrDefault(x => x.ImageUrl == $"{image}");
+                    if (item == null)
+                        return BadRequest(new ResponseDTO<object>(400, "Ảnh không tồn tại trong loại khu vực!", null));
+                    areaTypeFromDb.Images.Remove(item);
+
+                }
+                await _areaTypeService.UpdateImage(areaTypeFromDb, images);
+
+
+                foreach (var image in images)
+                {
+                    ImageSerive.RemoveImage(image);
+                }
+                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công!", null));
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
             }
         }
     }

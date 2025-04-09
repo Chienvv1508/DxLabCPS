@@ -70,5 +70,28 @@ namespace DxLabCoworkingSpace
         {
             return await _unitOfWork.AreaTypeRepository.GetWithInclude(expression, includes);
         }
+
+        public async Task UpdateImage(AreaType areaTypeFromDb, List<string> images)
+        {
+            try
+            {
+                var listImage = await _unitOfWork.ImageRepository.GetAll(x => x.AreaTypeId == areaTypeFromDb.AreaTypeId);
+                if (images == null)
+                    throw new ArgumentNullException();
+                foreach (var item in images)
+                {
+                    var x = listImage.FirstOrDefault(x => x.ImageUrl == item);
+                    if (x == null) throw new Exception("Ảnh nhập vào không phù hợp");
+                    await _unitOfWork.ImageRepository.Delete(x.ImageId);
+
+                }
+                await _unitOfWork.AreaTypeRepository.Update(areaTypeFromDb);
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+            }
+        }
     }
 }
