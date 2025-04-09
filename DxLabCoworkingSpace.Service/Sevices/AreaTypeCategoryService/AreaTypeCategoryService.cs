@@ -10,6 +10,7 @@ namespace DxLabCoworkingSpace
     public class AreaTypeCategoryService : IAreaTypeCategoryService
     {
         private readonly IUnitOfWork _unitOfWork;
+        
 
         public AreaTypeCategoryService(IUnitOfWork unitOfWork)
         {
@@ -53,15 +54,38 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<AreaTypeCategory> GetWithInclude(Expression<Func<AreaTypeCategory, bool>> expression, params Expression<Func<AreaTypeCategory, object>>[] includes)
+        public async Task<AreaTypeCategory> GetWithInclude(Expression<Func<AreaTypeCategory, bool>> expression, params Expression<Func<AreaTypeCategory, object>>[] includes)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeCategoryRepository.GetWithInclude(expression,includes);
         }
 
         public async Task Update(AreaTypeCategory entity)
         {
            await _unitOfWork.AreaTypeCategoryRepository.Update(entity);
            await _unitOfWork.CommitAsync();
+        }
+
+        public async Task UpdateImage(AreaTypeCategory areaTypeCateFromDb, List<string> images)
+        {
+            try
+            {
+                var listImage = await _unitOfWork.ImageRepository.GetAll(x => x.AreaTypeCategoryId == areaTypeCateFromDb.CategoryId);
+                if (images == null)
+                    throw new ArgumentNullException();
+                foreach(var item in images)
+                {
+                    var x = listImage.FirstOrDefault(x => x.ImageUrl == item);
+                    if (x == null) throw new Exception("Ảnh nhập vào không phù hợp");
+                   await _unitOfWork.ImageRepository.Delete(x.ImageId);
+
+                }
+                await _unitOfWork.AreaTypeCategoryRepository.Update(areaTypeCateFromDb);
+                await _unitOfWork.CommitAsync();
+            }
+            catch(Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+            }
         }
     }
 }

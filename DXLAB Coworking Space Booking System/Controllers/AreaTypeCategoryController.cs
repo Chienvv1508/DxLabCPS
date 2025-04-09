@@ -12,11 +12,13 @@ namespace DXLAB_Coworking_Space_Booking_System
     {
         private readonly IAreaTypeCategoryService _areaTypeCategoryService;
         private readonly IMapper _mapper;
+        private readonly IImageServiceDb _imageServiceDb;
 
-        public AreaTypeCategoryController(IAreaTypeCategoryService areaTypeCategoryService, IMapper mapper)
+        public AreaTypeCategoryController(IAreaTypeCategoryService areaTypeCategoryService, IMapper mapper, IImageServiceDb imageServiceDb)
         {
             _areaTypeCategoryService = areaTypeCategoryService;
             _mapper = mapper;
+            _imageServiceDb = imageServiceDb;
         }
 
         [HttpPost("newareatypecategory")]
@@ -70,9 +72,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 {
                        "title",
                         "categoryDescription",
-                        "status",
-                        "images"
-
+                        "status"
                 };
                 var areaTypeCategoryTitleOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("title", StringComparison.OrdinalIgnoreCase));
                 if (areaTypeCategoryTitleOp != null)
@@ -136,6 +136,79 @@ namespace DXLAB_Coworking_Space_Booking_System
             {
                 var response = new ResponseDTO<object>(01, "Lỗi khi cập nhập dữ liệu!", null);
                 return StatusCode(500, response);
+            }
+        }
+
+        [HttpPost("newImage")]
+        public async Task<IActionResult> AddNewImageInAreaTypeCategory(int id, [FromForm] List<IFormFile> Images)
+        {
+
+            try
+            {
+                var areaTypeCateFromDb = await _areaTypeCategoryService.Get(x => x.CategoryId == id);
+                if (areaTypeCateFromDb == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
+                if (Images == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
+                var result = await ImageSerive.AddImage(Images);
+                if (result.Item1 == true)
+                {
+                    foreach (var i in result.Item2)
+                    {
+                        areaTypeCateFromDb.Images.Add(new Image() { ImageUrl = i });
+
+                    }
+                }
+                else
+                    return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
+
+                await _areaTypeCategoryService.Update(areaTypeCateFromDb);
+                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công", null));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
+            }
+        }
+
+
+        [HttpDelete("Images")]
+        public async Task<IActionResult> RemoveImage(int id,[FromBody] List<string> images)
+        {
+            try
+            {
+                var areaTypeCateFromDb = await _areaTypeCategoryService.GetWithInclude(x => x.CategoryId == id,x => x.Images);
+                if (areaTypeCateFromDb == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
+                if(images == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
+                var imageList = areaTypeCateFromDb.Images;
+                if(imageList.Count <= images.Count)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
+                }
+                
+                foreach(var image in images)
+                {
+                    var item = imageList.FirstOrDefault(x => x.ImageUrl == $"{image}");
+                    if(item == null)
+                        return BadRequest(new ResponseDTO<object>(400, "Ảnh không tồn tại trong loại khu vực!", null));
+                    areaTypeCateFromDb.Images.Remove(item);
+
+                }
+                await _areaTypeCategoryService.UpdateImage(areaTypeCateFromDb,images);
+               
+
+                foreach (var image in images)
+                {
+                    ImageSerive.RemoveImage(image);
+                }
+                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công!", null));
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
             }
         }
 

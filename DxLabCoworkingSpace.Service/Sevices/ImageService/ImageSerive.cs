@@ -11,8 +11,6 @@ namespace DxLabCoworkingSpace
     {
         public static async Task<Tuple<bool,List<string>>> AddImage(List<IFormFile> fromFiles)
         {
-
-            // Đảm bảo thư mục images tồn tại
             var imagesDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
             if (!Directory.Exists(imagesDir))
             {
@@ -59,6 +57,25 @@ namespace DxLabCoworkingSpace
 
             return new Tuple<bool, List<string>>(true, images);
 
+        }
+        public static Tuple<bool,string> RemoveImage(string relativeImagePath)
+        {
+            try
+            {
+                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativeImagePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+
+                if (System.IO.File.Exists(imagePath))
+                {
+                    System.IO.File.Delete(imagePath);
+                    return new Tuple<bool,string>(true,$"/Images/{relativeImagePath}");
+                }
+
+                return new Tuple<bool, string>(false, $"/Images/{relativeImagePath}");
+            }
+            catch
+            {
+                return new Tuple<bool, string>(false, $"/Images/{relativeImagePath}");
+            }
         }
     }
 }
