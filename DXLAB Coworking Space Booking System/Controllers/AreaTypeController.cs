@@ -23,7 +23,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateAreaType([FromBody] AreaTypeDTO areTypeDto)
+        public async Task<IActionResult> CreateAreaType([FromForm] AreaTypeForAddDTO areTypeDto)
         {
             var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName);
             if (existedAreaType != null)
@@ -36,10 +36,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             try
             {
                 var areaType = _mapper.Map<AreaType>(areTypeDto);
+                var rs = await ImageSerive.AddImage(areTypeDto.Images);
+                if(rs.Item1 == true)
+                {
+                    foreach(var i in rs.Item2)
+                    {
+                        areaType.Images.Add(new Image() { ImageUrl = i});
+                    }
+                }
                 await _areaTypeService.Add(areaType);
-                areTypeDto = _mapper.Map<AreaTypeDTO>(areaType);
+                var areTypeDtoResult = _mapper.Map<AreaTypeDTO>(areaType);
 
-                var response = new ResponseDTO<AreaTypeDTO>(201, "Tạo loại khu vực thành công", areTypeDto);
+                var response = new ResponseDTO<AreaTypeDTO>(201, "Tạo loại khu vực thành công", areTypeDtoResult);
                 return CreatedAtAction(nameof(GetAreTypeById), new { id = areaType.AreaTypeId }, response);
             }
             catch (DbUpdateException ex)

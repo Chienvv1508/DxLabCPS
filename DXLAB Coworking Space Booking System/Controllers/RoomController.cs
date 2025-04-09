@@ -32,8 +32,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDto)
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateRoom([FromForm] RoomForAddDTO roomDto)
         {
             if (roomDto.Area_DTO == null || !roomDto.Area_DTO.Any())
             {
@@ -123,6 +123,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     }
                 }
 
+                var rs = await ImageSerive.AddImage(roomDto.Images);
+                if (rs.Item1 == true)
+                {
+                    foreach (var i in rs.Item2)
+                    {
+                        room.Images.Add(new Image() { ImageUrl = i });
+                    }
+                }else
+                {
+                    var response1 = new ResponseDTO<object>(500, "Lỗi nhập ảnh!", null);
+                    return BadRequest(response1);
+                }    
                 // Lưu room vào database
                 await _roomService.Add(room);
 
@@ -146,9 +158,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 // Ánh xạ sang RoomDTO để trả về
-                roomDto = _mapper.Map<RoomDTO>(savedRoom);
+              var roomDtoRs = _mapper.Map<RoomDTO>(savedRoom);
 
-                var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDto);
+                var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDtoRs);
                 return CreatedAtAction(nameof(GetRoomById), new { id = room.RoomId }, response);
             }
             catch (DbUpdateException ex)
@@ -199,14 +211,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
 
             };
-            var allowedPaths = new HashSet<string>
+            foreach (var operation in patchDoc.Operations)
             {
-            "areaTypeName",
-             "areaDescription",
-             "price"
-
-
-            };
+                if (!allowedPaths.Contains(operation.path))
+                {
+                    var response1 = new ResponseDTO<object>(400, $"Không thể cập nhật trường: {operation.path}", null);
+                    return BadRequest(response1);
+                }
+            }
 
 
             patchDoc.ApplyTo(roomFromDb, ModelState);  

@@ -135,6 +135,14 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(x => x.Images, opt =>
                     opt.Ignore());
 
+
+            CreateMap<AreaTypeForAddDTO, AreaType>()
+                .ForMember(x => x.Images, opt =>
+                    opt.Ignore());
+            CreateMap<RoomForAddDTO, Room>()
+              .ForMember(x => x.Images, opt =>
+                  opt.Ignore());
+
         }
     }
 }
