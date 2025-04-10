@@ -72,61 +72,27 @@ namespace DxLabCoworkingSpace
             return await _unitOfWork.AreaTypeRepository.GetWithInclude(expression, includes);
         }
 
-        public async Task UpdateImage(int id, AreaType areaTypeFromDb, List<IFormFile> newImages)
+        public async Task UpdateImage(AreaType areaTypeFromDb, List<string> images)
         {
-            var areaType = await GetWithInclude(b => b.AreaTypeId == id, x => x.Images);
-            if (areaType == null)
+            try
             {
-                throw new Exception("Không tìm thấy AreaType");
-            }
-
-            // Xóa ảnh cũ
-            if (areaType.Images != null && areaType.Images.Any())
-            {
-                foreach (var image in areaType.Images.ToList())
+                var listImage = await _unitOfWork.ImageRepository.GetAll(x => x.AreaTypeId == areaTypeFromDb.AreaTypeId);
+                if (images == null)
+                    throw new ArgumentNullException();
+                foreach (var item in images)
                 {
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", image.ImageUrl.TrimStart('/'));
-                    if (File.Exists(filePath))
-                    {
-                        File.Delete(filePath);
-                    }
-                    _unitOfWork.Context.Set<Image>().Remove(image);
-                }
-                areaType.Images.Clear();
-            }
+                    var x = listImage.FirstOrDefault(x => x.ImageUrl == item);
+                    if (x == null) throw new Exception("Ảnh nhập vào không phù hợp");
+                    await _unitOfWork.ImageRepository.Delete(x.ImageId);
 
-            // Thêm ảnh mới từ newImages
-            if (newImages != null && newImages.Any())
+                }
+                await _unitOfWork.AreaTypeRepository.Update(areaTypeFromDb);
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception ex)
             {
-                var imagesDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
-                Directory.CreateDirectory(imagesDir);
-                areaTypeFromDb.Images.Clear();
-
-                foreach (var file in newImages)
-                {
-                    if (file.Length > 0)
-                    {
-                        if (!file.FileName.EndsWith(".jpg") && !file.FileName.EndsWith(".png"))
-                            throw new Exception("Chỉ chấp nhận file .jpg hoặc .png!");
-                        if (file.Length > 5 * 1024 * 1024)
-                            throw new Exception("File quá lớn, tối đa 5MB!");
-
-                        var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileNameWithoutExtension(file.FileName)}{Path.GetExtension(file.FileName)}";
-                        var filePath = Path.Combine(imagesDir, uniqueFileName);
-
-                        using (var stream = new FileStream(filePath, FileMode.Create))
-                        {
-                            await file.CopyToAsync(stream);
-                        }
-
-                        areaTypeFromDb.Images.Add(new Image { ImageUrl = $"/images/{uniqueFileName}" });
-                    }
-                }
+                await _unitOfWork.RollbackAsync();
             }
-
-            // Lưu thay đổi
-            await _unitOfWork.AreaTypeRepository.Update(areaTypeFromDb);
-            await _unitOfWork.CommitAsync();
         }
     }
 }

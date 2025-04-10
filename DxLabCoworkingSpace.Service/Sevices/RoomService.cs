@@ -98,5 +98,28 @@ namespace DxLabCoworkingSpace {
             await _unitOfWork.CommitAsync();
 
     }
-}
+
+        public async Task UpdateImage(Room roomFromDb, List<string> images)
+        {
+            try
+            {
+                var listImage = await _unitOfWork.ImageRepository.GetAll(x => x.RoomId == roomFromDb.RoomId);
+                if (images == null)
+                    throw new ArgumentNullException();
+                foreach (var item in images)
+                {
+                    var x = listImage.FirstOrDefault(x => x.ImageUrl == item);
+                    if (x == null) throw new Exception("Ảnh nhập vào không phù hợp");
+                    await _unitOfWork.ImageRepository.Delete(x.ImageId);
+
+                }
+                await _unitOfWork.RoomRepository.Update(roomFromDb);
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+            }
+        }
+    }
 }

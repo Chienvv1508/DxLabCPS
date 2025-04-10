@@ -11,6 +11,6 @@ namespace DxLabCoworkingSpace
     public interface IAreaTypeService : IGenericeService<AreaType>
     {
         public Task<object> GetAreaTypeForAddRoom();
-        Task UpdateImage(int id, AreaType areaTypeFromDb, List<IFormFile> files);
+        Task UpdateImage(AreaType areaTypeFromDb, List<string> images);
     }
 }
