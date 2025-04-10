@@ -56,7 +56,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         FacilityTitle = d.Facility.FacilityTitle,
                         FacilityCategory = d.Facility.FacilityCategory,
                         SumDate = d.SumDate,
-                        DepreciationAmount = d.DepreciationAmount
+                        DepreciationAmount = d.DepreciationAmount,
+
+                        BatchNumber = d.BatchNumber
 
                     };
                     list.Add(depreciationDTO);
@@ -93,8 +95,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             FacilityTitle = d.Facility.FacilityTitle,
                             FacilityCategory = d.Facility.FacilityCategory,
                             SumDate = d.SumDate,
-                            DepreciationAmount = d.DepreciationAmount
-                            
+                            DepreciationAmount = d.DepreciationAmount,
+                            BatchNumber = d.BatchNumber
+
                         };
                         list.Add(depreciationDTO);
                     }    
