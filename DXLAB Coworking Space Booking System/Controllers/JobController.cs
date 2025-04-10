@@ -66,19 +66,25 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("month")]
-        public async Task<IActionResult> GetSumaryExpense(DateTime date)
+        public async Task<IActionResult> GetSumaryExpense(int year, int month)
         {
             try
             {
-                if(date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year && date.Month < DateTime.Now.Month))
+                if(year > 9999 || year < 2000 || month >12 || month < 1)
                 {
+                    return BadRequest(new ResponseDTO<object>(400, "Nhập năm hoặc tháng không hợp lệ!", null));
+                }
+
+                DateTime date = new DateTime(year, month, 1);
+                //if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year && date.Month < DateTime.Now.Month))
+                //{
                     var sums = await _sumaryExpenseService.GetAll(x=>x.SumaryDate.Year == date.Year && x.SumaryDate.Month == date.Month);
                     return Ok(new ResponseDTO<object>(200, "Lấy dữ liệu thành công", sums));
-                }
-                else
-                {
-                    return BadRequest(new ResponseDTO<object>(400,"Chưa tổng hợp chi phí cho tháng này!", null));
-                }
+               // }
+                //else
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400,"Chưa tổng hợp chi phí cho tháng này!", null));
+                //}
                
             }
             catch(Exception ex)
@@ -92,15 +98,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year))
-                {
+                //if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year))
+                //{
                     var sums = await _sumaryExpenseService.GetAll(x => x.SumaryDate.Year == date.Year);
                     return Ok(new ResponseDTO<object>(200, "Lấy dữ liệu thành công", sums));
-                }
-                else
-                {
-                    return BadRequest(new ResponseDTO<object>(400, "Chưa tổng hợp chi phí cho tháng này!", null));
-                }
+                //}
+                //else
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, "Chưa tổng hợp chi phí cho tháng này!", null));
+                //}
 
             }
             catch (Exception ex)
