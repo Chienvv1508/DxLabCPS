@@ -146,6 +146,14 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => DateTime.Now))
                 .ForMember(dest => dest.UserId, opt => opt.Ignore());
 
+
+            CreateMap<AreaTypeForAddDTO, AreaType>()
+                .ForMember(x => x.Images, opt =>
+                    opt.Ignore());
+            CreateMap<RoomForAddDTO, Room>()
+              .ForMember(x => x.Images, opt =>
+                  opt.Ignore());
+
             // Mapping cho Report -> ReportResponseDTO
             CreateMap<Report, ReportResponseDTO>()
     .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate.ToString("yyyy-MM-ddTHH:mm:ss")))

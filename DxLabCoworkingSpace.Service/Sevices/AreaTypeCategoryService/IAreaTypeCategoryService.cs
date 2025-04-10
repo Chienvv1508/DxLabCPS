@@ -9,6 +9,6 @@ namespace DxLabCoworkingSpace
 {
     public interface IAreaTypeCategoryService : IGenericeService<AreaTypeCategory>
     {
-        Task updateAreaTypeCategory(int id, AreaTypeCategory updatedAreaTypeCategory, List<IFormFile> newImages);
+        Task UpdateImage(AreaTypeCategory areaTypeCateFromDb, List<string> images);
     }
 }

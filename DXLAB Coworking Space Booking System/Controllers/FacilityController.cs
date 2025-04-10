@@ -30,7 +30,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Add Facility From Excel File
         [HttpPost("importexcel")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacilityFromExcel(IFormFile file)
         {
             try
@@ -119,6 +119,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 ImportDate = import,
                                 Size = size,
                                 FacilityCategory = facilityCategory,
+                                RemainingValue = cost ,
                                 FacilitiesStatuses = new List<FacilitiesStatus> 
                                                         {
                                                             new FacilitiesStatus
@@ -167,7 +168,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
        
         // Add New Facility
         [HttpPost("createfacility")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateFacility([FromBody] FacilitiesDTO facilityDto)
         {
             try
@@ -178,6 +179,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 var facility = _mapper.Map<Facility>(facilityDto);
+                facility.RemainingValue = facility.Cost;
                 facility.FacilitiesStatuses.Add(new FacilitiesStatus { BatchNumber = facility.BatchNumber , ImportDate = facility.ImportDate,
                 Quantity = facility.Quantity, Status = 0
                 

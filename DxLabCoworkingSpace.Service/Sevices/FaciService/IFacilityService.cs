@@ -9,5 +9,6 @@ namespace DxLabCoworkingSpace
     public interface IFacilityService : IGenericeService<Facility>
     {
         Task AddFacilityFromExcel(List<Facility> facilities);
+        Task Update(IEnumerable<Facility> faciKHList);
     }
 }
