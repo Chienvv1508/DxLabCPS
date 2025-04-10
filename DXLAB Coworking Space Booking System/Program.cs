@@ -15,6 +15,7 @@ using Nethereum.ABI.Model;
 using System.IO;
 using DxLabCoworkingSpace.Service.Sevices.Blockchain;
 using Microsoft.Extensions.Options;
+using DxLabCoworkingSpa;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -143,6 +144,7 @@ builder.Services.AddScoped<IFaciStatusService, FaciStatusService>();
 builder.Services.AddScoped<ISumaryExpenseService, SumaryExpenseService>();
 builder.Services.AddScoped<IAreaTypeCategoryService, AreaTypeCategoryService>();
 builder.Services.AddScoped<IImageServiceDb, ImageServiceDb>();
+builder.Services.AddScoped<IDepreciationService, DepreciationService>();
 
 
 //// Đăng ký LabBookingCrawlerService với các giá trị từ configuration

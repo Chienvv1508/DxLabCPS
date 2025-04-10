@@ -167,6 +167,15 @@ namespace DxLabCoworkingSpace
                     .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
                     .HasConstraintName("FK_FacilitiesStatus_Facilities");
             });
+            modelBuilder.Entity<DepreciationSum>(entity =>
+            {
+               
+
+                entity.HasOne(d => d.Facility)
+                    .WithMany(p => p.DepreciationSums)
+                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
+                    .HasConstraintName("FK_DepreciationSum_Facilities");
+            });
 
             modelBuilder.Entity<Facility>(entity =>
             {

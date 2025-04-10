@@ -28,6 +28,7 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<ContractCrawl> _contractCrawlRepository;
         private IGenericRepository<Image> _imageRepository { get; }
         private IGenericRepository<AreaTypeCategory> _areaTypeCategoryRepository { get; }
+        private IGenericRepository<DepreciationSum> _depreciationSumRepository { get; }
         public UnitOfWork(DxLabSystemContext dbContext) 
         {
             _dbContext = dbContext;
@@ -48,6 +49,7 @@ namespace DxLabCoworkingSpace
         public IGenericRepository<ContractCrawl> ContractCrawlRepository => _contractCrawlRepository ?? new GenericRepository<ContractCrawl>(_dbContext);
         public IGenericRepository<AreaTypeCategory> AreaTypeCategoryRepository => _areaTypeCategoryRepository ?? new GenericRepository<AreaTypeCategory>(_dbContext);
         public IGenericRepository<Image> ImageRepository => _imageRepository ?? new GenericRepository<Image>(_dbContext);
+        public IGenericRepository<DepreciationSum> DepreciationSumRepository => _depreciationSumRepository ?? new GenericRepository<DepreciationSum>(_dbContext);
         public DbContext Context => _dbContext;
 
         public async Task CommitAsync()
