@@ -35,6 +35,7 @@ namespace DxLabCoworkingSpace
         public virtual DbSet<UsingFacility> UsingFacilities { get; set; } = null!;
         public virtual DbSet<SumaryExpense> SumaryExpenses { get; set; } = null!;
         public virtual DbSet<AreaTypeCategory> AreaTypeCategory { get; set; } = null!;
+        public virtual DbSet<UltilizationRate> UltilizationRateCategory { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

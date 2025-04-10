@@ -145,6 +145,7 @@ builder.Services.AddScoped<ISumaryExpenseService, SumaryExpenseService>();
 builder.Services.AddScoped<IAreaTypeCategoryService, AreaTypeCategoryService>();
 builder.Services.AddScoped<IImageServiceDb, ImageServiceDb>();
 builder.Services.AddScoped<IDepreciationService, DepreciationService>();
+builder.Services.AddScoped<IUltilizationRateService, UltilizationRateService>();
 
 
 //// Đăng ký LabBookingCrawlerService với các giá trị từ configuration
