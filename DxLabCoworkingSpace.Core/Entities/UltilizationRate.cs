@@ -21,5 +21,7 @@ namespace DxLabCoworkingSpace
         public string AreaTypeCategoryTitle { get; set; }
 
         public decimal Rate { get; set; }
+
+
     }
 }
