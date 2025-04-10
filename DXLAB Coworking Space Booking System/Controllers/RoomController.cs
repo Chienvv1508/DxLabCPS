@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NBitcoin.Secp256k1;
 using Nethereum.Contracts.Standards.ERC20.TokenList;
+using Newtonsoft.Json;
 using Thirdweb;
 
 
@@ -33,8 +34,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         [HttpPost]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateRoom([FromForm] RoomForAddDTO roomDto)
+        public async Task<IActionResult> CreateRoom([FromForm] RoomForAddDTO roomDto, [FromForm] string AreaAddDTO)
         {
+            if (string.IsNullOrEmpty(AreaAddDTO))
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null));
+            }
+
+
+            roomDto.Area_DTO = JsonConvert.DeserializeObject<List<AreaDTO>>(AreaAddDTO);
+
             if (roomDto.Area_DTO == null || !roomDto.Area_DTO.Any())
             {
                 var response = new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null);
