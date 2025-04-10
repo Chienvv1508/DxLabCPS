@@ -35,20 +35,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDto)
         {
-
-            if (roomDto.Area_DTO == null)
-            {
-                var response = new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null);
-                return BadRequest(response);
-            }
-            if (roomDto.Area_DTO.Count() == 0)
+            if (roomDto.Area_DTO == null || !roomDto.Area_DTO.Any())
             {
                 var response = new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null);
                 return BadRequest(response);
             }
 
             var existedRoom = await _roomService.Get(x => x.RoomName == roomDto.RoomName);
-
             if (existedRoom != null)
             {
                 var response = new ResponseDTO<object>(400, "Tên phòng đã tồn tại!", null);
@@ -57,30 +50,28 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
-                //check size
+                // Check size
                 int areas_totalSize = 0;
                 var areaTypeList = await _areaTypeService.GetAll();
-               // var areaTypeListPara = new List<AreaType>();
                 Area individualArea = null;
                 int inputIndividual = 0;
+
                 foreach (var area in roomDto.Area_DTO)
                 {
                     var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
                     if (areatype != null)
                     {
                         areas_totalSize += areatype.Size;
-                      //  areaTypeListPara.Add(areatype);
                         if (areatype.AreaCategory == 1)
                         {
                             inputIndividual++;
-                            if(inputIndividual > 1)
+                            if (inputIndividual > 1)
                             {
-                                var response1 = new ResponseDTO<object>(400, $"Trong phòng chỉ được có 1 phòng cá nhân", null);
+                                var response1 = new ResponseDTO<object>(400, "Trong phòng chỉ được có 1 phòng cá nhân", null);
                                 return BadRequest(response1);
-                            }    
-                            individualArea = new Area();
+                            }
                             individualArea = _mapper.Map<Area>(area);
-                            individualArea.AreaType = areatype;   
+                            individualArea.AreaType = areatype;
                         }
                     }
                     else
@@ -96,13 +87,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(response1);
                 }
 
-                //check arename
-                var areaList = roomDto.Area_DTO;
+                // Check area name duplicates
                 var areaNameList = new List<string>();
-                //var araeExistedList = await _areaService.GetAll();
-                foreach(var area in areaList)
+                foreach (var area in roomDto.Area_DTO)
                 {
-                    if(areaNameList.FirstOrDefault(x => x.Equals(area.AreaName)) != null)
+                    if (areaNameList.Contains(area.AreaName))
                     {
                         var response1 = new ResponseDTO<object>(400, "Tên khu vực đang nhập trùng nhau", null);
                         return BadRequest(response1);
@@ -110,38 +99,64 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     areaNameList.Add(area.AreaName);
                 }
 
+                // Ánh xạ từ RoomDTO sang Room
                 var room = _mapper.Map<Room>(roomDto);
-                
-                //Thêm position
-                    if (individualArea != null)
-                    {
-                    var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == individualArea.AreaTypeId);
 
+                // Thêm position cho khu vực cá nhân
+                if (individualArea != null)
+                {
+                    var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == individualArea.AreaTypeId);
+                    if (xr != null)
+                    {
                         int[] position = Enumerable.Range(1, individualArea.AreaType.Size).ToArray();
-                        List<Position> postions = new List<Position>();
+                        List<Position> positions = new List<Position>();
                         for (int i = 1; i <= position.Length; i++)
                         {
-                            var pos = new Position();
-                            pos.PositionNumber = i;
-                            pos.Status = true;
-                            postions.Add(pos);
+                            var pos = new Position
+                            {
+                                PositionNumber = i,
+                                Status = true
+                            };
+                            positions.Add(pos);
                         }
-                    xr.Positions = postions;
-
+                        xr.Positions = positions;
                     }
-                   
+                }
+
+                // Lưu room vào database
                 await _roomService.Add(room);
-                roomDto = _mapper.Map<RoomDTO>(room);
+
+                // Tải lại room từ database với Areas, Images và AreaType
+                var savedRoom = await _roomService.GetWithInclude(
+                    r => r.RoomId == room.RoomId,
+                    r => r.Areas // Include Areas
+                );
+
+                if (savedRoom != null)
+                {
+                    foreach (var area in savedRoom.Areas)
+                    {
+                        var areaWithImages = await _areaService.GetWithInclude(
+                            a => a.AreaId == area.AreaId,
+                            a => a.Images
+                        );
+                        area.Images = areaWithImages.Images.ToList();
+                        area.AreaType = await _areaTypeService.Get(at => at.AreaTypeId == area.AreaTypeId);
+                    }
+                }
+
+                // Ánh xạ sang RoomDTO để trả về
+                roomDto = _mapper.Map<RoomDTO>(savedRoom);
 
                 var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDto);
                 return CreatedAtAction(nameof(GetRoomById), new { id = room.RoomId }, response);
             }
-            catch (DbUpdateException ex)  // Lỗi liên quan đến database
+            catch (DbUpdateException ex)
             {
                 var response = new ResponseDTO<object>(500, "Lỗi cập nhật cơ sở dữ liệu.", ex.Message);
                 return StatusCode(500, response);
             }
-            catch (Exception ex)  // Các lỗi khác
+            catch (Exception ex)
             {
                 var response = new ResponseDTO<object>(500, "Đã xảy ra lỗi khi tạo phòng.", ex.Message);
                 return StatusCode(500, response);
@@ -209,16 +224,23 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RoomDTO>>> GetAllRooms()
-        {    
+        {
+            // Tải tất cả Room với Areas, Images của Areas và AreaType
             var rooms = await _roomService.GetAll();
-           
-            foreach(var r in rooms)
+
+            foreach (var r in rooms)
             {
-                foreach(var a in r.Areas)
+                foreach (var a in r.Areas)
                 {
-                    var areaType = await _areaTypeService.Get(x => x.AreaTypeId == a.AreaTypeId);
-                    a.AreaType = areaType;
-                }   
+                    // Tải Images và AreaType cho mỗi Area
+                    var areaWithDetails = await _areaService.GetWithInclude(
+                        x => x.AreaId == a.AreaId,
+                        x => x.Images,
+                        x => x.AreaType
+                    );
+                    a.Images = areaWithDetails.Images.ToList();
+                    a.AreaType = areaWithDetails.AreaType;
+                }
             }
             var roomDtos = _mapper.Map<IEnumerable<RoomDTO>>(rooms);
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDtos);
@@ -228,17 +250,26 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<RoomDTO>> GetRoomById(int id)
         {
+            // Tải Room với Areas và Images của Room
             var room = await _roomService.Get(x => x.RoomId == id);
             if (room == null)
             {
                 var responseNotFound = new ResponseDTO<object>(404, "Mã Room không tồn tại", null);
                 return NotFound(responseNotFound);
             }
+
             foreach (var a in room.Areas)
             {
-                var areaType = await _areaTypeService.Get(x => x.AreaTypeId == a.AreaTypeId);
-                a.AreaType = areaType;
+                // Tải Images và AreaType cho mỗi Area
+                var areaWithDetails = await _areaService.GetWithInclude(
+                    x => x.AreaId == a.AreaId,
+                    x => x.Images,
+                    x => x.AreaType
+                );
+                a.Images = areaWithDetails.Images.ToList();
+                a.AreaType = areaWithDetails.AreaType;
             }
+
             var roomDto = _mapper.Map<RoomDTO>(room);
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDto);
             return Ok(response);
@@ -247,10 +278,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpGet("area")]
         public async Task<IActionResult> GetAllAreas()
         {
-            var areas = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
+            // Tải tất cả Areas với AreaType, Positions và Images
+            var areas = await _areaService.GetAllWithInclude(
+                x => x.AreaType,
+                x => x.Positions,
+                x => x.Images // Thêm Images
+            );
+
             if (!areas.Any())
             {
-                return NotFound( new ResponseDTO<object>(404, "Không tìm thấy khu vực nào!", null));
+                return NotFound(new ResponseDTO<object>(404, "Không tìm thấy khu vực nào!", null));
             }
 
             var areaDtos = _mapper.Map<IEnumerable<AreaDTO>>(areas);
@@ -258,7 +295,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             var responseData = areas.Select(a => new
             {
                 AreaId = a.AreaId,
-                AreaName = a.AreaName
+                AreaName = a.AreaName,
+                AreaDescription = a.AreaDescription,
+                AreaImage = a.Images != null ? a.Images.Select(i => i.ImageUrl).ToList() : null // Sửa để trả về danh sách URL
             }).ToList();
 
             var response = new ResponseDTO<object>(200, "Lấy tất cả khu vực thành công", responseData);
@@ -268,7 +307,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpGet("area/{id}")]
         public async Task<IActionResult> GetAreaById(int id)
         {
-            var area = await _areaService.Get(a => a.AreaId == id);
+            // Tải Area với Images và AreaType
+            var area = await _areaService.GetWithInclude(
+                a => a.AreaId == id,
+                a => a.Images,
+                a => a.AreaType
+            );
+
             if (area == null)
             {
                 return NotFound(new ResponseDTO<object>(404, $"Không tìm thấy khu vực có id {id}!", null));
@@ -277,7 +322,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             var responseData = new
             {
                 AreaId = area.AreaId,
-                AreaName = area.AreaName
+                AreaName = area.AreaName,
+                AreaDescription = area.AreaDescription,
+                AreaImage = area.Images != null ? area.Images.Select(i => i.ImageUrl).ToList() : null // Sửa để trả về danh sách URL
             };
 
             var response = new ResponseDTO<object>(200, "Lấy khu vực thành công", responseData);

@@ -21,6 +21,8 @@ namespace DxLabCoworkingSpace
         public bool IsDeleted { get; set; }
         [JsonIgnore]
         public virtual ICollection<Area> Areas { get; set; }
+
+        public virtual AreaTypeCategory AreaTypeCategory { get; set; }
         public virtual ICollection<Image> Images { get; set; }
     }
 }

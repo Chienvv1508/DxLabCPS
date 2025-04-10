@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using DxLabCoworkingSpace.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,16 +13,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     public class StatisticsController : ControllerBase
     {
         private readonly IStatisticsService _statisticsService;
-        private readonly IMapper _mapper;
 
-        public StatisticsController(IStatisticsService statisticsService, IMapper mapper)
+        public StatisticsController(IStatisticsService statisticsService)
         {
             _statisticsService = statisticsService;
-            _mapper = mapper;
         }
 
         [HttpGet("student-group")]
-        public async Task<IActionResult> GetRevenueByStudentGroup([FromQuery] PeriodRequestDTO request)
+        public async Task<IActionResult> GetDetailedRevenue([FromQuery] PeriodRequestDTO request)
         {
             if (!ModelState.IsValid)
             {
@@ -31,8 +30,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
-                var result = await _statisticsService.GetRevenueByStudentGroup(request.Period.ToLower(), request.Year, request.Month, request.Week);
-                return Ok(new ResponseDTO<StudentRevenueDTO>(200, "Lấy thành công doanh số đến từ sinh viên đặt!", result));
+                var result = await _statisticsService.GetDetailedRevenue(request.Period.ToLower(), request.Year, request.Month);
+                return Ok(new ResponseDTO<DetailedRevenueDTO>(200, "Lấy thành công doanh số chi tiết!", result));
             }
             catch (ArgumentException ex)
             {

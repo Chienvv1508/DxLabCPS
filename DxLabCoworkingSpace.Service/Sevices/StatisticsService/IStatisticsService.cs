@@ -4,11 +4,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using DxLabCoworkingSpace;
+using DxLabCoworkingSpace.Core;
 
 namespace DxLabCoworkingSpace
 {
     public interface IStatisticsService
     {
-        Task<StudentRevenueDTO> GetRevenueByStudentGroup(string period, int? year = null, int? month = null, int? week = null);
+        Task<DetailedRevenueDTO> GetDetailedRevenue(string period, int year, int? month = null);
     }
 }

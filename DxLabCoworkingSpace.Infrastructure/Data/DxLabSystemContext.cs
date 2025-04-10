@@ -33,6 +33,8 @@ namespace DxLabCoworkingSpace
         public virtual DbSet<Slot> Slots { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
         public virtual DbSet<UsingFacility> UsingFacilities { get; set; } = null!;
+        public virtual DbSet<SumaryExpense> SumaryExpenses { get; set; } = null!;
+        public virtual DbSet<AreaTypeCategory> AreaTypeCategory { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -47,6 +49,7 @@ namespace DxLabCoworkingSpace
         {
             modelBuilder.Entity<Area>(entity =>
             {
+                entity.Property(e => e.AreaDescription).HasMaxLength(255);
                 entity.Property(e => e.AreaName).HasMaxLength(250);
 
                 entity.HasOne(d => d.AreaType)
@@ -71,6 +74,12 @@ namespace DxLabCoworkingSpace
                 entity.Property(e => e.IsDeleted).HasColumnName("isDeleted");
 
                 entity.Property(e => e.Price).HasColumnType("decimal(10, 0)");
+
+                entity.HasOne(d => d.AreaTypeCategory)
+                   .WithMany(p => p.AreaTypes)
+                   .HasForeignKey(d => d.AreaCategory)
+                   .OnDelete(DeleteBehavior.ClientSetNull)
+                   .HasConstraintName("FK_AreaTypes_AreaTypeCategory");
             });
 
             modelBuilder.Entity<Blog>(entity =>
@@ -180,6 +189,15 @@ namespace DxLabCoworkingSpace
                 entity.Property(e => e.ImageUrl)
                     .HasMaxLength(255)
                     .HasColumnName("ImageURL");
+
+                entity.HasOne(d => d.Area)
+                    .WithMany(p => p.Images)
+                    .HasForeignKey(d => d.AreaId)
+                    .HasConstraintName("FK_Images_Areas");
+                entity.HasOne(d => d.AreaTypeCategory)
+                   .WithMany(p => p.Images)
+                   .HasForeignKey(d => d.AreaTypeCategoryId)
+                   .HasConstraintName("FK_Images_AreaTypeCategory");
 
                 entity.HasOne(d => d.AreaType)
                     .WithMany(p => p.Images)

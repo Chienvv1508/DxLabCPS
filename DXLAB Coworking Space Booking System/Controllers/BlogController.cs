@@ -67,15 +67,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 return BadRequest(new ResponseDTO<object>(400, "File quá lớn, tối đa 5MB!", null));
                             }
 
-                            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                            var filePath = Path.Combine(imagesDir, fileName);
+                            // Lấy tên file gốc để hiển thị
+                            var originalFileName = Path.GetFileName(file.FileName); // Tên gốc: "myphoto.jpg"
+
+                            // Tạo tên file duy nhất để lưu trên server
+                            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileNameWithoutExtension(file.FileName)}{Path.GetExtension(file.FileName)}";
+                            var filePath = Path.Combine(imagesDir, uniqueFileName);
 
                             using (var stream = new FileStream(filePath, FileMode.Create))
                             {
                                 await file.CopyToAsync(stream);
                             }
 
-                            blog.Images.Add(new Image { ImageUrl = $"/images/{fileName}" });
+                            blog.Images.Add(new Image { ImageUrl = $"/Images/{uniqueFileName}" });
                         }
                     }
                 }
@@ -91,7 +95,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     BlogTitle = resultDto.BlogTitle,
                     BlogContent = resultDto.BlogContent,
                     BlogCreatedDate = resultDto.BlogCreatedDate,
-                    Status = resultDto.Status,
+                    Status = resultDto.Status,  
                     UserName = resultDto.UserName,
                     Images = resultDto.Images
                 };
@@ -186,7 +190,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var updatedBlog = _mapper.Map<Blog>(blogRequestDTO);
                 updatedBlog.BlogId = id;
                 updatedBlog.UserId = existingBlog.UserId;
-                // Không cần set Status và BlogCreatedDate vì BlogService sẽ xử lý
 
                 // Đảm bảo thư mục images tồn tại
                 var imagesDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
@@ -215,15 +218,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 return BadRequest(new ResponseDTO<object>(400, "File quá lớn, tối đa 5MB!", null));
                             }
 
-                            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                            var filePath = Path.Combine(imagesDir, fileName);
+                            // Lấy tên file gốc để hiển thị
+                            var originalFileName = Path.GetFileName(file.FileName); // Tên gốc: "myphoto.jpg"
+
+                            // Tạo tên file duy nhất để lưu trên server
+                            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileNameWithoutExtension(file.FileName)}{Path.GetExtension(file.FileName)}";
+                            var filePath = Path.Combine(imagesDir, uniqueFileName);
 
                             using (var stream = new FileStream(filePath, FileMode.Create))
                             {
                                 await file.CopyToAsync(stream);
                             }
 
-                            updatedBlog.Images.Add(new Image { ImageUrl = $"/images/{fileName}" });
+                            updatedBlog.Images.Add(new Image { ImageUrl = $"/Images/{uniqueFileName}" });
                         }
                     }
                 }

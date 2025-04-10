@@ -1,6 +1,6 @@
 using DXLAB_Coworking_Space_Booking_System;
+using DxLabCoworkingSpac;
 using DxLabCoworkingSpace;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +13,7 @@ using Hangfire;
 using Hangfire.MemoryStorage;
 using Nethereum.ABI.Model;
 using System.IO;
-using DxLabCoworkingSpace.Service.Sevices.Blockchain;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -137,6 +137,11 @@ builder.Services.AddScoped<IAreaService, AreaService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IBookingDetailService, BookingDetailService>();
 builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<IUsingFacilytyService, UsingFacilityService>();
+builder.Services.AddScoped<IFaciStatusService, FaciStatusService>();
+builder.Services.AddScoped<ISumaryExpenseService, SumaryExpenseService>();
+builder.Services.AddScoped<IAreaTypeCategoryService, AreaTypeCategoryService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 //// Đăng ký LabBookingCrawlerService với các giá trị từ configuration
 builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
@@ -159,7 +164,13 @@ builder.Services.AddHangfire(config => config
     .UseRecommendedSerializerSettings()
     .UseMemoryStorage()); // Dùng MemoryStorage
 
-builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer(options =>
+{
+    options.WorkerCount = 20;                  // Số lượng worker
+    options.Queues = new[] { "default" };      // Listening queues: 'default'
+    options.ShutdownTimeout = TimeSpan.FromHours(1)/*FromSeconds(30)*/; // Shutdown timeout
+    options.SchedulePollingInterval = TimeSpan.FromHours(1)/*FromSeconds(30)*/; // Schedule polling interval
+});
 
 // Cập nhật CORS
 builder.Services.AddCors(options =>
@@ -202,7 +213,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     using (var scope = app.Services.CreateScope())
     {
         var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
-        jobService.ScheduleBookingLogJob();
+        jobService.ScheduleJob();
     }
 });
 app.MapControllers();
