@@ -25,7 +25,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> CreateAreaType([FromForm] AreaTypeDTO areTypeDto, [FromForm] List<IFormFile> files)
+        public async Task<IActionResult> CreateAreaType([FromForm] AreaTypeForAddDTO areTypeDto)
         {
             var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName);
             if (existedAreaType != null)
@@ -217,7 +217,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPatch("{id}")]
         //[Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> PatchRoom(int id, [FromForm] string areaTypeData, [FromForm] List<IFormFile> files)
+        public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<AreaType> patchDoc)
         {
             try
             {
