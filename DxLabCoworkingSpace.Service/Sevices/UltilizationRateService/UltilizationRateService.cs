@@ -14,6 +14,11 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
+        public Task Add(IUltilizationRateService ultilizationRateService)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task Delete(int id)
         {
             throw new NotImplementedException();
