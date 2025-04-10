@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DxLabCoworkingSpace.Infrast
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DxLabCoworkingSpace.Service", "..\DxLabCoworkingSpace.Service\DxLabCoworkingSpace.Service.csproj", "{641A95B8-ADAF-47D0-BE67-9FE0096961B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobService", "..\JobService\JobService.csproj", "{52527288-0BAD-42A9-8126-241EAA1CE694}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JobService", "..\JobService\JobService.csproj", "{52527288-0BAD-42A9-8126-241EAA1CE694}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestCode", "..\UnitTestCode\UnitTestCode.csproj", "{D54864C4-81AB-46E6-B38F-EBECD5CE499E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{52527288-0BAD-42A9-8126-241EAA1CE694}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{52527288-0BAD-42A9-8126-241EAA1CE694}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{52527288-0BAD-42A9-8126-241EAA1CE694}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D54864C4-81AB-46E6-B38F-EBECD5CE499E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D54864C4-81AB-46E6-B38F-EBECD5CE499E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D54864C4-81AB-46E6-B38F-EBECD5CE499E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D54864C4-81AB-46E6-B38F-EBECD5CE499E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
