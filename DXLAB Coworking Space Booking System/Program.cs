@@ -14,6 +14,7 @@ using Hangfire.MemoryStorage;
 using Nethereum.ABI.Model;
 using System.IO;
 using Microsoft.Extensions.Options;
+using DXLAB_Coworking_Space_Booking_System.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,9 @@ builder.Services.AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
 });
 builder.Services.AddEndpointsApiExplorer();
+
+// SignalR Service
+builder.Services.AddSignalR();
 
 builder.Services.AddSwaggerGen(options =>
 {   
@@ -206,6 +210,9 @@ app.UseAuthorization();
 
 // Thêm Hangfire Dashboard
 app.UseHangfireDashboard();
+
+// Enpoint SIgnalR cho FE call
+app.MapHub<ChatHub>("/chatHub");
 
 // Khởi động job crawl sau khi Hangfire server đã khởi động
 app.Lifetime.ApplicationStarted.Register(() =>
