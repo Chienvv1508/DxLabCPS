@@ -35,6 +35,7 @@ namespace DxLabCoworkingSpace
         public virtual DbSet<UsingFacility> UsingFacilities { get; set; } = null!;
         public virtual DbSet<SumaryExpense> SumaryExpenses { get; set; } = null!;
         public virtual DbSet<AreaTypeCategory> AreaTypeCategory { get; set; } = null!;
+        public virtual DbSet<UltilizationRate> UltilizationRateCategory { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -166,6 +167,15 @@ namespace DxLabCoworkingSpace
                     .WithMany(p => p.FacilitiesStatuses)
                     .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
                     .HasConstraintName("FK_FacilitiesStatus_Facilities");
+            });
+            modelBuilder.Entity<DepreciationSum>(entity =>
+            {
+               
+
+                entity.HasOne(d => d.Facility)
+                    .WithMany(p => p.DepreciationSums)
+                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
+                    .HasConstraintName("FK_DepreciationSum_Facilities");
             });
 
             modelBuilder.Entity<Facility>(entity =>

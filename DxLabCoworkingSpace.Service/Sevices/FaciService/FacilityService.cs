@@ -165,5 +165,57 @@ namespace DxLabCoworkingSpace
         {
             throw new NotImplementedException();
         }
+
+        public async Task Update(IEnumerable<Facility> faciKHList)
+        {
+            try
+            {
+                if (faciKHList != null)
+                {
+                    foreach (var faci in faciKHList)
+                    {
+                        if (faci.ExpiredTime <= DateTime.Now)
+                        {
+                            decimal? depreciationAmount = faci.RemainingValue;
+                            await _unitOfWork.DepreciationSumRepository.Add(new DepreciationSum()
+                            {
+                                FacilityId = faci.FacilityId,
+                                BatchNumber = faci.BatchNumber,
+                                ImportDate = faci.ImportDate,
+                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value,
+                                SumDate = DateTime.Now.Date
+                            });
+                            faci.RemainingValue = 0;
+                            await _unitOfWork.FacilityRepository.Update(faci);
+
+                        }
+                        else
+                        {
+                            int daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+                            int daysKH = (faci.ExpiredTime - faci.ImportDate).Days;
+
+                            decimal? depreciationAmount = faci.Cost * daysInMonth  / daysKH;
+                            await _unitOfWork.DepreciationSumRepository.Add(new DepreciationSum()
+                            {
+                                FacilityId = faci.FacilityId,
+                                BatchNumber = faci.BatchNumber,
+                                ImportDate = faci.ImportDate,
+                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value,
+                                SumDate = DateTime.Now.Date
+                            });
+                            faci.RemainingValue -= depreciationAmount;
+                            await _unitOfWork.FacilityRepository.Update(faci);
+                        }
+                    }
+                    await _unitOfWork.CommitAsync();
+                }
+            }
+            catch(Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+            }
+           
+            
+        }
     }
 }

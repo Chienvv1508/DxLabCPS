@@ -14,7 +14,13 @@ using Hangfire.MemoryStorage;
 using Nethereum.ABI.Model;
 using System.IO;
 using Microsoft.Extensions.Options;
+
 using DXLAB_Coworking_Space_Booking_System.Hubs;
+
+
+using DxLabCoworkingSpa;
+using DXLAB_Coworking_Space_Booking_System.Hubs;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -145,7 +151,14 @@ builder.Services.AddScoped<IUsingFacilytyService, UsingFacilityService>();
 builder.Services.AddScoped<IFaciStatusService, FaciStatusService>();
 builder.Services.AddScoped<ISumaryExpenseService, SumaryExpenseService>();
 builder.Services.AddScoped<IAreaTypeCategoryService, AreaTypeCategoryService>();
+
 builder.Services.AddScoped<IReportService, ReportService>();
+
+builder.Services.AddScoped<IImageServiceDb, ImageServiceDb>();
+builder.Services.AddScoped<IDepreciationService, DepreciationService>();
+builder.Services.AddScoped<IUltilizationRateService, UltilizationRateService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+
 
 //// Đăng ký LabBookingCrawlerService với các giá trị từ configuration
 builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
