@@ -225,7 +225,7 @@ app.UseAuthorization();
 app.UseHangfireDashboard();
 
 // Enpoint SIgnalR cho FE call
-app.MapHub<ChatHub>("/chatHub");
+app.MapHub<BlogHub>("/chatHub");
 
 // Khởi động job crawl sau khi Hangfire server đã khởi động
 app.Lifetime.ApplicationStarted.Register(() =>
