@@ -31,7 +31,8 @@ namespace DxLabCoworkingSpace
         public int Quantity { get; set; }
         [Required(ErrorMessage = "Ngày nhập không được để trống!")]
         public DateTime ImportDate { get; set; }
-     
+        public decimal? RemainingValue { get; set; }
+
         //public List<FacilitiesStatus> FacilitiesStatus { get; set; }
     }
 }

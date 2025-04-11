@@ -261,7 +261,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 var currentTime = DateTime.Now;
                 var slotEndTime = bookingDetail.Slot?.EndTime ?? TimeSpan.Zero; // Xử lý null cho TimeSpan?
-                var bookingDate = bookingDetail.CheckoutTime.Date;
+                var bookingDate = bookingDetail.CheckoutTime.Value.Date;
                 var slotEndDateTime = bookingDate + slotEndTime;
 
                 if (currentTime < bookingDetail.CheckoutTime)

@@ -24,5 +24,7 @@ namespace DxLabCoworkingSpace
 
         public virtual AreaTypeCategory AreaTypeCategory { get; set; }
         public virtual ICollection<Image> Images { get; set; }
+
+       
     }
 }

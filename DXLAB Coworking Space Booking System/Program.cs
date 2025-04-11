@@ -15,6 +15,13 @@ using Nethereum.ABI.Model;
 using System.IO;
 using Microsoft.Extensions.Options;
 
+using DXLAB_Coworking_Space_Booking_System.Hubs;
+
+
+using DxLabCoworkingSpa;
+using DXLAB_Coworking_Space_Booking_System.Hubs;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -23,6 +30,9 @@ builder.Services.AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
 });
 builder.Services.AddEndpointsApiExplorer();
+
+// SignalR Service
+builder.Services.AddSignalR();
 
 builder.Services.AddSwaggerGen(options =>
 {   
@@ -141,7 +151,14 @@ builder.Services.AddScoped<IUsingFacilytyService, UsingFacilityService>();
 builder.Services.AddScoped<IFaciStatusService, FaciStatusService>();
 builder.Services.AddScoped<ISumaryExpenseService, SumaryExpenseService>();
 builder.Services.AddScoped<IAreaTypeCategoryService, AreaTypeCategoryService>();
+
 builder.Services.AddScoped<IReportService, ReportService>();
+
+builder.Services.AddScoped<IImageServiceDb, ImageServiceDb>();
+builder.Services.AddScoped<IDepreciationService, DepreciationService>();
+builder.Services.AddScoped<IUltilizationRateService, UltilizationRateService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+
 
 //// Đăng ký LabBookingCrawlerService với các giá trị từ configuration
 builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
@@ -168,8 +185,8 @@ builder.Services.AddHangfireServer(options =>
 {
     options.WorkerCount = 20;                  // Số lượng worker
     options.Queues = new[] { "default" };      // Listening queues: 'default'
-    options.ShutdownTimeout = TimeSpan.FromHours(1)/*FromSeconds(30)*/; // Shutdown timeout
-    options.SchedulePollingInterval = TimeSpan.FromHours(1)/*FromSeconds(30)*/; // Schedule polling interval
+    options.ShutdownTimeout = TimeSpan.FromSeconds(15)/*FromSeconds(30)*/; // Shutdown timeout
+    options.SchedulePollingInterval = TimeSpan.FromSeconds(15)/*FromSeconds(30)*/; // Schedule polling interval
 });
 
 // Cập nhật CORS
@@ -207,14 +224,17 @@ app.UseAuthorization();
 // Thêm Hangfire Dashboard
 app.UseHangfireDashboard();
 
+// Enpoint SIgnalR cho FE call
+app.MapHub<BlogHub>("/chatHub");
+
 // Khởi động job crawl sau khi Hangfire server đã khởi động
-app.Lifetime.ApplicationStarted.Register(() =>
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
-        jobService.ScheduleJob();
-    }
-});
+//app.Lifetime.ApplicationStarted.Register(() =>
+//{
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
+//        jobService.ScheduleJob();
+//    }
+//});
 app.MapControllers();
 app.Run();

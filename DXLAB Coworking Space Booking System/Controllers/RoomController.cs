@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NBitcoin.Secp256k1;
 using Nethereum.Contracts.Standards.ERC20.TokenList;
+using Newtonsoft.Json;
 using Thirdweb;
 
 
@@ -32,9 +33,17 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDto)
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateRoom([FromForm] RoomForAddDTO roomDto, [FromForm] string AreaAddDTO)
         {
+            if (string.IsNullOrEmpty(AreaAddDTO))
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null));
+            }
+
+
+            roomDto.Area_DTO = JsonConvert.DeserializeObject<List<AreaDTO>>(AreaAddDTO);
+
             if (roomDto.Area_DTO == null || !roomDto.Area_DTO.Any())
             {
                 var response = new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null);
@@ -123,6 +132,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     }
                 }
 
+                var rs = await ImageSerive.AddImage(roomDto.Images);
+                if (rs.Item1 == true)
+                {
+                    foreach (var i in rs.Item2)
+                    {
+                        room.Images.Add(new Image() { ImageUrl = i });
+                    }
+                }else
+                {
+                    var response1 = new ResponseDTO<object>(500, "Lỗi nhập ảnh!", null);
+                    return BadRequest(response1);
+                }    
                 // Lưu room vào database
                 await _roomService.Add(room);
 
@@ -146,9 +167,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 // Ánh xạ sang RoomDTO để trả về
-                roomDto = _mapper.Map<RoomDTO>(savedRoom);
+              var roomDtoRs = _mapper.Map<RoomDTO>(savedRoom);
 
-                var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDto);
+                var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDtoRs);
                 return CreatedAtAction(nameof(GetRoomById), new { id = room.RoomId }, response);
             }
             catch (DbUpdateException ex)
@@ -164,7 +185,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPatch("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<Room> patchDoc)
         {
             if (patchDoc == null)
@@ -189,6 +210,25 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var response = new ResponseDTO<object>(404, $"Không tìm thấy phòng có id {id}!", null);
                 return NotFound(response);
             }
+
+
+            var allowedPaths = new HashSet<string>
+             {
+            "areaTypeName",
+             "areaDescription",
+             "price"
+
+
+            };
+            foreach (var operation in patchDoc.Operations)
+            {
+                if (!allowedPaths.Contains(operation.path))
+                {
+                    var response1 = new ResponseDTO<object>(400, $"Không thể cập nhật trường: {operation.path}", null);
+                    return BadRequest(response1);
+                }
+            }
+
 
             patchDoc.ApplyTo(roomFromDb, ModelState);  
             
@@ -329,6 +369,79 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             var response = new ResponseDTO<object>(200, "Lấy khu vực thành công", responseData);
             return Ok(response);
+        }
+
+        [HttpPost("newImage")]
+        public async Task<IActionResult> AddNewImage(int id, [FromForm] List<IFormFile> Images)
+        {
+
+            try
+            {
+                var roomFromDb = await _roomService.Get(x => x.RoomId == id);
+                if (roomFromDb == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy phòng này!", null));
+                if (Images == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
+                var result = await ImageSerive.AddImage(Images);
+                if (result.Item1 == true)
+                {
+                    foreach (var i in result.Item2)
+                    {
+                        roomFromDb.Images.Add(new Image() { ImageUrl = i });
+
+                    }
+                }
+                else
+                    return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
+
+                await _roomService.Update(roomFromDb);
+                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công", null));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
+            }
+        }
+
+
+        [HttpDelete("Images")]
+        public async Task<IActionResult> RemoveImage(int id, [FromBody] List<string> images)
+        {
+            try
+            {
+                var roomFromDb = await _roomService.GetWithInclude(x => x.RoomId == id, x => x.Images);
+                if (roomFromDb == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy phòng này!", null));
+                if (images == null)
+                    return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
+                var imageList = roomFromDb.Images;
+                if (imageList.Count <= images.Count)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
+                }
+
+                foreach (var image in images)
+                {
+                    var item = imageList.FirstOrDefault(x => x.ImageUrl == $"{image}");
+                    if (item == null)
+                        return BadRequest(new ResponseDTO<object>(400, "Ảnh không tồn tại trong phòng!", null));
+                    roomFromDb.Images.Remove(item);
+
+                }
+                await _roomService.UpdateImage(roomFromDb, images);
+
+
+                foreach (var image in images)
+                {
+                    ImageSerive.RemoveImage(image);
+                }
+                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công!", null));
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
+            }
         }
     }
 }

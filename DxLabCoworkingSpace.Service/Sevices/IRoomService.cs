@@ -13,5 +13,6 @@ namespace DxLabCoworkingSpace
         Task<bool> PatchRoomAsync(int id, JsonPatchDocument<Room> patchDoc);
         Task<Room> GetRoomWithAllInClude(Expression<Func<Room, bool>> expression);
         Task GetAreaDisctinctFaci(Func<Room, bool> value);
+        Task UpdateImage(Room roomFromDb, List<string> images);
     }
 }
