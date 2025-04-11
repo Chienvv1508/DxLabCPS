@@ -14,12 +14,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         private readonly ISlotService _slotService;
         private readonly IAreaTypeCategoryService _areaTypeCategoryService;
 
-        public UltilizationRateController(IUltilizationRateService ultilizationRateService, IBookingDetailService bookingDetailService, ISlotService slotService, IAreaTypeCategoryService areaTypeCategoryService)
+        public UltilizationRateController(IUltilizationRateService ultilizationRateService, IBookingDetailService bookingDetailService, ISlotService slotService, IAreaTypeCategoryService areaTypeCategoryService, IAreaService areaService)
         {
             _bookingDetailService = bookingDetailService;
             _ultilizationRateService = ultilizationRateService;
             _slotService = slotService;
             _areaTypeCategoryService = areaTypeCategoryService;
+            _areaService = areaService;
         }
 
         [HttpPost]
@@ -27,9 +28,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                int checkTime = int.Parse(DateTime.Now.ToString("HHmmss"));
-                if (checkTime >= 180000)
-                {
+                //int checkTime = int.Parse(DateTime.Now.ToString("HHmmss"));
+                //if (checkTime >= 180000)
+                //{
                     DateTime firtPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
                     DateTime secondPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 18, 0, 0);
                     var bookingdetailList = await _bookingDetailService.GetAll(x => x.CheckinTime >= firtPara && x.CheckinTime <= secondPara);
@@ -64,6 +65,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 areaTypeCategoryName = areaTypeCategory.Title;
                             var newUlRate = new UltilizationRate()
                             {
+                                THDate = DateTime.Now,
                                 AreaId = area.AreaId,
                                 AreaName = area.AreaName,
                                 AreaTypeCategoryId = areaTypeCategoryId,
@@ -71,17 +73,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 AreatypeId = areaTypeId,
                                 AreaTypeName = areaTypeName,
                                 RoomId = roomid,
-                                RoomName = roomName
+                                RoomName = roomName,
+                                Rate = rate
                             };
                             ultilizationRates.Add(newUlRate);
 
                         }
                     }
-                    await _ultilizationRateService.Add(_ultilizationRateService);
+                    await _ultilizationRateService.Add(ultilizationRates);
                     return Ok();
-                }
-                else
-                    return BadRequest("Chỉ tổng hợp sau 18h!");
+                //}
+                //else
+                //    return BadRequest("Chỉ tổng hợp sau 18h!");
             }
             catch(Exception ex)
             {
@@ -91,7 +94,67 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
            
         }
 
-        //[HttpGet("date")]
-        //public async Task<IAction>
+        [HttpGet("date")]
+        public async Task<IActionResult> GetRateOnDate(DateTime dateTime)
+        {
+            try
+            {
+                //Check ngày nhưng tạm thời bỏ để test
+                var result = await _ultilizationRateService.GetAll(x => x.THDate.Date == dateTime.Date);
+                var response = new ResponseDTO<object>(200, "Danh sách rate: ", result);
+                return Ok(response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+
+        }
+
+        [HttpGet("month")]
+        public async Task<IActionResult> GetRateInMonth(int year, int month)
+        {
+            try
+            {
+                //Check ngày nhưng tạm thời bỏ để test
+                if (year > 9999 || year < 2000 || month > 12 || month < 1)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Nhập năm hoặc tháng không hợp lệ!", null));
+                }
+                DateTime firstDate = new DateTime(year, month, 1);
+                DateTime lastDate = new DateTime(year, month, DateTime.DaysInMonth(year, month));
+                var result = await _ultilizationRateService.GetAll(x => x.THDate.Date >= firstDate.Date && x.THDate.Date <= lastDate.Date);
+                var response = new ResponseDTO<object>(200, "Danh sách rate: ", result);
+                return Ok(response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+
+        }
+
+        [HttpGet("year")]
+        public async Task<IActionResult> GetRateInYear(int year)
+        {
+            try
+            {
+                //Check ngày nhưng tạm thời bỏ để test
+                if (year > 9999 || year < 2000)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Nhập năm không hợp lệ!", null));
+                }
+                DateTime firstDate = new DateTime(year, 1, 1);
+                DateTime lastDate = new DateTime(year, 12, DateTime.DaysInMonth(year, 12));
+                var result = await _ultilizationRateService.GetAll(x => x.THDate.Date >= firstDate.Date && x.THDate.Date <= lastDate.Date);
+                var response = new ResponseDTO<object>(200, "Danh sách rate: ", result);
+                return Ok(response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+
+        }
     }
 }

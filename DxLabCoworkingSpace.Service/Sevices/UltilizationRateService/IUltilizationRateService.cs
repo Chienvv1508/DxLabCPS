@@ -9,5 +9,6 @@ namespace DxLabCoworkingSpace
     public interface IUltilizationRateService : IGenericeService<UltilizationRate>
     {
         Task Add(IUltilizationRateService ultilizationRateService);
+        Task Add(List<UltilizationRate> ultilizationRates);
     }
 }
