@@ -216,7 +216,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         [HttpPatch("{id}")]
         //[Authorize(Roles = "Admin")]
-        [Consumes("multipart/form-data")]
+        //[Consumes("multipart/form-data")]
         public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<AreaType> patchDoc)
         {
             try
@@ -230,9 +230,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                        "areaTypeName",
                         "areaDescription",
-                        "price"
-                       
-                        
+                        "price",
+                        "isDeleted"
+
+
             };
                 var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
                 if(areaTypeNameOp != null)

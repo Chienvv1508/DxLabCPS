@@ -9,14 +9,47 @@ namespace DxLabCoworkingSpace
 {
     public class UltilizationRateService : IUltilizationRateService
     {
-        public Task Add(UltilizationRate entity)
+        private readonly IUnitOfWork _unitOfWork;
+
+        public UltilizationRateService(IUnitOfWork unitOfWork)
         {
-            throw new NotImplementedException();
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task Add(UltilizationRate entity)
+        {
+            try
+            {
+              await  _unitOfWork.UltilizationRateRepository.Add(entity);
+                await _unitOfWork.CommitAsync();
+            }
+            catch(Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+            }
         }
 
         public Task Add(IUltilizationRateService ultilizationRateService)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task Add(List<UltilizationRate> ultilizationRates)
+        {
+            if (ultilizationRates == null) return;
+            try
+            {
+                foreach(var i in ultilizationRates)
+                {
+                    await _unitOfWork.UltilizationRateRepository.Add(i);
+                }
+                
+                await _unitOfWork.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+            }
         }
 
         public Task Delete(int id)
@@ -34,9 +67,9 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<UltilizationRate>> GetAll(Expression<Func<UltilizationRate, bool>> expression)
+        public async Task<IEnumerable<UltilizationRate>> GetAll(Expression<Func<UltilizationRate, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.UltilizationRateRepository.GetAll(expression);
         }
 
         public Task<IEnumerable<UltilizationRate>> GetAllWithInclude(params Expression<Func<UltilizationRate, object>>[] includes)

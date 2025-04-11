@@ -228,13 +228,13 @@ app.UseHangfireDashboard();
 app.MapHub<BlogHub>("/chatHub");
 
 // Khởi động job crawl sau khi Hangfire server đã khởi động
-app.Lifetime.ApplicationStarted.Register(() =>
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
-        jobService.ScheduleJob();
-    }
-});
+//app.Lifetime.ApplicationStarted.Register(() =>
+//{
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
+//        jobService.ScheduleJob();
+//    }
+//});
 app.MapControllers();
 app.Run();
