@@ -216,7 +216,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         [HttpPatch("{id}")]
         //[Authorize(Roles = "Admin")]
-        [Consumes("multipart/form-data")]
         public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<AreaType> patchDoc)
         {
             try
