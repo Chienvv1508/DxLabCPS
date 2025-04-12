@@ -31,7 +31,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         // Add Facility From Excel File
         [HttpPost("importexcel")]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AddFacilityFromExcel(IFormFile file)
+        public async Task<IActionResult> AddFacilityFromExcel(IFormFile? file)
         {
             try
             {
