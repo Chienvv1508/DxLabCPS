@@ -283,7 +283,6 @@ namespace DxLabCoworkingSpace
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.Property(e => e.Avatar).HasMaxLength(255);
 
                 entity.Property(e => e.Email).HasMaxLength(255);
 

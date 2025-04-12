@@ -95,7 +95,7 @@ namespace DxLabCoworkingSpace
         }
         public async Task<IEnumerable<Slot>> GetAll()
         {
-            return await _unitOfWork.SlotRepository.GetAll();
+            return await _unitOfWork.SlotRepository.GetAll(s => s.Status == 1);
         }
         public async Task<Slot> Get(Expression<Func<Slot, bool>> expression)
         {
@@ -119,7 +119,29 @@ namespace DxLabCoworkingSpace
         }
          public async Task Update(Slot entity)
         {
-            throw new NotImplementedException();
+            // Kiểm tra slot có tồn tại không
+            var existingSlot = await _unitOfWork.SlotRepository.GetById(entity.SlotId);
+            if (existingSlot == null)
+            {
+                throw new InvalidOperationException($"Slot với Id {entity.SlotId} không tìm thấy!");
+            }
+
+            // Kiểm tra xem slot có BookingDetail nào không (nếu thay đổi trạng thái sang inactive)
+            if (entity.Status == 0) // Nếu đánh dấu slot là inactive
+            {
+                var bookingDetails = await _unitOfWork.BookingDetailRepository.GetAll(bd => bd.SlotId == entity.SlotId);
+                if (bookingDetails.Any())
+                {
+                    throw new InvalidOperationException($"Slot với ID {entity.SlotId} có {bookingDetails.Count()} đặt chỗ, không thể thay đổi trạng thái thành inactive!");
+                }
+            }
+
+            // Chỉ cập nhật trạng thái (Status)
+            existingSlot.Status = entity.Status;
+
+            // Lưu thay đổi vào database
+            await _unitOfWork.SlotRepository.Update(existingSlot);
+            await _unitOfWork.CommitAsync();
         }
          public async Task Delete(int id)
         {

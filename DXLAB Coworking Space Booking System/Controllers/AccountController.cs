@@ -32,7 +32,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Add Account For Excel File
         [HttpPost("importexcel")]
-        public async Task<IActionResult> AddFromExcel(IFormFile file)
+        public async Task<IActionResult> AddFromExcel(IFormFile? file)
         {
             try
             {
@@ -138,13 +138,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Get All Account By Role Name
         [HttpGet("role/{rolename}")]
-        public async Task<IActionResult> GetUsersByRoleName(string roleName)
+        public async Task<IActionResult> GetUsersByRoleName(string rolename)
         {
             try
             {
-                var users = (await _accountService.GetUsersByRoleName(roleName)).ToList();
+                var users = (await _accountService.GetUsersByRoleName(rolename)).ToList();
                 var accountDTOs = _mapper.Map<IEnumerable<AccountDTO>>(users);
-                return Ok(new ResponseDTO<IEnumerable<AccountDTO>>(200, $"Người dùng với RoleName: {roleName} được lấy thành công!", accountDTOs));
+                return Ok(new ResponseDTO<IEnumerable<AccountDTO>>(200, $"Người dùng với RoleName: {rolename} được lấy thành công!", accountDTOs));
             }
             catch (InvalidOperationException ex)
             {
