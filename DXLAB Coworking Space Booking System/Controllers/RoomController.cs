@@ -328,7 +328,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDto);
             return Ok(response);
         }
-
+        
         [HttpGet("area")]
         public async Task<IActionResult> GetAllAreas()
         {
