@@ -152,7 +152,13 @@ namespace DXLAB_Coworking_Space_Booking_System
                     opt.Ignore());
             CreateMap<RoomForAddDTO, Room>()
               .ForMember(x => x.Images, opt =>
-                  opt.Ignore());
+                  opt.Ignore())
+              .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area
+                {
+                    AreaName = a.AreaName,
+                    AreaTypeId = a.AreaTypeId,
+                    Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
+                }).ToList() : null));
 
             // Mapping cho Report -> ReportResponseDTO
             CreateMap<Report, ReportResponseDTO>()
