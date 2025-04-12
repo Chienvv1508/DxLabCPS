@@ -41,8 +41,22 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return BadRequest(new ResponseDTO<object>(400, "Bạn phải thêm khu vực cho phòng", null));
             }
 
-
-            roomDto.Area_DTO = JsonConvert.DeserializeObject<List<AreaDTO>>(AreaAddDTO);
+            try
+            {
+                var inputArea = JsonConvert.DeserializeObject<List<AreaAdd>>(AreaAddDTO);
+                List<AreaDTO> listAreaDTO = new List<AreaDTO>();
+                foreach(var item in inputArea)
+                {
+                    var area = new AreaDTO() { AreaTypeId = item.AreaTypeId, AreaName = item.AreaName };
+                    listAreaDTO.Add(area);
+                }
+                roomDto.Area_DTO = listAreaDTO;
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Lỗi truyền tham số phòng", null));
+            }
+           
 
             if (roomDto.Area_DTO == null || !roomDto.Area_DTO.Any())
             {
@@ -214,9 +228,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             var allowedPaths = new HashSet<string>
              {
-            "areaTypeName",
-             "areaDescription",
-             "price"
+            "roomName",
+             "roomDescription",
+             "isDeleted"
 
 
             };
