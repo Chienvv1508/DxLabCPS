@@ -50,7 +50,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(ClaimTypes.Role, user.Role.RoleName), // Thêm RoleName
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
+            };
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
@@ -76,7 +76,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 // Sử dụng GetWithInclude thay vì Get
                 var user = await _userService.GetWithInclude(x => x.Email == userinfo.Email, u => u.Role);
-
                 // Trường hợp user đã tồn tại
                 if (user != null)
                 {
@@ -84,7 +83,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     {
                         return StatusCode(500, new ResponseDTO<object>(500, "Lỗi: Người dùng chưa được gán Role!", null));
                     }
-
                     Console.WriteLine($"User already exists: {user.Email}, RoleId: {user.RoleId}");
                     var token = GenerateJwtToken(user);
 
@@ -95,26 +93,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         user.WalletAddress = userinfo.WalletAddress;
                         await _userService.Update(user);
                     }
-
-                    //string grantTransactionHash = null;
-                    //BigInteger fptBalance = 0;
-
-                    //// Cấp token bonus nếu là Student (RoleId = 3)
-                    //if (user.RoleId == 3)   
-                    //{
-                    //    // Kiểm tra WalletAddress trước khi gọi GrantTokenAsync
-                    //    if (string.IsNullOrEmpty(user.WalletAddress))
-                    //    {
-                    //        return BadRequest(new ResponseDTO<object>(400, "Lỗi: WalletAddress của người dùng không được để trống!", null));
-                    //    }
-
-                    //    BigInteger bonusAmount = new BigInteger(50) * BigInteger.Pow(10, 18); // 50 FPT với 18 decimals
-                    //    Console.WriteLine($"Granting token to existing Student...");
-                    //    grantTransactionHash = await _userTokenService.GrantTokenAsync(user.WalletAddress, bonusAmount);
-                    //    fptBalance = await _userTokenService.GetFptBalanceAsync(user.WalletAddress);
-                    //}
-
-                    // Chỉ cập nhật AccessToken, không cập nhật các trường khác
                     user.AccessToken = token;
                     await _userService.Update(user);
 

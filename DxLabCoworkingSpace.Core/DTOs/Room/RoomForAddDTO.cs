@@ -23,6 +23,6 @@ namespace DxLabCoworkingSpace
 
         public List<IFormFile>? Images { get; set; }
 
-        public List<AreaDTO> Area_DTO { get; set; }
+        public List<AreaDTO>? Area_DTO { get; set; }
     }
 }
