@@ -182,7 +182,7 @@ namespace DxLabCoworkingSpace
                                 FacilityId = faci.FacilityId,
                                 BatchNumber = faci.BatchNumber,
                                 ImportDate = faci.ImportDate,
-                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value,
+                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value*faci.Quantity,
                                 SumDate = DateTime.Now.Date
                             });
                             faci.RemainingValue = 0;
@@ -192,7 +192,13 @@ namespace DxLabCoworkingSpace
                         else
                         {
                             int daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-                            int daysKH = (faci.ExpiredTime - faci.ImportDate).Days;
+                       
+                            if (faci.ImportDate.Month == DateTime.Now.Month && faci.ImportDate.Year == DateTime.Now.Year)
+                            {
+                                daysInMonth = (DateTime.Now.Date - faci.ImportDate.Date).Days;
+                            }
+                           
+                            int daysKH = (faci.ExpiredTime.Date - faci.ImportDate.Date).Days;
 
                             decimal? depreciationAmount = faci.Cost * daysInMonth  / daysKH;
                             await _unitOfWork.DepreciationSumRepository.Add(new DepreciationSum()
@@ -200,10 +206,11 @@ namespace DxLabCoworkingSpace
                                 FacilityId = faci.FacilityId,
                                 BatchNumber = faci.BatchNumber,
                                 ImportDate = faci.ImportDate,
-                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value,
+                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value*faci.Quantity,
                                 SumDate = DateTime.Now.Date
                             });
                             faci.RemainingValue -= depreciationAmount;
+                            
                             await _unitOfWork.FacilityRepository.Update(faci);
                         }
                     }
