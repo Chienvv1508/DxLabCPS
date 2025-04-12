@@ -228,9 +228,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             var allowedPaths = new HashSet<string>
              {
-            "areaTypeName",
-             "areaDescription",
-             "price"
+            "roomName",
+             "roomDescription",
+             "isDeleted"
 
 
             };
