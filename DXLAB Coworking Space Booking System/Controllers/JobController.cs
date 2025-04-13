@@ -1,5 +1,4 @@
-﻿using DxLabCoworkingSpac;
-using DxLabCoworkingSpace;
+﻿using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -44,7 +43,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     decimal amount = 0;
                     foreach(var item in group)
                     {
-                        amount += item.Cost;
+                        amount += item.Cost*item.Quantity;
                     }
                     var sum = new SumaryExpense()
                     {

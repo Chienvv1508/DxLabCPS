@@ -24,20 +24,38 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ResponseDTO<object>(400, "Dữ liệu đầu vào không hợp lệ!", ModelState));
-            }
-            TimeSpan startTime = TimeSpan.Parse(request.StartTime); // Hỗ trợ HH:mm:ss
-            TimeSpan endTime = TimeSpan.Parse(request.EndTime);
+                // Lấy các lỗi validation từ ModelState
+                var errors = ModelState
+                    .Where(m => m.Value.Errors.Any())
+                    .SelectMany(m => m.Value.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .Where(e => !string.IsNullOrEmpty(e)) // Loại bỏ lỗi rỗng
+                    .ToList();
 
-            if (startTime >= endTime)
-            {
-                return BadRequest(new ResponseDTO<object>(400, "StartTime phải sớm hơn EndTime!", null));
+                // Trả về message lỗi cụ thể
+                string errorMessage = errors.Any() ? string.Join(", ", errors) : "Dữ liệu đầu vào không hợp lệ!";
+                return BadRequest(new ResponseDTO<object>(400, $"Lỗi: {errorMessage}", null));
             }
-            int timeSLot = request.TimeSlot ?? throw new ArgumentException(nameof(timeSLot), "Time Slot là bắt buộc!");
-            int breakTime = request.BreakTime ?? throw new ArgumentException(nameof(breakTime), "Break Time là bắt buộc!");
             try
             {
-                var slots = await _slotService.CreateSlots(startTime, endTime, timeSLot, breakTime);
+                if (string.IsNullOrEmpty(request.StartTime) || !TimeSpan.TryParse(request.StartTime, out TimeSpan startTime))
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "StartTime sai định dạng thời gian!", null));
+                }
+                if (string.IsNullOrEmpty(request.EndTime) || !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "EndTime sai định dạng thời gian!", null));
+                }
+
+                if (startTime >= endTime)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "StartTime phải sớm hơn EndTime!", null));
+                }
+
+                int timeSlot = request.TimeSlot ?? throw new ArgumentException(nameof(timeSlot), "Time Slot là bắt buộc!");
+                int breakTime = request.BreakTime ?? throw new ArgumentException(nameof(breakTime), "Break Time là bắt buộc!");
+
+                var slots = await _slotService.CreateSlots(startTime, endTime, timeSlot, breakTime);
                 await _slotService.AddMany(slots);
 
                 var slotDtos = _mapper.Map<IEnumerable<SlotDTO>>(slots);

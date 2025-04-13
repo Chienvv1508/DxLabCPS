@@ -230,6 +230,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", id);
 
                 await _blogService.Delete(id);
+
+                // Gửi thông báo real-time
+                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogDeleted", id); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", id); // Admin
+                await _hubContext.Clients.Group("Students").SendAsync("ReceiveBlogDeleted", id); // Student
+
                 return Ok(new ResponseDTO<object>(200, $"Blog với ID: {id} đã được xóa thành công!", null));
             }
             catch (Exception ex)

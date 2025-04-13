@@ -34,6 +34,8 @@ namespace UnitTestCode
         }
 
         // Test cho API  CreateSlots
+
+        //UT-01: Valid value
         [Fact]
         public async Task CreateSlots_ValidRequest_ReturnsOkWithSlotDtos()
         {
@@ -74,19 +76,20 @@ namespace UnitTestCode
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ResponseDTO<IEnumerable<SlotDTO>>>(okResult.Value);
             Assert.Equal(200, response.StatusCode);
-            Assert.Equal(2, response.Data.Count());
-            Assert.Equal("2 slots được tạo thành công!", response.Message);
+            Assert.Equal(4, response.Data.Count());
+            Assert.Equal("4 slots được tạo thành công!", response.Message);
         }
 
+        //UT-02: StartTime < EndTime
         [Fact]
         public async Task CreateSlots_InvalidTimeRange_ReturnsBadRequest()
         {
             // Arrange
             var request = new SlotGenerationRequest
             {
-                StartTime = "12:00:00",
-                EndTime = "08:00:00",
-                TimeSlot = 60,
+                StartTime = "17:40:00",
+                EndTime = "07:30:00",
+                TimeSlot = 140,
                 BreakTime = 10
             };
 
@@ -100,15 +103,16 @@ namespace UnitTestCode
             Assert.Equal("StartTime phải sớm hơn EndTime!", response.Message);
         }
 
+        //UT-03 Conflict TimeSlot or dupplicate TimeSlot
         [Fact]
         public async Task CreateSlots_ConflictingSlots_ReturnsConflict()
         {
             // Arrange
             var request = new SlotGenerationRequest
             {
-                StartTime = "08:00:00",
+                StartTime = "07:30:00",
                 EndTime = "12:00:00",
-                TimeSlot = 60,
+                TimeSlot = 140,
                 BreakTime = 10
             };
 
@@ -125,6 +129,7 @@ namespace UnitTestCode
             Assert.Contains("Không thể tạo được slots", response.Message);
         }
 
+        //UT-04 StartTime = null
         [Fact]
         public async Task CreateSlots_MissingStartTime_ReturnsBadRequest()
         {
@@ -133,7 +138,7 @@ namespace UnitTestCode
             {
                 StartTime = null,
                 EndTime = "12:00:00",
-                TimeSlot = 60,
+                TimeSlot = 140,
                 BreakTime = 10
             };
 
@@ -147,13 +152,14 @@ namespace UnitTestCode
             Assert.Contains("StartTime là bắt buộc!", response.Message);
         }
 
+        //UT-05 EndTime = null
         [Fact]
         public async Task CreateSlots_MissingEndTime_ReturnsBadRequest()
         {
             // Arrange
             var request = new SlotGenerationRequest
             {
-                StartTime = "08:00:00",
+                StartTime = "07:30:00",
                 EndTime = null,
                 TimeSlot = 60,
                 BreakTime = 10
@@ -169,6 +175,7 @@ namespace UnitTestCode
             Assert.Contains("EndTime là bắt buộc!", response.Message);
         }
 
+        //UT-06 StartTime is wrong format time("HH:mm:ss")
         [Fact]
         public async Task CreateSlots_InvalidStartTimeFormat_ReturnsBadRequest()
         {
@@ -191,6 +198,7 @@ namespace UnitTestCode
             Assert.Contains("StartTime sai định dạng thời gian!", response.Message);
         }
 
+        //UT-07 EndTime is wrong format time("HH:mm:ss")
         [Fact]
         public async Task CreateSlots_InvalidEndTimeFormat_ReturnsBadRequest()
         {

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
@@ -19,15 +20,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Hubs
             await Clients.Group("Admins").SendAsync("ReceiveEditedBlog", blog);
         }
 
-        // Thông báo trạng thái blog tới Staff và Admin
-        public async Task NotifyBlogStatus(string staffUserId, object blog)
+        // Thông báo trạng thái blog tới Staff, Admin và Student
+        public async Task NotifyBlogStatus(string userId, object blog)
         {
             await Clients.Group("Staff").SendAsync("ReceiveBlogStatus", blog);
             await Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blog);
         }
 
         // Thông báo blog bị xóa tới Staff và Admin
-        public async Task NotifyBlogDeleted(string staffUserId, int blogId)
+        public async Task NotifyBlogDeleted(string userId, int blogId)
         {
             await Clients.Group("Staff").SendAsync("ReceiveBlogDeleted", blogId);
             await Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", blogId);
