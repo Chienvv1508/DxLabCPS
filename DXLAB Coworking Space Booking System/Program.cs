@@ -1,5 +1,4 @@
 using DXLAB_Coworking_Space_Booking_System;
-using DxLabCoworkingSpac;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -16,9 +15,7 @@ using System.IO;
 using Microsoft.Extensions.Options;
 
 using DXLAB_Coworking_Space_Booking_System.Hubs;
-
-
-using DxLabCoworkingSpa;
+using System.Security.Claims;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -119,7 +116,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = issuer,
             ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            NameClaimType = "sub", //Email
+            RoleClaimType = ClaimTypes.Role // "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var userId = context.Principal.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    context.Principal.AddIdentity(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userId) }));
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -224,7 +235,8 @@ app.UseAuthorization();
 app.UseHangfireDashboard();
 
 // Enpoint SIgnalR cho FE call
-app.MapHub<BlogHub>("/chatHub");
+app.MapHub<BlogHub>("/blogHub");
+app.MapHub<ReportHub>("reportHub");
 
 // Khởi động job crawl sau khi Hangfire server đã khởi động
 //app.Lifetime.ApplicationStarted.Register(() =>
