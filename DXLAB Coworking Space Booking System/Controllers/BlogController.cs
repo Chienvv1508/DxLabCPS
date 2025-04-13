@@ -102,6 +102,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     UserName = resultDto.UserName,
                     Images = resultDto.Images
                 };
+
                 await _hubContext.Clients.Group("Admins").SendAsync("ReceiveNewBlog", blogData);
 
                 // Chỉ trả về các trường cần thiết trong response

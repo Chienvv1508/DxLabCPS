@@ -116,8 +116,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     UserName = blogDto.UserName,
                     Images = blogDto.Images
                 };
-                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogStatus", blogData);
-                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blogData);
+
+                // Gửi thông báo real-time
+                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogStatus", blogData); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blogData); // Admin
+                await _hubContext.Clients.Group("Students").SendAsync("ReceiveBlogStatus", blogData); // Student
 
                 // Chỉ trả về các trường cần thiết trong response
                 var responseDto = new
@@ -165,8 +168,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     UserName = blogDto.UserName,
                     Images = blogDto.Images
                 };
-                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogStatus", blogData);
-                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blogData);
+
+                // Gửi thông báo real-time
+                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogStatus", blogData); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blogData); // Admin
 
                 // Chỉ trả về các trường cần thiết trong response
                 var responseDto = new
@@ -233,11 +238,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return NotFound(new ResponseDTO<object>(404, $"Blog với ID: {id} không tìm thấy!", null));
                 }
 
-                // Gửi thông báo real-time tới Staff và Admin
-                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogDeleted", id);
-                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", id);
-
                 await _blogService.Delete(id);
+
+                // Gửi thông báo real-time
+                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogDeleted", id); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", id); // Admin
+                await _hubContext.Clients.Group("Students").SendAsync("ReceiveBlogDeleted", id); // Student
+
                 return Ok(new ResponseDTO<object>(200, $"Blog với ID: {id} đã được xóa thành công!", null));
             }
             catch (Exception ex)
