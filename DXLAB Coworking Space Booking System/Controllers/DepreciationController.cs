@@ -82,10 +82,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         }
         [HttpGet("year")]
-        public async Task<IActionResult> GetInYear(DateTime date)
+        public async Task<IActionResult> GetInYear(int year)
         {
             try
             {
+                if (year > 9999 || year < 2000)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Nhập năm không hợp lệ!", null));
+                }
+
+                DateTime date = new DateTime(year, 1, 1);
                 if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year))
                 {
                     var sums = await _depreciationService.GetAllWithInclude(x => x.SumDate.Year == date.Year, x => x.Facility);

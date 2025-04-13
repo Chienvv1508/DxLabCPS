@@ -93,13 +93,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             
         }
         [HttpGet("year")]
-        public async Task<IActionResult> GetSumaryExpenseYear(DateTime date)
+        public async Task<IActionResult> GetSumaryExpenseYear(int year)
         {
             try
             {
                 //if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year))
                 //{
-                    var sums = await _sumaryExpenseService.GetAll(x => x.SumaryDate.Year == date.Year);
+                if (year > 9999 || year < 2000 )
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Nhập năm không hợp lệ!", null));
+                }
+
+                DateTime date = new DateTime(year, 1, 1);
+                var sums = await _sumaryExpenseService.GetAll(x => x.SumaryDate.Year == date.Year);
                     return Ok(new ResponseDTO<object>(200, "Lấy dữ liệu thành công", sums));
                 //}
                 //else
