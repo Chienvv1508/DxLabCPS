@@ -79,6 +79,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     AreaId = a.AreaId,
                     AreaName = a.AreaName,
                     AreaTypeId = a.AreaTypeId,
+                    IsAvail = a.IsAvail,
                     AreaTypeName = a.AreaType != null ? a.AreaType.AreaTypeName : null,
                     AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
                     Images = a.Images != null ? a.Images.Select(i => i.ImageUrl).ToList() : null // Thêm ánh xạ Images
@@ -102,7 +103,9 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(dest => dest.AreaTypeName, opt => opt.MapFrom(x => x.AreaType != null ? x.AreaType.AreaTypeName : null))
                 .ForMember(dest => dest.AreaDescription, opt => opt.MapFrom(src => src.AreaDescription)) // Thêm ánh xạ AreaDescription
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
-            
+
+            CreateMap<AreaAdd, Area>();
+
             // Mapping cho thống kê
             CreateMap<Booking, StudentRevenueDTO>();
             CreateMap<BookingDetail, ServiceTypeDetailDTO>()
@@ -151,6 +154,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 {
                     AreaName = a.AreaName,
                     AreaTypeId = a.AreaTypeId,
+                    IsAvail = a.IsAvail,
                     Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
                 }).ToList() : null));
 

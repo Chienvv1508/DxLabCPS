@@ -47,7 +47,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 List<AreaDTO> listAreaDTO = new List<AreaDTO>();
                 foreach(var item in inputArea)
                 {
-                    var area = new AreaDTO() { AreaTypeId = item.AreaTypeId, AreaName = item.AreaName };
+                    var area = new AreaDTO() { AreaTypeId = item.AreaTypeId, AreaName = item.AreaName, IsAvail = false };
                     listAreaDTO.Add(area);
                 }
                 roomDto.Area_DTO = listAreaDTO;
@@ -122,6 +122,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     areaNameList.Add(area.AreaName);
                 }
 
+                roomDto.IsDeleted = false;
                 // Ánh xạ từ RoomDTO sang Room
                 var room = _mapper.Map<Room>(roomDto);
 
