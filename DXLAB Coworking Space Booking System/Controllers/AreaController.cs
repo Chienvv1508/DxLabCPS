@@ -198,7 +198,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch(Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi database", null));
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi cơ sở dữ liệu", null));
             }
            
         }
