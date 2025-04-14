@@ -24,25 +24,25 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             if (!ModelState.IsValid)
             {
-                // Lấy các lỗi validation từ ModelState
+                // Lấy lỗi từ ModelState
                 var errors = ModelState
                     .Where(m => m.Value.Errors.Any())
                     .SelectMany(m => m.Value.Errors)
                     .Select(e => e.ErrorMessage)
-                    .Where(e => !string.IsNullOrEmpty(e)) // Loại bỏ lỗi rỗng
+                    .Where(e => !string.IsNullOrEmpty(e))
                     .ToList();
 
-                // Trả về message lỗi cụ thể
                 string errorMessage = errors.Any() ? string.Join(", ", errors) : "Dữ liệu đầu vào không hợp lệ!";
-                return BadRequest(new ResponseDTO<object>(400, $"Lỗi: {errorMessage}", null));
+                return BadRequest(new ResponseDTO<object>(400, errorMessage, null));
             }
             try
             {
-                if (string.IsNullOrEmpty(request.StartTime) || !TimeSpan.TryParse(request.StartTime, out TimeSpan startTime))
+                // Parse StartTime và EndTime
+                if (!TimeSpan.TryParse(request.StartTime, out TimeSpan startTime))
                 {
                     return BadRequest(new ResponseDTO<object>(400, "StartTime sai định dạng thời gian!", null));
                 }
-                if (string.IsNullOrEmpty(request.EndTime) || !TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
+                if (!TimeSpan.TryParse(request.EndTime, out TimeSpan endTime))
                 {
                     return BadRequest(new ResponseDTO<object>(400, "EndTime sai định dạng thời gian!", null));
                 }
