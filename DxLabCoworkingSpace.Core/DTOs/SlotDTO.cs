@@ -12,11 +12,11 @@ namespace DxLabCoworkingSpace
         public int SlotId { get; set; }
 
         [Required(ErrorMessage = "StartTime là bắt buộc!")]
-        //[RegularExpression(@"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", ErrorMessage = "StartTime sai định dạng thời gian!")]
+        [RegularExpression(@"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", ErrorMessage = "StartTime sai định dạng thời gian!")]
         public TimeSpan? StartTime { get; set; }
 
         [Required(ErrorMessage = "EndTime là bắt buộc!")]
-        //[RegularExpression(@"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", ErrorMessage = "EndTime sai định dang thời gian!")]
+        [RegularExpression(@"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", ErrorMessage = "EndTime sai định dang thời gian!")]
         public TimeSpan? EndTime { get; set; }
         public int Status { get; set; }
 
