@@ -161,12 +161,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if (!usingFacilities.Any())
                 {
-                    return Ok(new ResponseDTO<object>(200, "Không có dữ liệu UsingFacility", new List<UsingFacilityDTO>()));
+                    return Ok(new ResponseDTO<object>(200, "Không có dữ liệu thiết bị đang sử dụng", new List<UsingFacilityDTO>()));
                 }
 
                 var usingFacilityDTOs = _mapper.Map<List<UsingFacilityDTO>>(usingFacilities);
 
-                return Ok(new ResponseDTO<object>(200, "Lấy thành công danh sách UsingFacility", usingFacilityDTOs));
+                return Ok(new ResponseDTO<object>(200, "Lấy thành công danh sách thiết bị đang sử dụng", usingFacilityDTOs));
             }
             catch (Exception ex)
             {
