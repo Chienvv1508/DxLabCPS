@@ -439,8 +439,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var listAreaTypeCategory = await _areaTypeCategoryService.GetAll();
                 List<AreaGetForManagement> areaDTOs = new List<AreaGetForManagement>();
                 IEnumerable<UsingFacility> usingFacilities = await _usingFaclytyService.GetAllWithInclude(x => x.Facility);
+                
                 foreach (var are in room.Areas)
                 {
+                    if (usingFacilities != null)
+                    {
+                        usingFacilities.AsQueryable().Where(x => x.AreaId == are.AreaId);
+                     }
                     var areaType = listAreaType.FirstOrDefault(x => x.AreaTypeId == are.AreaTypeId);
                     are.AreaType = areaType;
                     var areaTypeCategory = listAreaTypeCategory.FirstOrDefault(x => x.CategoryId == are.AreaType.AreaCategory);
