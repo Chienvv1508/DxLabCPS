@@ -5,6 +5,7 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
         services.AddHttpClient();
         services.AddHostedService<Worker>();
+        services.AddHostedService<DepreciationTHBackGroundTask>();
     })
     .Build();
 
