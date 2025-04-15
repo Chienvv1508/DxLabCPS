@@ -18,10 +18,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         private readonly IFacilityService _facilityService;
         private readonly IRoomService _roomService;
         private readonly IAreaTypeService _areaTypeService;
+        private readonly IAreaTypeCategoryService _areaTypeCategoryService;
 
         public AreaController(IAreaService areaService, IUsingFacilytyService usingFacilytyService,
             IFaciStatusService faciStatusService, IMapper mapper, IFacilityService facilityService,
-            IRoomService roomService, IAreaTypeService areaTypeService)
+            IRoomService roomService, IAreaTypeService areaTypeService, IAreaTypeCategoryService areaTypeCategoryService)
         {
             _usingFaclytyService = usingFacilytyService;
             _facilityStatusService = faciStatusService;
@@ -30,6 +31,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _facilityService = facilityService;
             _roomService = roomService;
             _areaTypeService = areaTypeService;
+            _areaTypeCategoryService = areaTypeCategoryService;
         }
 
         [HttpPost("faci")]
@@ -159,12 +161,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if (!usingFacilities.Any())
                 {
-                    return Ok(new ResponseDTO<object>(200, "Không có dữ liệu UsingFacility", new List<UsingFacilityDTO>()));
+                    return Ok(new ResponseDTO<object>(200, "Không có dữ liệu thiết bị đang sử dụng", new List<UsingFacilityDTO>()));
                 }
 
                 var usingFacilityDTOs = _mapper.Map<List<UsingFacilityDTO>>(usingFacilities);
 
-                return Ok(new ResponseDTO<object>(200, "Lấy thành công danh sách UsingFacility", usingFacilityDTOs));
+                return Ok(new ResponseDTO<object>(200, "Lấy thành công danh sách thiết bị đang sử dụng", usingFacilityDTOs));
             }
             catch (Exception ex)
             {
@@ -196,7 +198,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch(Exception ex)
             {
-                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi database", null));
+                return StatusCode(500, new ResponseDTO<object>(500, "Lỗi cơ sở dữ liệu", null));
             }
            
         }
@@ -418,6 +420,85 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return StatusCode(500, new ResponseDTO<object>(500, "Lỗi xóa trang thiết bị!", null));
             }
 
+        }
+
+
+        [HttpGet("areainroomformanagement")]
+        public async Task<IActionResult> GetAreasManagementInRoom(int roomId)
+        {
+            try
+            {
+                var room = await _roomService.Get(x => x.RoomId == roomId);
+                if (room == null)
+                {
+                    var response = new ResponseDTO<object>(400, "Bạn nhập phòng không tồn tại", null);
+                    return BadRequest(response);
+
+                }
+                var listAreaType = await _areaTypeService.GetAll();
+                var listAreaTypeCategory = await _areaTypeCategoryService.GetAll();
+                List<AreaGetForManagement> areaDTOs = new List<AreaGetForManagement>();
+                IEnumerable<UsingFacility> usingFacilities = await _usingFaclytyService.GetAllWithInclude(x => x.Facility);
+                foreach (var are in room.Areas)
+                {
+                    var areaType = listAreaType.FirstOrDefault(x => x.AreaTypeId == are.AreaTypeId);
+                    are.AreaType = areaType;
+                    var areaTypeCategory = listAreaTypeCategory.FirstOrDefault(x => x.CategoryId == are.AreaType.AreaCategory);
+                    if (!usingFacilities.Any())
+                    {
+                        int faci = 0;
+                        AreaGetForManagement areaGetForManagement = new AreaGetForManagement()
+                        {
+                            AreaId = are.AreaId,
+                            AreaName = are.AreaName,
+                            AreaTypeId = are.AreaTypeId,
+                            AreaTypeName = are.AreaType.AreaTypeName,
+                            CategoryId = are.AreaType.AreaCategory,
+                            Title = are.AreaType.AreaTypeCategory.Title,
+                            FaciAmount = faci,
+                            IsAvail = are.IsAvail,
+                            Size = are.AreaType.Size
+
+
+                        };
+                        areaDTOs.Add(areaGetForManagement);
+                    }
+                    else
+                    {
+                        int faci = 0;
+                        foreach (var facility in usingFacilities)
+                        {
+                            if (facility.Facility.FacilityCategory == 1)
+                                faci += facility.Facility.Size;
+                        }
+                        AreaGetForManagement areaGetForManagement = new AreaGetForManagement()
+                        {
+                            AreaId = are.AreaId,
+                            AreaName = are.AreaName,
+                            AreaTypeId = are.AreaTypeId,
+                            AreaTypeName = are.AreaType.AreaTypeName,
+                            CategoryId = are.AreaType.AreaCategory,
+                            Title = are.AreaType.AreaTypeCategory.Title,
+                            FaciAmount = faci,
+                            IsAvail = are.IsAvail,
+                            Size = are.AreaType.Size
+
+
+                        };
+                        areaDTOs.Add(areaGetForManagement);
+                    }
+                }
+
+
+                var response1 = new ResponseDTO<object>(200, "Danh sách khu vực", areaDTOs);
+                return Ok(response1);
+            }
+            catch(Exception ex)
+            {
+                var response1 = new ResponseDTO<object>(500, "Lỗi lấy danh sách khu vực!", null);
+                return StatusCode(500,response1);
+            }
+          
         }
 
     }

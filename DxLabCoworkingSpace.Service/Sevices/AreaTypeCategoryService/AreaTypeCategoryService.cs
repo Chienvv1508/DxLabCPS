@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,14 +36,14 @@ namespace DxLabCoworkingSpace
             
         }
 
-        public Task<IEnumerable<AreaTypeCategory>> GetAll()
+        public async Task<IEnumerable<AreaTypeCategory>> GetAll()
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeCategoryRepository.GetAll();
         }
 
-        public Task<IEnumerable<AreaTypeCategory>> GetAll(Expression<Func<AreaTypeCategory, bool>> expression)
+        public async Task<IEnumerable<AreaTypeCategory>> GetAll(Expression<Func<AreaTypeCategory, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.AreaTypeCategoryRepository.GetAll(expression);
         }
 
         public async Task<IEnumerable<AreaTypeCategory>> GetAllWithInclude(params Expression<Func<AreaTypeCategory, object>>[] includes)
