@@ -12,13 +12,15 @@ namespace DxLabCoworkingSpace
     public class LabBookingCrawlerService : ILabBookingCrawlerService
     {
         private readonly Web3 _web3;
-        private readonly Contract _contract;
+        private readonly Contract _contract;    
         private readonly IUnitOfWork _unitOfWork;
         private readonly string _contractAddress;
 
         public LabBookingCrawlerService(string providerCrawl, string contractAddress, string contractAbi, IUnitOfWork unitOfWork)
         {
-            _web3 = new Web3(providerCrawl);
+            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            var client = new Nethereum.JsonRpc.Client.RpcClient(new Uri(providerCrawl), httpClient);
+            _web3 = new Web3(client);
             _contractAddress = contractAddress;
             _contract = _web3.Eth.GetContract(contractAbi, contractAddress);
             _unitOfWork = unitOfWork;
@@ -50,7 +52,7 @@ namespace DxLabCoworkingSpace
                         WalletAddress = userAddress,
                         Status = eventType == "UserBlocked" ? false : true
                     };
-                    await _unitOfWork.UserRepository.Add(user);
+                   // await _unitOfWork.UserRepository.Add(user);
                 }
                 else if (user != null)
                 {
@@ -67,7 +69,7 @@ namespace DxLabCoworkingSpace
                     {
                         user.Status = true;
                     }
-                    _unitOfWork.UserRepository.Update(user);
+                    //_unitOfWork.UserRepository.Update(user);
                 }
                 await _unitOfWork.CommitAsync();
                 Console.WriteLine($"Processed {eventType} for user {userAddress}, txHash: {transactionHash}");
@@ -94,8 +96,8 @@ namespace DxLabCoworkingSpace
                             WalletAddress = userAddress,
                             Status = true
                         };
-                        await _unitOfWork.UserRepository.Add(user);
-                        await _unitOfWork.CommitAsync();
+                        //await _unitOfWork.UserRepository.Add(user);
+                        //await _unitOfWork.CommitAsync();
                     }
 
                     var booking = await _unitOfWork.BookingRepository.Get(b => b.BookingId.ToString() == bookingId);
@@ -107,8 +109,8 @@ namespace DxLabCoworkingSpace
                             BookingCreatedDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime,
                             Price = eventType == "Created" ? 100m : 0m
                         };
-                        await _unitOfWork.BookingRepository.Add(booking);
-                        await _unitOfWork.CommitAsync();
+                        //await _unitOfWork.BookingRepository.Add(booking);
+                        //await _unitOfWork.CommitAsync();
                     }
 
                     var bookingDetail = new BookingDetail
@@ -129,15 +131,15 @@ namespace DxLabCoworkingSpace
                         Price = eventType == "Cancelled" && refundAmount != null ? decimal.Parse(refundAmount) : 100m
                     };
 
-                    await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
-                    await _unitOfWork.CommitAsync();
+                    //await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
+                    //await _unitOfWork.CommitAsync();
                 }
                 else
                 {
                     Console.WriteLine($"Booking event with transactionHash: {transactionHash} already exists.");
                 }
             }
-        }
+        }       
 
         public async Task CrawlBookingEventsAsync(int fromBlock, int toBlock)
         {
@@ -146,7 +148,9 @@ namespace DxLabCoworkingSpace
                 // BookingCreated
                 var bookingCreatedEvent = _contract.GetEvent("BookingCreated");
                 var bookingCreatedFilter = bookingCreatedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                var bookingCreatedLogs = await bookingCreatedEvent.GetAllChangesAsync<BookingCreatedEventDTO>(bookingCreatedFilter);
+                //var bookingCreatedLogs = await bookingCreatedEvent.GetAllChangesAsync<BookingCreatedEventDTO>(bookingCreatedFilter);
+                var bookingCreatedLogs = await RetryGetAllChangesAsync<BookingCreatedEventDTO>(bookingCreatedEvent, bookingCreatedFilter);
+                await Task.Delay(200);
 
                 Console.WriteLine($"Found {bookingCreatedLogs.Count} BookingCreated logs.");
                 foreach (var log in bookingCreatedLogs)
@@ -174,7 +178,9 @@ namespace DxLabCoworkingSpace
                 // BookingCancelled
                 var bookingCancelledEvent = _contract.GetEvent("BookingCancelled");
                 var bookingCancelledFilter = bookingCancelledEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                var bookingCancelledLogs = await bookingCancelledEvent.GetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledFilter);
+                //var bookingCancelledLogs = await bookingCancelledEvent.GetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledFilter);
+                var bookingCancelledLogs = await RetryGetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledEvent, bookingCancelledFilter);
+                await Task.Delay(200);
 
                 Console.WriteLine($"Found {bookingCancelledLogs.Count} BookingCancelled logs.");
                 foreach (var log in bookingCancelledLogs)
@@ -204,7 +210,9 @@ namespace DxLabCoworkingSpace
                 // BookingCheckedIn
                 var bookingCheckedInEvent = _contract.GetEvent("BookingCheckedIn");
                 var bookingCheckedInFilter = bookingCheckedInEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                var bookingCheckedInLogs = await bookingCheckedInEvent.GetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInFilter);
+                //var bookingCheckedInLogs = await bookingCheckedInEvent.GetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInFilter);
+                var bookingCheckedInLogs = await RetryGetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInEvent, bookingCheckedInFilter);
+                await Task.Delay(200);
 
                 Console.WriteLine($"Found {bookingCheckedInLogs.Count} BookingCheckedIn logs.");
                 foreach (var log in bookingCheckedInLogs)
@@ -232,7 +240,9 @@ namespace DxLabCoworkingSpace
                 // UserBlocked
                 var userBlockedEvent = _contract.GetEvent("UserBlocked");
                 var userBlockedFilter = userBlockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                var userBlockedLogs = await userBlockedEvent.GetAllChangesAsync<UserBlockedEventDTO>(userBlockedFilter);
+                //var userBlockedLogs = await userBlockedEvent.GetAllChangesAsync<UserBlockedEventDTO>(userBlockedFilter);
+                var userBlockedLogs = await RetryGetAllChangesAsync<UserBlockedEventDTO>(userBlockedEvent, userBlockedFilter);
+                await Task.Delay(200);
 
                 Console.WriteLine($"Found {userBlockedLogs.Count} UserBlocked logs.");
                 foreach (var log in userBlockedLogs)
@@ -260,7 +270,9 @@ namespace DxLabCoworkingSpace
                 // UserRegistered
                 var userRegisteredEvent = _contract.GetEvent("UserRegistered");
                 var userRegisteredFilter = userRegisteredEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                var userRegisteredLogs = await userRegisteredEvent.GetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredFilter);
+                //var userRegisteredLogs = await userRegisteredEvent.GetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredFilter);
+                var userRegisteredLogs = await RetryGetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredEvent, userRegisteredFilter);
+                await Task.Delay(200);
 
                 Console.WriteLine($"Found {userRegisteredLogs.Count} UserRegistered logs.");
                 foreach (var log in userRegisteredLogs)
@@ -291,7 +303,9 @@ namespace DxLabCoworkingSpace
                 // UserUnblocked
                 var userUnblockedEvent = _contract.GetEvent("UserUnblocked");
                 var userUnblockedFilter = userUnblockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                var userUnblockedLogs = await userUnblockedEvent.GetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedFilter);
+                //var userUnblockedLogs = await userUnblockedEvent.GetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedFilter);
+                var userUnblockedLogs = await RetryGetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedEvent, userUnblockedFilter);
+                await Task.Delay(200);
 
                 Console.WriteLine($"Found {userUnblockedLogs.Count} UserUnblocked logs.");
                 foreach (var log in userUnblockedLogs)
@@ -347,18 +361,59 @@ namespace DxLabCoworkingSpace
 
         public async Task<int?> GetLatestBlockNumberAsync()
         {
-            try
+            const int maxRetries = 3;
+            for (int i = 0; i < maxRetries; i++)
             {
-                var latestBlockNumber = await _web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
-                Console.WriteLine($"Latest Block Number: {latestBlockNumber.Value}");
-                return (int)latestBlockNumber.Value;
+                try
+                {
+                    var latestBlockNumber = await _web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+                    Console.WriteLine($"Latest Block Number: {latestBlockNumber.Value}");
+                    return (int)latestBlockNumber.Value;
+                }
+                catch (Exception error)
+                {
+                    Console.WriteLine($"Retry {i + 1}/{maxRetries} - Error get LastestBlock: {error.Message}");
+                    if (i == maxRetries - 1)
+                    {
+                        Console.WriteLine("Out of attempts, returning null!");
+                        return null;
+                    }
+                    await Task.Delay(2000 * (i + 1));
+                }
             }
-            catch (Exception error)
+            return null;
+        }
+
+        private async Task<List<EventLog<TEventDTO>>> RetryGetAllChangesAsync<TEventDTO>(
+    Event @event,
+    NewFilterInput filter,
+    int maxRetries = 3,
+    int delayBetweenRetriesMs = 1000
+) where TEventDTO : IEventDTO, new()
+        {
+            int retry = 0;
+            while (true)
             {
-                Console.WriteLine($"Error fetching the latest block number: {error.Message}");
-                return null;
+                try
+                {
+                    return await @event.GetAllChangesAsync<TEventDTO>(filter);
+                }
+                catch (Exception ex)
+                {
+                    retry++;
+                    Console.WriteLine($"Retry {retry}/{maxRetries} for {typeof(TEventDTO).Name} - Error: {ex.Message}");
+
+                    if (retry >= maxRetries)
+                    {
+                        Console.WriteLine($"Max retry reached. Skipping {typeof(TEventDTO).Name}.");
+                        return new List<EventLog<TEventDTO>>();
+                    }
+
+                    await Task.Delay(delayBetweenRetriesMs);
+                }
             }
         }
+
     }
 
     [Event("BookingCreated")]

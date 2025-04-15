@@ -48,6 +48,34 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
+        public async Task Delete(IEnumerable<UsingFacility> faciInArea)
+        {
+            try
+            {
+                if(faciInArea != null)
+                {
+                    foreach(var faci in faciInArea)
+                    {
+                        _unitOfWork.UsingFacilityRepository.Delete(faci);
+                        var newFaciStatus = new FacilitiesStatus()
+                        {
+                            FacilityId = faci.FacilityId,
+                            BatchNumber = faci.BatchNumber,
+                            ImportDate = faci.ImportDate,
+                            Quantity = faci.Quantity,
+                            Status = 1
+                        };
+                       await _unitOfWork.FacilitiesStatusRepository.Add(newFaciStatus);
+                    }
+                    await _unitOfWork.CommitAsync();
+                }    
+            }
+            catch(Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+            }
+        }
+
         public async Task<UsingFacility> Get(Expression<Func<UsingFacility, bool>> expression)
         {
             return await _unitOfWork.UsingFacilityRepository.Get(expression);

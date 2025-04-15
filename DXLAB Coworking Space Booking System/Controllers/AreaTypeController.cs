@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -23,6 +24,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> CreateAreaType([FromForm] AreaTypeForAddDTO areTypeDto)
         {
             var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName);
@@ -128,8 +130,93 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
         }
 
+        //[HttpPatch("{id}")]
+        //[Authorize(Roles = "Admin")]
+        //public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<AreaType> patchDoc)
+        //{
+        //    try
+        //    {
+        //        if (patchDoc == null)
+        //        {
+        //            var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
+        //            return BadRequest(response);
+        //        }
+        //        var allowedPaths = new HashSet<string>
+        //    {
+        //               "areaTypeName",
+        //                "areaDescription",
+        //                "price",
+        //                "images"
+
+        //    };
+        //        var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
+        //        if(areaTypeNameOp != null)
+        //        {
+        //            var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp.value.ToString());
+        //            if (existedAreaType != null)
+        //            {
+        //                var response = new ResponseDTO<object>(400, $"Tên loại phòng {areaTypeNameOp} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
+        //                return BadRequest(response);
+        //            }
+        //        }
+
+        //        foreach (var operation in patchDoc.Operations)
+        //        {
+        //            if (!allowedPaths.Contains(operation.path))
+        //            {
+        //                var response1 = new ResponseDTO<object>(400, $"Không thể cập nhật trường: {operation.path}", null);
+        //                return BadRequest(response1);
+        //            }
+        //        }
+
+        //        var areaTypeFromDb = await _areaTypeService.Get(x => x.AreaTypeId == id);
+        //        if (areaTypeFromDb == null)
+        //        {
+        //            var response2 = new ResponseDTO<object>(404, "Không tìm thấy phòng. Vui lòng nhập lại mã loại phòng!", null);
+        //            return NotFound(response2);
+        //        }
+
+        //        patchDoc.ApplyTo(areaTypeFromDb, ModelState);
+
+        //        if (!ModelState.IsValid)
+        //        {
+        //            var allErrors = ModelState
+        //            .SelectMany(ms => ms.Value.Errors
+        //            .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
+        //            .ToList();
+        //            string errorString = string.Join(" | ", allErrors);
+        //            var response = new ResponseDTO<object>(400, errorString, null);
+        //            return BadRequest(response);
+        //        }
+
+        //        var areaTypeDTO = _mapper.Map<AreaTypeDTO>(areaTypeFromDb);
+
+        //        bool isValid = TryValidateModel(areaTypeDTO);
+        //        if (!isValid)
+        //        {
+        //            var allErrors = ModelState
+        //            .SelectMany(ms => ms.Value.Errors
+        //            .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
+        //            .ToList();
+
+        //            string errorString = string.Join(" | ", allErrors);
+        //            var response = new ResponseDTO<object>(404, errorString, null);
+        //            return BadRequest(response);
+        //        }
+        //        await _areaTypeService.Update(areaTypeFromDb);
+        //        var response3 = new ResponseDTO<object>(200, "Cập nhập thành công!", null);
+        //        return Ok(response3);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        var response = new ResponseDTO<object>(01, "Lỗi khi cập nhập dữ liệu!", null);
+        //        return StatusCode(500, response);
+        //    }
+        //}
+
         [HttpPatch("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
+        //[Consumes("multipart/form-data")]
         public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<AreaType> patchDoc)
         {
             try
@@ -143,9 +230,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                        "areaTypeName",
                         "areaDescription",
-                        "price"
-                       
-                        
+                        "price",
+                        "isDeleted"
+
+
             };
                 var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
                 if(areaTypeNameOp != null)
@@ -187,8 +275,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(response);
                 }
 
+                // Gắn các trường vào đối tượng AreaType
                 var areaTypeDTO = _mapper.Map<AreaTypeDTO>(areaTypeFromDb);
-
                 bool isValid = TryValidateModel(areaTypeDTO);
                 if (!isValid)
                 {

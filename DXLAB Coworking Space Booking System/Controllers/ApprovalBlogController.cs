@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using DXLAB_Coworking_Space_Booking_System.Hubs;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -12,11 +14,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     {
         private readonly IBlogService _blogService;
         private readonly IMapper _mapper;
+        private readonly IHubContext<BlogHub> _hubContext;
 
-        public ApprovalBlogController(IBlogService blogService, IMapper mapper)
+        public ApprovalBlogController(IBlogService blogService, IMapper mapper, IHubContext<BlogHub> hubContext)
         {
             _blogService = blogService;
             _mapper = mapper;
+            _hubContext = hubContext;
         }
 
         [HttpGet("pending")]
@@ -101,6 +105,23 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 var blogDto = _mapper.Map<BlogDTO>(blog);
 
+                // Gửi thông báo real-time tới Staff và Admin
+                var blogData = new
+                {
+                    BlogId = blogDto.BlogId,
+                    BlogTitle = blogDto.BlogTitle,
+                    BlogContent = blogDto.BlogContent,
+                    BlogCreatedDate = blogDto.BlogCreatedDate,
+                    Status = blogDto.Status,
+                    UserName = blogDto.UserName,
+                    Images = blogDto.Images
+                };
+
+                // Gửi thông báo real-time
+                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogStatus", blogData); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blogData); // Admin
+                await _hubContext.Clients.Group("Students").SendAsync("ReceiveBlogStatus", blogData); // Student
+
                 // Chỉ trả về các trường cần thiết trong response
                 var responseDto = new
                 {
@@ -135,6 +156,22 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 var blogDto = _mapper.Map<BlogDTO>(blog);
+
+                // Gửi thông báo real-time tới Staff và Admin
+                var blogData = new
+                {
+                    BlogId = blogDto.BlogId,
+                    BlogTitle = blogDto.BlogTitle,
+                    BlogContent = blogDto.BlogContent,
+                    BlogCreatedDate = blogDto.BlogCreatedDate,
+                    Status = blogDto.Status,
+                    UserName = blogDto.UserName,
+                    Images = blogDto.Images
+                };
+
+                // Gửi thông báo real-time
+                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogStatus", blogData); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blogData); // Admin
 
                 // Chỉ trả về các trường cần thiết trong response
                 var responseDto = new
@@ -202,6 +239,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 await _blogService.Delete(id);
+
+                // Gửi thông báo real-time
+                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogDeleted", id); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", id); // Admin
+                await _hubContext.Clients.Group("Students").SendAsync("ReceiveBlogDeleted", id); // Student
+
                 return Ok(new ResponseDTO<object>(200, $"Blog với ID: {id} đã được xóa thành công!", null));
             }
             catch (Exception ex)

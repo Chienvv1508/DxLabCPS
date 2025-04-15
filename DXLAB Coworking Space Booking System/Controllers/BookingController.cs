@@ -148,6 +148,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                                     var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Positions);
                                     var areaBook = areaBooks.FirstOrDefault(x => x.Positions.FirstOrDefault(x => x.PositionId == id) != null);
                                     bookingDetail.Price = areaBook.AreaType.Price;
+                                    bookingDetail.AreaId = areaBook.AreaId;
                                     bookingDetails.Add(bookingDetail);
                                 }
                             }

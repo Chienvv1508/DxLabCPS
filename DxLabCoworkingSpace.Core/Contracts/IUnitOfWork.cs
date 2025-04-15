@@ -29,7 +29,9 @@ namespace DxLabCoworkingSpace
         IGenericRepository<DepreciationSum> DepreciationSumRepository { get; }
 
         IGenericRepository<UltilizationRate> UltilizationRateRepository { get; }
+        IGenericRepository<Report> ReportRepository { get; }
 
+    
         IGenericRepository<ContractCrawl> ContractCrawlRepository { get; }
         DbContext Context { get; }
         Task CommitAsync();

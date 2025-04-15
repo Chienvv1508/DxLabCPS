@@ -1,8 +1,14 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DXLAB_Coworking_Space_Booking_System
 {
@@ -22,22 +28,22 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPost("newareatypecategory")]
+        [Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> CreateAreaTypeCategory([FromForm] AreaTypeCategoryForAddDTO areaTypeCategoryDTO)
         {
             var areaTypeCategory = _mapper.Map<AreaTypeCategory>(areaTypeCategoryDTO);
-            var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images);
-            if(result.Item1 == false)
+            var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images); // Typo: Fix "ImageSerive" to "ImageService"
+            if (!result.Item1)
             {
                 return BadRequest(new ResponseDTO<object>(400, "Lỗi nhập ảnh", null));
             }
-            else
+
+            foreach (var imageUrl in result.Item2)
             {
-               foreach(var i in result.Item2)
-                {
-                    areaTypeCategory.Images.Add(new Image() { ImageUrl = i});
-                }
+                areaTypeCategory.Images.Add(new Image { ImageUrl = imageUrl });
             }
+
             await _areaTypeCategoryService.Add(areaTypeCategory);
             return Ok();
         }

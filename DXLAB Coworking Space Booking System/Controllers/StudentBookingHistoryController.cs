@@ -111,10 +111,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 var filteredDetails = bookingDetails.Where(bd => bd.BookingId == bookingId).ToList();
 
-                // Lấy tất cả AreaIds và AreaTypeIds từ filteredDetails
+                if (!filteredDetails.Any())
+                {
+                    return NotFound(new ResponseDTO<object>(404, "Không tìm thấy chi tiết booking!", null));
+                }
+
+                // Lấy tất cả AreaIds từ filteredDetails
                 var areaIds = filteredDetails
-                    .Where(bd => bd.Position != null)
-                    .Select(bd => bd.Position.AreaId)
+                    .Select(bd => bd.Position != null ? bd.Position.AreaId : (bd.Area != null ? bd.Area.AreaId : 0)) // Lấy AreaId từ Position hoặc Area
+                    .Where(id => id != 0) // Loại bỏ các id không hợp lệ
                     .Distinct()
                     .ToList();
 
@@ -122,11 +127,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var allAreasWithRooms = await _areaService.GetAllWithInclude(a => a.Room);
                 var areas = areaIds.Any() ? allAreasWithRooms.Where(a => areaIds.Contains(a.AreaId)).ToList() : new List<Area>();
 
-                // Lấy AreaTypeIds từ cả Area trong BookingDetails và Areas từ Position
-                var areaTypeIds = filteredDetails
-                    .Where(bd => bd.Area?.AreaTypeId != null)
-                    .Select(bd => bd.Area.AreaTypeId)
-                    .Union(areas.Select(a => a.AreaTypeId))
+                // Lấy AreaTypeIds từ Areas
+                var areaTypeIds = areas
+                    .Select(a => a.AreaTypeId)
                     .Distinct()
                     .ToList();
 
@@ -147,33 +150,37 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     TotalPrice = booking.Price,
                     Details = filteredDetails.Select(bd =>
                     {
-                        string positionDisplay = null;
-                        string areaName = null;
-                        string areaTypeName = null;
-                        string roomName = null;
+                        string positionDisplay = "N/A";
+                        string areaName = "N/A";
+                        string areaTypeName = "N/A";
+                        string roomName = "N/A";
 
-                        if (bd.Area?.AreaId != null)
+                        // Lấy thông tin Area và AreaType
+                        Area area = null;
+                        if (bd.Position != null && areaLookup.TryGetValue(bd.Position.AreaId, out var areaFromPosition))
                         {
-                            areaName = bd.Area.AreaName;
-                            positionDisplay = areaTypeLookup.TryGetValue(bd.Area.AreaTypeId, out var areaType) ? areaType.AreaTypeName : "N/A";
-                            roomName = bd.Area.Room?.RoomName;
-                            areaTypeName = positionDisplay;
+                            area = areaFromPosition;
                         }
-                        else if (bd.Position != null)
+                        else if (bd.Area != null && areaLookup.TryGetValue(bd.Area.AreaId, out var areaFromArea))
                         {
-                            positionDisplay = bd.Position.PositionNumber.ToString();
-                            if (areaLookup.TryGetValue(bd.Position.AreaId, out var area))
-                            {
-                                areaName = area.AreaName;
-                                areaTypeName = area.AreaTypeId != 0 && areaTypeLookup.TryGetValue(area.AreaTypeId, out var areaType) ? areaType.AreaTypeName : "N/A";
-                                roomName = area.Room?.RoomName;
-                            }
-                            else
-                            {
-                                areaName = "N/A";
-                                areaTypeName = "N/A";
-                                roomName = "N/A";
-                            }
+                            area = areaFromArea;
+                        }
+
+                        if (area != null)
+                        {
+                            areaName = area.AreaName;
+                            areaTypeName = areaTypeLookup.TryGetValue(area.AreaTypeId, out var areaType) ? areaType.AreaTypeName : "N/A";
+                            roomName = area.Room?.RoomName ?? "N/A";
+                        }
+
+                        // Xác định Position
+                        if (bd.Position != null)
+                        {
+                            positionDisplay = bd.Position.PositionNumber.ToString(); // Hiển thị PositionNumber nếu có Position
+                        }
+                        else
+                        {
+                            positionDisplay = areaTypeName; // Hiển thị AreaTypeName nếu Position là null
                         }
 
                         return new
@@ -188,7 +195,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             CheckoutTime = bd.CheckoutTime,
                             Price = bd.Price,
                             Status = bd.Status
-
                         };
                     }).ToList()
                 };

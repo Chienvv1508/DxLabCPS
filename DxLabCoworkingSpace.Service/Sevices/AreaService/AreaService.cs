@@ -66,9 +66,17 @@ namespace DxLabCoworkingSpace
             return x.FirstOrDefault(expression.Compile());
         }
 
-        public Task Update(Area entity)
+        public async Task Update(Area entity)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _unitOfWork.AreaRepository.Update(entity);
+                await _unitOfWork.CommitAsync();
+
+            }catch(Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+            }
         }
     }
 }

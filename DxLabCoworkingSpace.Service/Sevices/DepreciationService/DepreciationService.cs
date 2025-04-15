@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpa
+namespace DxLabCoworkingSpace
 {
 
     public class DepreciationService : IDepreciationService

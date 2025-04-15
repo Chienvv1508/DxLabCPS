@@ -1,5 +1,4 @@
 using DXLAB_Coworking_Space_Booking_System;
-using DxLabCoworkingSpac;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +12,11 @@ using Hangfire;
 using Hangfire.MemoryStorage;
 using Nethereum.ABI.Model;
 using System.IO;
-using DxLabCoworkingSpace.Service.Sevices.Blockchain;
 using Microsoft.Extensions.Options;
-using DxLabCoworkingSpa;
+
+using DXLAB_Coworking_Space_Booking_System.Hubs;
+using System.Security.Claims;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,9 @@ builder.Services.AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
 });
 builder.Services.AddEndpointsApiExplorer();
+
+// SignalR Service
+builder.Services.AddSignalR();
 
 builder.Services.AddSwaggerGen(options =>
 {   
@@ -112,7 +116,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = issuer,
             ValidAudience = audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            NameClaimType = "sub", //Email
+            RoleClaimType = ClaimTypes.Role // "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var userId = context.Principal.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    context.Principal.AddIdentity(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userId) }));
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -143,9 +161,13 @@ builder.Services.AddScoped<IUsingFacilytyService, UsingFacilityService>();
 builder.Services.AddScoped<IFaciStatusService, FaciStatusService>();
 builder.Services.AddScoped<ISumaryExpenseService, SumaryExpenseService>();
 builder.Services.AddScoped<IAreaTypeCategoryService, AreaTypeCategoryService>();
+
+builder.Services.AddScoped<IReportService, ReportService>();
+
 builder.Services.AddScoped<IImageServiceDb, ImageServiceDb>();
 builder.Services.AddScoped<IDepreciationService, DepreciationService>();
 builder.Services.AddScoped<IUltilizationRateService, UltilizationRateService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 
 //// Đăng ký LabBookingCrawlerService với các giá trị từ configuration
@@ -173,8 +195,8 @@ builder.Services.AddHangfireServer(options =>
 {
     options.WorkerCount = 20;                  // Số lượng worker
     options.Queues = new[] { "default" };      // Listening queues: 'default'
-    options.ShutdownTimeout = TimeSpan.FromSeconds(30); // Shutdown timeout
-    options.SchedulePollingInterval = TimeSpan.FromSeconds(30); // Schedule polling interval
+    options.ShutdownTimeout = TimeSpan.FromSeconds(15)/*FromSeconds(30)*/; // Shutdown timeout
+    options.SchedulePollingInterval = TimeSpan.FromSeconds(15)/*FromSeconds(30)*/; // Schedule polling interval
 });
 
 // Cập nhật CORS
@@ -212,14 +234,18 @@ app.UseAuthorization();
 // Thêm Hangfire Dashboard
 app.UseHangfireDashboard();
 
+// Enpoint SIgnalR cho FE call
+app.MapHub<BlogHub>("/blogHub");
+app.MapHub<ReportHub>("reportHub");
+
 // Khởi động job crawl sau khi Hangfire server đã khởi động
-app.Lifetime.ApplicationStarted.Register(() =>
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
-        jobService.ScheduleBookingLogJob();
-    }
-});
+//app.Lifetime.ApplicationStarted.Register(() =>
+//{
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
+//        jobService.ScheduleJob();
+//    }
+//});
 app.MapControllers();
 app.Run();

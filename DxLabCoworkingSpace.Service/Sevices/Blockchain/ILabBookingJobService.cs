@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Nethereum.RPC.Eth.DTOs;
+using Nethereum.Web3;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +10,10 @@ namespace DxLabCoworkingSpace
 {
     public interface ILabBookingJobService
     {
-        void ScheduleBookingLogJob();
+        void ScheduleJob();
         Task RunBookingLogJobAsync();
+        Task ExecuteMintingJob();
+        Task<TransactionReceipt> WaitForReceipt(Web3 web3, string transactionHash);
+
     }
 }

@@ -14,12 +14,9 @@ namespace DxLabCoworkingSpace
         public string Period { get; set; }
 
         [Range(2000, int.MaxValue, ErrorMessage = "Năm không hợp lệ!")]
-        public int? Year { get; set; }
+        public int Year { get; set; }
 
         [Range(1, 12, ErrorMessage = "Tháng phải từ 1 đến 12!")]
         public int? Month { get; set; }
-
-        [Range(1, 5, ErrorMessage = "Tuần phải từ 1 đến 5!")]
-        public int? Week { get; set; }
     }
 }

@@ -1,5 +1,4 @@
-﻿using DxLabCoworkingSpac;
-using DxLabCoworkingSpace;
+﻿using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,13 +38,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("month")]
-        public async Task<IActionResult> GetInMonth(DateTime date)
+        public async Task<IActionResult> GetInMonth(int year, int month)
         {
             try
             {
+                if (year > 9999 || year < 2000 || month > 12 || month < 1)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Nhập năm hoặc tháng không hợp lệ!", null));
+                }
+                DateTime date = new DateTime(year, month, 1);
                 //if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year && date.Month < DateTime.Now.Month))
                 //{
-                    var sums = await _depreciationService.GetAllWithInclude(x => x.SumDate.Year == date.Year && x.SumDate.Month == date.Month, x => x.Facility);
+                var sums = await _depreciationService.GetAllWithInclude(x => x.SumDate.Year == date.Year && x.SumDate.Month == date.Month, x => x.Facility);
                 List<DepreciationDTO> list = new List<DepreciationDTO>();
                 foreach (var d in sums)
                 {
@@ -56,7 +60,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         FacilityTitle = d.Facility.FacilityTitle,
                         FacilityCategory = d.Facility.FacilityCategory,
                         SumDate = d.SumDate,
-                        DepreciationAmount = d.DepreciationAmount
+                        DepreciationAmount = d.DepreciationAmount,
+
+                        BatchNumber = d.BatchNumber
 
                     };
                     list.Add(depreciationDTO);
@@ -76,10 +82,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         }
         [HttpGet("year")]
-        public async Task<IActionResult> GetInYear(DateTime date)
+        public async Task<IActionResult> GetInYear(int year)
         {
             try
             {
+                if (year > 9999 || year < 2000)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Nhập năm không hợp lệ!", null));
+                }
+
+                DateTime date = new DateTime(year, 1, 1);
                 if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year))
                 {
                     var sums = await _depreciationService.GetAllWithInclude(x => x.SumDate.Year == date.Year, x => x.Facility);
@@ -93,8 +105,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             FacilityTitle = d.Facility.FacilityTitle,
                             FacilityCategory = d.Facility.FacilityCategory,
                             SumDate = d.SumDate,
-                            DepreciationAmount = d.DepreciationAmount
-                            
+                            DepreciationAmount = d.DepreciationAmount,
+                            BatchNumber = d.BatchNumber
+
                         };
                         list.Add(depreciationDTO);
                     }    

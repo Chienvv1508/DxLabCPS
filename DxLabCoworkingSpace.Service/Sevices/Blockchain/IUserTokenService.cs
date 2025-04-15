@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DxLabCoworkingSpace.Service.Sevices.Blockchain
+namespace DxLabCoworkingSpace
 {
     public interface IUserTokenService
     {

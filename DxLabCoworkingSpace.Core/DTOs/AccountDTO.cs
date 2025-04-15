@@ -16,7 +16,7 @@ namespace DxLabCoworkingSpace
 
         [Required(ErrorMessage = "Email không được để trống.")]
         [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
-        //[RegularExpression(@"^[a-zA-Z0-9._%+-]+@fpt\.edu\.vn$", ErrorMessage = "Email phải thuộc miền @fpt.edu.vn.")]
+        [RegularExpression(@"^[^@]+@[^@]+\.[^@]+$", ErrorMessage = "Email phải có định dạng hợp lệ (chứa @ và .).")]
         public string Email { get; set; } = null!;
 
         [Required(ErrorMessage = "FullName không được để trống.")]

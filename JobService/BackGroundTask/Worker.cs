@@ -36,8 +36,7 @@ namespace JobService
                         }
                         else
                             _logger.LogInformation("Chạy thất bại");
-                    }
-                   
+                    }   
                 }
                 catch (Exception ex)
                 {
