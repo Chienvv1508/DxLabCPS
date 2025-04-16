@@ -179,6 +179,7 @@ namespace DxLabCoworkingSpace
                 }
                 var listFaciInArea = await _unitOfWork.UsingFacilityRepository.GetAll(x => x.FacilityId == removedFaciDTO.FacilityId &&
                  x.AreaId == removedFaciDTO.AreaId);
+               
                 int quantity = 0;
                 foreach (var faci in listFaciInArea)
                 {
@@ -295,13 +296,21 @@ namespace DxLabCoworkingSpace
             try
             {
                 await _unitOfWork.UsingFacilityRepository.Update(existedFaciInArea);
+                var faciInArea = await _unitOfWork.UsingFacilityRepository.Get(x => x.FacilityId == existedFaciInArea.FacilityId &&
+                x.BatchNumber == existedFaciInArea.BatchNumber && x.ImportDate == existedFaciInArea.ImportDate
+                );
+                int removeQuantity = 0;
+                if ( faciInArea != null )
+                {
+                    removeQuantity = existedFaciInArea.Quantity - faciInArea.Quantity;
+                }
                 var updateFaciStatus = await _facilityStatusService.Get(x => x.FacilityId == existedFaciInArea.FacilityId && x.BatchNumber == existedFaciInArea.BatchNumber
                     && x.ImportDate == existedFaciInArea.ImportDate && x.Status == status);
                 if (updateFaciStatus == null)
                 {
                     throw new Exception("Lỗi khi cập nhập trạng thái của thiết bị");
                 }
-                updateFaciStatus.Quantity -= existedFaciInArea.Quantity;
+                updateFaciStatus.Quantity -= removeQuantity;
                 await _unitOfWork.FacilitiesStatusRepository.Update(updateFaciStatus);
                 if (isAvail)
                 {

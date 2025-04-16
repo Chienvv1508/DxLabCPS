@@ -420,6 +420,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             xr.Positions = positions;
                         }
                     }
+                    if(room.IsDeleted == false)
+                    room.IsDeleted = true;
                     await _roomService.Update(room);
                     return Ok("Thêm khu vực thành công!");
                 }
