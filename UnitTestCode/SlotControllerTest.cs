@@ -240,7 +240,7 @@ namespace UnitTestCode
             var response = Assert.IsType<ResponseDTO<IEnumerable<SlotDTO>>>(okResult.Value);
             Assert.Equal(200, response.StatusCode);
             Assert.Equal("Lấy danh sách slot thành công.", response.Message);
-            Assert.Equal(2, response.Data.Count());
+            Assert.Equal(4, response.Data.Count());
         }
 
         // UT-09 Lấy ra List Slots rỗng
@@ -310,7 +310,7 @@ namespace UnitTestCode
             _mockSlotService.Setup(s => s.GetById(8)).ReturnsAsync((Slot)null);
 
             // Act
-            var result = await _controller.GetSlotById(1);
+            var result = await _controller.GetSlotById(8);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
@@ -327,7 +327,7 @@ namespace UnitTestCode
             _mockSlotService.Setup(s => s.GetById(2)).ThrowsAsync(new Exception("Database error"));
 
             // Act
-            var result = await _controller.GetSlotById(1);
+            var result = await _controller.GetSlotById(2);
 
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
