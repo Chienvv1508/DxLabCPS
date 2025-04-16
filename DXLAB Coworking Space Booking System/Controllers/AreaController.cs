@@ -501,7 +501,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     if (usingFacilities != null)
                     {
-                        usingFacilities.AsQueryable().Where(x => x.AreaId == are.AreaId);
+                        usingFacilities =  usingFacilities.AsQueryable().Where(x => x.AreaId == are.AreaId);
                     }
                     var areaType = listAreaType.FirstOrDefault(x => x.AreaTypeId == are.AreaTypeId);
                     are.AreaType = areaType;
