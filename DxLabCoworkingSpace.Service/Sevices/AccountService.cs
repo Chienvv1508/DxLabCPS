@@ -308,12 +308,61 @@ namespace DxLabCoworkingSpace
                     // Xóa các bản ghi Image trong cơ sở dữ liệu
                     _unitOfWork.Context.Set<Image>().RemoveRange(blog.Images);
                 }
-
                 // Xóa Blog
-                await _unitOfWork.BlogRepository.Delete(blog.BlogId);
+                await _unitOfWork.BlogRepository.Delete(blog.BlogId); 
             }
 
-            // Sau khi xóa hết Blog và Image liên quan, xóa User
+            // Lấy tất cả Bookings của User
+            var bookings = await _unitOfWork.Context.Set<Booking>()
+                .Where(b => b.UserId == id)
+                .Include(b => b.BookingDetails) // Bao gồm BookingDetails
+                .Include(b => b.Notifications) // Bao gồm Notifications
+                .ToListAsync();
+
+            foreach (var booking in bookings)
+            {
+                // Xử lý BookingDetails
+                if (booking.BookingDetails != null && booking.BookingDetails.Any())
+                {
+                    // Lấy tất cả Reports liên quan đến BookingDetails
+                    var bookingDetailIds = booking.BookingDetails.Select(bd => bd.BookingDetailId).ToList();
+                    var reports = await _unitOfWork.Context.Set<Report>()
+                        .Where(r => r.BookingDetailId != null && bookingDetailIds.Contains(r.BookingDetailId.Value))
+                        .ToListAsync();
+
+                    // Xóa các bản ghi Reports
+                    if (reports.Any())
+                    {
+                        _unitOfWork.Context.Set<Report>().RemoveRange(reports);
+                    }
+
+                    // Xóa các bản ghi BookingDetails
+                    _unitOfWork.Context.Set<BookingDetail>().RemoveRange(booking.BookingDetails);
+                }
+
+                // Xóa các bản ghi Notifications liên quan đến Booking
+                if (booking.Notifications != null && booking.Notifications.Any())
+                {
+                    _unitOfWork.Context.Set<Notification>().RemoveRange(booking.Notifications);
+                }
+            }
+
+            // Xóa các bản ghi Bookings
+            _unitOfWork.Context.Set<Booking>().RemoveRange(bookings);
+
+            // Xóa các bản ghi Notifications (trực tiếp liên quan đến User)
+            var userNotifications = await _unitOfWork.Context.Set<Notification>()
+                .Where(n => n.UserId == id)
+                .ToListAsync();
+            _unitOfWork.Context.Set<Notification>().RemoveRange(userNotifications);
+
+            // Xóa các bản ghi Reports (trực tiếp liên quan đến User)
+            var userReports = await _unitOfWork.Context.Set<Report>()
+                .Where(r => r.UserId == id)
+                .ToListAsync();
+            _unitOfWork.Context.Set<Report>().RemoveRange(userReports);
+
+            // Xóa User
             await _unitOfWork.UserRepository.Delete(id);
             await _unitOfWork.CommitAsync();
         }
@@ -359,5 +408,7 @@ namespace DxLabCoworkingSpace
             await _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.CommitAsync();
         }
+
+
     }
 }
