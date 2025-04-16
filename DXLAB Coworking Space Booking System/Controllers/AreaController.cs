@@ -84,7 +84,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     }
                     if (areaInRoom.AreaType.Size - numberOfPositionT == faciAddDTO.Quantity * fullInfoOfFaci.Size)
                         isFullT = true;
-                    if (areaInRoom.AreaType.Size - numberOfPositionT == faciAddDTO.Quantity)
+                    if (areaInRoom.AreaType.Size  == numberOfPositionCh)
                         isFullCh = true;
                 }
                 // thêm đoạn này
@@ -95,9 +95,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         var reponse = new ResponseDTO<object>(400, "Bạn đã nhập quá số lượng ghế cho phép của phòng", null); // Sửa
                         return BadRequest(reponse);
                     }
-                    if (areaInRoom.AreaType.Size - numberOfPositionT == faciAddDTO.Quantity)
+                    if (areaInRoom.AreaType.Size - numberOfPositionCh == faciAddDTO.Quantity)
                         isFullCh = true;
-                    if (areaInRoom.AreaType.Size - numberOfPositionT == faciAddDTO.Quantity * fullInfoOfFaci.Size)
+                    if (areaInRoom.AreaType.Size  == numberOfPositionT)
                         isFullT = true;
                 }
 
