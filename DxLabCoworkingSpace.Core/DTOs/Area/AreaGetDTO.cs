@@ -11,6 +11,5 @@ namespace DxLabCoworkingSpace
         public int AreaId { get; set; }
         public string AreaName { get; set; }
 
-       
     }
 }
