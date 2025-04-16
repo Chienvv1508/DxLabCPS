@@ -10,10 +10,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     [ApiController]
     public class RoleController : ControllerBase
     {
-        private IRoleSevice _roleSevice;
+        private IRoleService _roleSevice;
         private readonly IMapper _mapper;
 
-        public RoleController(IRoleSevice roleSevice, IMapper mapper)
+        public RoleController(IRoleService roleSevice, IMapper mapper)
         {
             _roleSevice = roleSevice;
             _mapper = mapper;

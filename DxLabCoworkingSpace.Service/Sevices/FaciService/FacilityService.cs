@@ -22,7 +22,7 @@ namespace DxLabCoworkingSpace
         {
             if (facilities == null || !facilities.Any())
             {
-                throw new ArgumentException("Danh sách facility không được rỗng hoặc null");
+                throw new ArgumentException("Danh sách cơ sở vật chất không được rỗng hoặc null");
             }
 
             var existingBatchNumbers = (await _unitOfWork.FacilityRepository.GetAll())
@@ -39,7 +39,7 @@ namespace DxLabCoworkingSpace
 
             if (duplicateBatchNumbersInFile.Any())
             {
-                throw new InvalidOperationException("BatchNumber, ImportDate bị trùng trong file!");
+                throw new InvalidOperationException("Số lô, Ngày nhập bị trùng trong file!");
             }
 
             var duplicateBatchNumbersInDB = batchNumbersInFile
@@ -48,7 +48,7 @@ namespace DxLabCoworkingSpace
 
             if (duplicateBatchNumbersInDB.Any())
             {
-                throw new InvalidOperationException("BatchNumber, ImportDate đã tồn tại trong database!");
+                throw new InvalidOperationException("Số lô, Ngày nhập đã tồn tại trong database!");
             }
 
             var validationErrors = new List<string>();
@@ -83,7 +83,7 @@ namespace DxLabCoworkingSpace
 
                 if (facility.ExpiredTime <= facility.ImportDate)
                 {
-                    validationErrors.Add("ExpiredTime phải lớn hơn ImportDate!");
+                    validationErrors.Add("Ngày hết hạn phải lớn hơn ngày nhập!");
                     break;
                 }
 
@@ -112,7 +112,7 @@ namespace DxLabCoworkingSpace
             var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate);
             if (existingFacility != null)
             {
-                throw new InvalidOperationException("BatchNumber đã tồn tại!");
+                throw new InvalidOperationException("Số lô đã tồn tại!");
             }
 
             await _unitOfWork.FacilityRepository.Add(entity);

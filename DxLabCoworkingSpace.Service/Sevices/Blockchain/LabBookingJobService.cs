@@ -45,7 +45,7 @@ namespace DxLabCoworkingSpace
             _contractAddress = _configuration.GetSection("ContractAddresses:Sepolia")["FPTCurrency"]
                 ?? throw new ArgumentNullException("ContractAddresses:Sepolia:FPTCurrency not configured");
             _sepoliaRpcUrl = _configuration.GetSection("Network")["ProviderCrawl"]
-                ?? "https://sepolia.infura.io/v3/027867a8ebd44bc192e7f7b33baf4b4e";
+                ?? "https://sepolia.infura.io/v3/9d13fab540c243ca9514d4ab4fe7e9e1";
             string labBookingPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "LabBookingSystem.json");
             string fptPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "FPTCurrency.json");
 
