@@ -420,6 +420,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             xr.Positions = positions;
                         }
                     }
+                    if(room.IsDeleted == false)
+                    room.IsDeleted = true;
                     await _roomService.Update(room);
                     return Ok("Thêm khu vực thành công!");
                 }
@@ -469,7 +471,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(new ResponseDTO<object>(400, "Khu vực không tồn tại", null));
                 }
                 var faciInArea = await _usingFaclytyService.GetAll(x => x.AreaId == areaid);
-                _usingFaclytyService.Delete(faciInArea);
+               await _usingFaclytyService.Delete(faciInArea);
                 return Ok("Xóa thành công!");
             }
             catch (Exception ex)
