@@ -499,14 +499,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 foreach (var are in room.Areas)
                 {
+                    IEnumerable<UsingFacility> usingFacilities1 = new List<UsingFacility>();
                     if (usingFacilities != null)
                     {
-                        usingFacilities =  usingFacilities.AsQueryable().Where(x => x.AreaId == are.AreaId);
+                        usingFacilities1 =  usingFacilities.AsQueryable().Where(x => x.AreaId == are.AreaId);
                     }
                     var areaType = listAreaType.FirstOrDefault(x => x.AreaTypeId == are.AreaTypeId);
                     are.AreaType = areaType;
                     var areaTypeCategory = listAreaTypeCategory.FirstOrDefault(x => x.CategoryId == are.AreaType.AreaCategory);
-                    if (!usingFacilities.Any())
+                    if (!usingFacilities1.Any())
                     {
                         int faci = 0;
                         AreaGetForManagement areaGetForManagement = new AreaGetForManagement()
@@ -528,7 +529,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     else
                     {
                         int faci = 0;
-                        foreach (var facility in usingFacilities)
+                        foreach (var facility in usingFacilities1)
                         {
                             if (facility.Facility.FacilityCategory == 1)
                                 faci += facility.Facility.Size*facility.Quantity;
