@@ -531,7 +531,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         foreach (var facility in usingFacilities)
                         {
                             if (facility.Facility.FacilityCategory == 1)
-                                faci += facility.Facility.Size;
+                                faci += facility.Facility.Size*facility.Quantity;
                         }
                         AreaGetForManagement areaGetForManagement = new AreaGetForManagement()
                         {
