@@ -80,6 +80,39 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                         }
                     }
+                var allArea = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Room);
+                allArea = allArea.AsQueryable().Where(x => x.IsAvail == true);
+                foreach(var area in allArea)
+                {
+                    var areaExisted = ultilizationRates.FirstOrDefault(x => x.AreaId == area.AreaId);
+                    if(areaExisted == null)
+                    {
+                        decimal rate = 0;
+                        int roomid = area.RoomId;
+                        string roomName = area.Room.RoomName;
+                        int areaTypeId = area.AreaType.AreaTypeId;
+                        string areaTypeName = area.AreaType.AreaTypeName;
+                        int areaTypeCategoryId = area.AreaType.AreaCategory;
+                        var areaTypeCategory = await _areaTypeCategoryService.Get(x => x.CategoryId == areaTypeCategoryId);
+                        string areaTypeCategoryName = "";
+                        if (areaTypeCategory != null)
+                            areaTypeCategoryName = areaTypeCategory.Title;
+                        var newUlRate = new UltilizationRate()
+                        {
+                            THDate = DateTime.Now,
+                            AreaId = area.AreaId,
+                            AreaName = area.AreaName,
+                            AreaTypeCategoryId = areaTypeCategoryId,
+                            AreaTypeCategoryTitle = areaTypeCategoryName,
+                            AreatypeId = areaTypeId,
+                            AreaTypeName = areaTypeName,
+                            RoomId = roomid,
+                            RoomName = roomName,
+                            Rate = rate
+                        };
+                        ultilizationRates.Add(newUlRate);
+                    }
+                }
                     await _ultilizationRateService.Add(ultilizationRates);
                     return Ok();
                 //}
