@@ -1,16 +1,20 @@
 ﻿using DxLabCoworkingSpace;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace JobService
 {
-    public class Worker : BackgroundService
+    public class DepreciationTHBackGroundTask : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
 
-        public Worker(ILogger<Worker> logger, IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public DepreciationTHBackGroundTask(ILogger<Worker> logger, IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             _logger = logger;
             _httpClient = httpClientFactory.CreateClient();
@@ -23,27 +27,24 @@ namespace JobService
             {
                 try
                 {
-                    int.TryParse(_configuration["ExpenseJob:Start"], out int start);
+                    int.TryParse(_configuration["DepreciationTH:Start"], out int start);
                     _logger.LogInformation($"{start}");
-                    int.TryParse(_configuration["ExpenseJob:End"], out int end);
+                    int.TryParse(_configuration["DepreciationTH:End"], out int end);
                     _logger.LogInformation($"{end}");
                     int.TryParse(DateTime.Now.ToString("HHmm"), out int realTime);
                     _logger.LogInformation($"{realTime}");
-
+                   
                     if (DateTime.Now.Day == DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month) && realTime >= start && realTime <= end)
                     {
-                        var requestData = new THJobExpenseDTO() { dateSum = DateTime.Now };
-                        string jsonContent = JsonConvert.SerializeObject(requestData);
-                        var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                        string apiUrl = _configuration["ExpenseJob:APIJob"];
-                        var response = await _httpClient.PostAsync(apiUrl, content, stoppingToken);
+                        string apiUrl = _configuration["DepreciationTH:APIDepreciationTH"];
+                        var response = await _httpClient.PostAsync(apiUrl, null, stoppingToken);
                         if (response.IsSuccessStatusCode)
                         {
                             _logger.LogInformation("Chạy thành công");
                         }
                         else
                             _logger.LogInformation("Chạy thất bại");
-                    }   
+                    }
                 }
                 catch (Exception ex)
                 {

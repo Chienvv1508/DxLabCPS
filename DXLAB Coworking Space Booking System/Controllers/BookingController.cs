@@ -512,7 +512,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     return NotFound(response);
 
                 }
-                var areas = await _areaService.GetAll(x => x.RoomId == room.RoomId);
+                var areas = await _areaService.GetAll(x => x.RoomId == room.RoomId && x.IsAvail == true);
                 if (areas == null)
                 {
                     var response = new ResponseDTO<object>(400, "Không tìm thấy room", null);
