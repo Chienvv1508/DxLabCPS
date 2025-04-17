@@ -27,17 +27,17 @@ namespace DxLabCoworkingSpace
         }
 
         private async Task SaveBookingEventAsync(
-    string bookingId = null,
-    int blockNumber = 0,
-    string transactionHash = null,
-    string roomId = null,
-    byte slot = 0,
-    string userAddress = null,
-    long timestamp = 0,
-    string eventType = null,
-    string refundAmount = null,
-    string email = null,
-    bool? isStaff = null)
+            string bookingId = null,
+            int blockNumber = 0,
+            string transactionHash = null,
+            string roomId = null,
+            byte slot = 0,
+            string userAddress = null,
+            long timestamp = 0,
+            string eventType = null,
+            string refundAmount = null,
+            string email = null,
+            bool? isStaff = null)
         {
             if (eventType.StartsWith("User"))
             {
@@ -385,11 +385,11 @@ namespace DxLabCoworkingSpace
         }
 
         private async Task<List<EventLog<TEventDTO>>> RetryGetAllChangesAsync<TEventDTO>(
-    Event @event,
-    NewFilterInput filter,
-    int maxRetries = 3,
-    int delayBetweenRetriesMs = 1000
-) where TEventDTO : IEventDTO, new()
+            Event @event,
+            NewFilterInput filter,
+            int maxRetries = 3,
+            int delayBetweenRetriesMs = 1000
+        ) where TEventDTO : IEventDTO, new()
         {
             int retry = 0;
             while (true)
