@@ -431,7 +431,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         [HttpGet("availiblepos")]
         public async Task<IActionResult> GetAvailableSlot([FromQuery] AvailableSlotRequestDTO availableSlotRequestDTO)
         {
-            var room = await _roomService.GetWithInclude(x => x.IsDeleted == false && x.RoomId == availableSlotRequestDTO.RoomId, x => x.Areas);
+            var room = await _roomService.GetWithInclude(x => x.Status == 1 && x.RoomId == availableSlotRequestDTO.RoomId, x => x.Areas);
             if (room == null)
             {
                 var responseDTO = new ResponseDTO<object>(404, "Phòng không tồn tại. Vui lòng nhập lại!", null);
@@ -505,21 +505,21 @@ namespace DXLAB_Coworking_Space_Booking_System
         {
             try
             {
-                var room = await _roomService.Get(x => x.RoomId == id && x.IsDeleted == false);
+                var room = await _roomService.Get(x => x.RoomId == id && x.Status == 1);
                 if (room == null)
                 {
                     var response = new ResponseDTO<object>(400, "Không tìm thấy room", null);
                     return NotFound(response);
 
                 }
-                var areas = await _areaService.GetAll(x => x.RoomId == room.RoomId && x.IsAvail == true);
+                var areas = await _areaService.GetAll(x => x.RoomId == room.RoomId && x.Status == 1);
                 if (areas == null)
                 {
                     var response = new ResponseDTO<object>(400, "Không tìm thấy room", null);
                     return NotFound(response);
                 }
                 List<AreaType> areaTypes = new List<AreaType>();
-                var areaTypesDb = await _areaTypeService.GetAll(x => x.IsDeleted == false);
+                var areaTypesDb = await _areaTypeService.GetAll(x => x.Status == 1);
                 foreach (var area in areas)
                 {
                     var areaType = areaTypesDb.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
@@ -528,8 +528,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                 }
 
                 var areaTypeGroup = areaTypes.GroupBy(x => x.AreaCategory);
-                var areaTypeCates =  await _areaTypeCategoryService.GetAllWithInclude(x => x.Images);
-                if (areaTypeCates == null) return NotFound(new ResponseDTO<object>(200,"Không tìm thấy thông tin phù hợp!", null));
+                var areaTypeCates = await _areaTypeCategoryService.GetAllWithInclude(x => x.Images);
+                if (areaTypeCates == null) return NotFound(new ResponseDTO<object>(200, "Không tìm thấy thông tin phù hợp!", null));
                 List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>> result = new List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>>();
                 foreach (var group in areaTypeGroup)
                 {
@@ -540,7 +540,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                         areaTypeDTOs.Add(areaType);
                     }
                     var aretypeCategory = areaTypeCates.FirstOrDefault(x => x.CategoryId == group.Key);
-                    if(aretypeCategory == null)
+                    if (aretypeCategory == null)
                         return NotFound(new ResponseDTO<object>(200, "Không tìm thấy thông tin phù hợp!", null));
                     var aretypeCategoryDTO = new AreaTypeCategoryDTO()
                     {

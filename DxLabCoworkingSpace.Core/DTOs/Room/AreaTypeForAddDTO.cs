@@ -11,7 +11,7 @@ namespace DxLabCoworkingSpace
 {
     public class AreaTypeForAddDTO
     {
-       
+
 
         [Required(ErrorMessage = "Tên khu vực không được để trống.")]
         [StringLength(255, MinimumLength = 3, ErrorMessage = "Tên khu vực phải từ 3 đến 255 ký tự.")]
@@ -34,7 +34,7 @@ namespace DxLabCoworkingSpace
         public decimal Price { get; set; }
 
         [Required(ErrorMessage = "Trạng thái xóa không được để trống.")]
-        public bool IsDeleted { get; set; }
+
 
         public List<IFormFile>? Images { get; set; }
     }

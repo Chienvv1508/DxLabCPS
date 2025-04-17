@@ -40,93 +40,46 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-
-                var areaInRoom = await _areaService.GetWithInclude(x => x.AreaId == areaid, x => x.AreaType);
-                if (areaInRoom == null)
+                // item 1: check item2: lỗi, item3: areaInroom
+                Tuple<bool, string, Area> checkAreaAndStatus = await CheckExistedAreaAndStatus(areaid, status);
+                if (checkAreaAndStatus.Item1 == false)
                 {
-                    var reponse = new ResponseDTO<object>(404, "Không tìm thấy khu vực. Vui lòng nhập lại khu vực", null);
-                    return NotFound(reponse);
-                }
-                //0-mơi 1-dasudung 2--hong
-                if (status < 0 && status > 1)
-                {
-                    var reponse = new ResponseDTO<object>(400, "Thiết bị được nhập phải mới hoặc vẫn sử dụng được", null);
+                    var reponse = new ResponseDTO<object>(400, checkAreaAndStatus.Item2, null);
                     return BadRequest(reponse);
                 }
-                var usingFacilities = await _usingFaclytyService.GetAllWithInclude(x => x.AreaId == areaid, x => x.Facility);
-                int numberOfPositionT = 0;
-                int numberOfPositionCh = 0;  // thay doi
-                foreach (var faci in usingFacilities)
-                {
-                    if (faci.Facility.FacilityCategory == 1)
-                    {
-                        numberOfPositionT += faci.Facility.Size * faci.Quantity; // sửa
-                    }
-                    else
-                        numberOfPositionCh += faci.Quantity;// sửa
+                var areaInRoom = checkAreaAndStatus.Item3;
 
-                }
-                bool isFullT = false;
-                bool isFullCh = false;
                 var fullInfoOfFaci = await _facilityService.Get(x => x.FacilityId == faciAddDTO.FacilityId && x.BatchNumber == faciAddDTO.BatchNumber
                 && x.ImportDate == faciAddDTO.ImportDate);
                 if (fullInfoOfFaci == null)
                 {
                     var reponse = new ResponseDTO<object>(400, "Thông tin thiết bị nhập sai. Vui lòng nhập lại", null);
                     return BadRequest(reponse);
-                }
-                if (fullInfoOfFaci.FacilityCategory == 1)
-                {
-                    if (areaInRoom.AreaType.Size - numberOfPositionT < faciAddDTO.Quantity * fullInfoOfFaci.Size)
-                    {
-                        var reponse = new ResponseDTO<object>(400, "Bạn đã nhập quá số lượng bàn cho phép của phòng", null); // Sửa
-                        return BadRequest(reponse);
-                    }
-                    if (areaInRoom.AreaType.Size - numberOfPositionT == faciAddDTO.Quantity * fullInfoOfFaci.Size)
-                        isFullT = true;
-                    if (areaInRoom.AreaType.Size  == numberOfPositionCh)
-                        isFullCh = true;
-                }
-                // thêm đoạn này
-                if (fullInfoOfFaci.FacilityCategory == 0)
-                {
-                    if (areaInRoom.AreaType.Size - numberOfPositionCh < faciAddDTO.Quantity)
-                    {
-                        var reponse = new ResponseDTO<object>(400, "Bạn đã nhập quá số lượng ghế cho phép của phòng", null); // Sửa
-                        return BadRequest(reponse);
-                    }
-                    if (areaInRoom.AreaType.Size - numberOfPositionCh == faciAddDTO.Quantity)
-                        isFullCh = true;
-                    if (areaInRoom.AreaType.Size  == numberOfPositionT)
-                        isFullT = true;
-                }
 
+                }
+                // item1: addable, item2: isfull, item3: mã lỗi
+                Tuple<bool, bool, string> checkIsAddable = await checkIsAddableAndStatusAfterAdd(fullInfoOfFaci, areaid, areaInRoom, faciAddDTO);
+                if (checkIsAddable.Item1 == false)
+                {
+                    var reponse = new ResponseDTO<object>(400, checkIsAddable.Item3, null);
+                    return BadRequest(reponse);
+                }
 
                 //check lượng đang có trong status
 
-                var faciInStatus = await _facilityStatusService.Get(x => x.FacilityId == faciAddDTO.FacilityId && x.BatchNumber == faciAddDTO.BatchNumber
-                && x.ImportDate == faciAddDTO.ImportDate && x.Status == status);
-
-                if (faciInStatus == null)
+                Tuple<bool, string> checkIsAvailFaciForAdd = await CheckIsAvailFaciForAdd(faciAddDTO, status);
+                if (checkIsAvailFaciForAdd.Item1 == false)
                 {
-                    string tt = status == 0 ? "Mới" : "Đã sử dụng";
-                    var reponse = new ResponseDTO<object>(400, $"Với trạng thái {tt} hiện không có thiết bị này", null);
+                    var reponse = new ResponseDTO<object>(400, checkIsAvailFaciForAdd.Item2, null);
                     return BadRequest(reponse);
                 }
-                if (faciInStatus.Quantity < faciAddDTO.Quantity)
-                {
-                    string tt = status == 0 ? "Mới" : "Đã sử dụng";
-                    var reponse = new ResponseDTO<object>(400, $"Với trạng thái {tt} hiện không có đủ {faciAddDTO.Quantity} thiết bị", null);
-                    return BadRequest(reponse);
-                }
-
 
                 //Thêm đoạn check xem trong phòng có using này chưa. Nếu có thì cộng nếu không thì thêm mới
 
                 var existedFaciInArea = await _usingFaclytyService.Get(x => x.AreaId == areaid && x.BatchNumber == faciAddDTO.BatchNumber
 
                 && x.FacilityId == faciAddDTO.FacilityId && x.ImportDate == faciAddDTO.ImportDate);
-                bool statusOfArea = isFullCh && isFullT;
+                bool statusOfArea = checkIsAddable.Item2;
                 if (existedFaciInArea == null)
                 {
                     var newUsingFacility = new UsingFacility
@@ -147,22 +100,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     await _usingFaclytyService.Update(existedFaciInArea, status, statusOfArea);
                 }
 
-
-
-
-
-
-
-                //var responseData = new
-                //{
-                //    AreaName = newUsingFacility.Area.AreaName,
-                //    FacilityId = newUsingFacility.FacilityId,
-                //    BatchNumber = newUsingFacility.BatchNumber,
-                //    ImportDate = newUsingFacility.ImportDate,
-                //    Quantity = newUsingFacility.Quantity
-                //};
-
-
                 return Ok(new ResponseDTO<object>(200, "Thêm thiết bị thành công", null));
             }
             catch (Exception ex)
@@ -172,6 +109,110 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
 
         }
+
+        private async Task<Tuple<bool, string>> CheckIsAvailFaciForAdd(FaciAddDTO faciAddDTO, int status)
+        {
+            try
+            {
+                var faciInStatus = await _facilityStatusService.Get(x => x.FacilityId == faciAddDTO.FacilityId && x.BatchNumber == faciAddDTO.BatchNumber
+                && x.ImportDate == faciAddDTO.ImportDate && x.Status == status);
+
+                if (faciInStatus == null)
+                {
+                    string tt = status == 0 ? "Mới" : "Đã sử dụng";
+                    return new Tuple<bool, string>(false, $"Với trạng thái {tt} hiện không có thiết bị này");
+                }
+                if (faciInStatus.Quantity < faciAddDTO.Quantity)
+                {
+                    string tt = status == 0 ? "Mới" : "Đã sử dụng";
+                    return new Tuple<bool, string>(false, $"Với trạng thái {tt} hiện không có đủ {faciAddDTO.Quantity} thiết bị");
+                }
+                return new Tuple<bool, string>(true, "");
+            }
+            catch (Exception ex)
+            {
+                return new Tuple<bool, string>(false, "");
+            }
+        }
+
+        private async Task<Tuple<bool, bool, string>> checkIsAddableAndStatusAfterAdd(Facility fullInfoOfFaci, int areaid, Area areaInRoom, FaciAddDTO faciAddDTO)
+        {
+            try
+            {
+                var usingFacilities = await _usingFaclytyService.GetAllWithInclude(x => x.AreaId == areaid, x => x.Facility);
+                int numberOfPositionT = 0;
+                int numberOfPositionCh = 0;  // thay doi
+                foreach (var faci in usingFacilities)
+                {
+                    if (faci.Facility.FacilityCategory == 1)
+                    {
+                        numberOfPositionT += faci.Facility.Size * faci.Quantity; // sửa
+                    }
+                    else
+                        numberOfPositionCh += faci.Quantity;// sửa
+                }
+                bool isFullT = false;
+                bool isFullCh = false;
+
+                if (fullInfoOfFaci.FacilityCategory == 1)
+                {
+                    if (areaInRoom.AreaType.Size - numberOfPositionT < faciAddDTO.Quantity * fullInfoOfFaci.Size)
+                    {
+                        return new Tuple<bool, bool, string>(false, false, "Bạn đã nhập quá số lượng bàn cho phép của phòng");
+                    }
+                    if (areaInRoom.AreaType.Size - numberOfPositionT == faciAddDTO.Quantity * fullInfoOfFaci.Size)
+                        isFullT = true;
+                    if (areaInRoom.AreaType.Size == numberOfPositionCh)
+                        isFullCh = true;
+                }
+                // thêm đoạn này
+                if (fullInfoOfFaci.FacilityCategory == 0)
+                {
+                    if (areaInRoom.AreaType.Size - numberOfPositionCh < faciAddDTO.Quantity)
+                    {
+                        return new Tuple<bool, bool, string>(false, false, "Bạn đã nhập quá số lượng ghế cho phép của phòng");
+                    }
+                    if (areaInRoom.AreaType.Size - numberOfPositionCh == faciAddDTO.Quantity)
+                        isFullCh = true;
+                    if (areaInRoom.AreaType.Size == numberOfPositionT)
+                        isFullT = true;
+                }
+
+                return new Tuple<bool, bool, string>(true, isFullT && isFullCh, "");
+            }
+            catch (Exception ex)
+            {
+                return new Tuple<bool, bool, string>(false, false, "");
+            }
+        }
+
+        private async Task<Tuple<bool, string, Area>> CheckExistedAreaAndStatus(int areaid, int status)
+        {
+            try
+            {
+                var areaInRoom = await _areaService.GetWithInclude(x => x.AreaId == areaid && x.Status != 2, x => x.AreaType);
+                if (areaInRoom == null)
+                {
+                    return new Tuple<bool, string, Area>(false, "Không tìm thấy khu vực. Vui lòng nhập lại khu vực", null);
+                }
+                if (areaInRoom.Status == 1)
+                {
+                    return new Tuple<bool, string, Area>(false, "Khu vực đã đầy thiết bị. Không thêm được vào phòng!", null);
+                }
+                //0-mơi 1-dasudung 2--hong
+                if (status < 0 && status > 1)
+                {
+                    return new Tuple<bool, string, Area>(false, "Thiết bị được nhập phải mới hoặc vẫn sử dụng được", null);
+                }
+                return new Tuple<bool, string, Area>(true, "", areaInRoom);
+            }
+            catch (Exception ex)
+            {
+                return new Tuple<bool, string, Area>(false, ex.Message, null);
+            }
+
+        }
+
         [HttpGet("allfacistatus")]
         public async Task<IActionResult> GetAllFaciStatus()
         { // Mục đích cho admin chon faci thêm vào phòng
@@ -249,7 +290,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpGet("areainroom")]
         public async Task<IActionResult> GetAreasInRoom(int roomId)
         {
-            var room = await _roomService.Get(x => x.RoomId == roomId);
+            var room = await _roomService.Get(x => x.RoomId == roomId && x.Status != 2);
             if (room == null)
             {
                 var response = new ResponseDTO<object>(400, "Bạn nhập phòng không tồn tại", null);
@@ -295,7 +336,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 try
                 {
-                    var room = await _roomService.Get(x => x.RoomId == roomId);
+                    var room = await _roomService.Get(x => x.RoomId == roomId && x.Status != 2);
                     if (room == null)
                     {
                         return BadRequest(new ResponseDTO<object>(400, "Lỗi phòng không tồn tại!", null));
@@ -309,9 +350,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     int countIndividualAre = 0;
 
 
-                    foreach (var area in room.Areas)
+                    foreach (var area in room.Areas.Where(x => x.Status !=2))
                     {
-                        var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
+                        var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId && x.Status == 1);
                         if (areatype != null)
                         {
                             areas_totalSize += areatype.Size;
@@ -342,7 +383,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     List<AreaType> areaTypesInput = new List<AreaType>();
                     foreach (var area in areaAdds)
                     {
-                        var newArea = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
+                        var newArea = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId && x.Status ==1);
                         if (newArea == null)
                         {
                             var response1 = new ResponseDTO<object>(400, "Nhập sai id của loại khu vực!", null);
@@ -381,7 +422,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
 
                     // Check area name duplicates
-                    var areaNameList = room.Areas.Select(x => x.AreaName).ToList();
+                    var areaNameList = room.Areas.Where(x => x.Status !=2).Select(x => x.AreaName).ToList();
                     foreach (var area in areaAdds)
                     {
                         if (areaNameList.Contains(area.AreaName))
@@ -420,8 +461,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             xr.Positions = positions;
                         }
                     }
-                    if(room.IsDeleted == false)
-                    room.IsDeleted = true;
+                  
                     await _roomService.Update(room);
                     return Ok("Thêm khu vực thành công!");
                 }
@@ -451,7 +491,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Trong phòng đang có thiết bị. Nếu muốn xóa bạn phải xóa hết thiết vị trong phòng", null));
                 }
-                area.IsAvail = false;
+                area.Status = 2;
                 await _areaService.Update(area);
                 return Ok("Xóa thành công!");
             }
@@ -471,7 +511,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(new ResponseDTO<object>(400, "Khu vực không tồn tại", null));
                 }
                 var faciInArea = await _usingFaclytyService.GetAll(x => x.AreaId == areaid);
-               await _usingFaclytyService.Delete(faciInArea);
+                await _usingFaclytyService.Delete(faciInArea);
                 return Ok("Xóa thành công!");
             }
             catch (Exception ex)
@@ -487,24 +527,24 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                var room = await _roomService.Get(x => x.RoomId == roomId);
+                var room = await _roomService.Get(x => x.RoomId == roomId && x.Status != 2);
                 if (room == null)
                 {
                     var response = new ResponseDTO<object>(400, "Bạn nhập phòng không tồn tại", null);
                     return BadRequest(response);
 
                 }
-                var listAreaType = await _areaTypeService.GetAll();
-                var listAreaTypeCategory = await _areaTypeCategoryService.GetAll();
+                var listAreaType = await _areaTypeService.GetAll( x=> x.Status == 1);
+                var listAreaTypeCategory = await _areaTypeCategoryService.GetAll(x => x.Status == 1);
                 List<AreaGetForManagement> areaDTOs = new List<AreaGetForManagement>();
                 IEnumerable<UsingFacility> usingFacilities = await _usingFaclytyService.GetAllWithInclude(x => x.Facility);
 
-                foreach (var are in room.Areas)
+                foreach (var are in room.Areas.Where(x => x.Status != 2))
                 {
                     IEnumerable<UsingFacility> usingFacilities1 = new List<UsingFacility>();
                     if (usingFacilities != null)
                     {
-                        usingFacilities1 =  usingFacilities.AsQueryable().Where(x => x.AreaId == are.AreaId);
+                        usingFacilities1 = usingFacilities.AsQueryable().Where(x => x.AreaId == are.AreaId);
                     }
                     var areaType = listAreaType.FirstOrDefault(x => x.AreaTypeId == are.AreaTypeId);
                     are.AreaType = areaType;
@@ -512,6 +552,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     if (!usingFacilities1.Any())
                     {
                         int faci = 0;
+                        int faciCh = 0;
                         AreaGetForManagement areaGetForManagement = new AreaGetForManagement()
                         {
                             AreaId = are.AreaId,
@@ -521,7 +562,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             CategoryId = are.AreaType.AreaCategory,
                             Title = are.AreaType.AreaTypeCategory.Title,
                             FaciAmount = faci,
-                            IsAvail = are.IsAvail,
+                            FaciAmountCh = faciCh,
+                            Status = are.Status,
                             Size = are.AreaType.Size
 
 
@@ -531,10 +573,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     else
                     {
                         int faci = 0;
+                        int faciCh = 0;
                         foreach (var facility in usingFacilities1)
                         {
                             if (facility.Facility.FacilityCategory == 1)
-                                faci += facility.Facility.Size*facility.Quantity;
+                                faci += facility.Facility.Size * facility.Quantity;
+                            else
+                                faciCh += facility.Quantity;
                         }
                         AreaGetForManagement areaGetForManagement = new AreaGetForManagement()
                         {
@@ -545,7 +590,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             CategoryId = are.AreaType.AreaCategory,
                             Title = are.AreaType.AreaTypeCategory.Title,
                             FaciAmount = faci,
-                            IsAvail = are.IsAvail,
+                            FaciAmountCh = faciCh,
+                            Status = are.Status,
                             Size = are.AreaType.Size
 
 
