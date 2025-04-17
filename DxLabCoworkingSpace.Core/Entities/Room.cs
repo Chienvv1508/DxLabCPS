@@ -15,7 +15,8 @@ namespace DxLabCoworkingSpace
         public string RoomName { get; set; } = null!;
         public string? RoomDescription { get; set; }
         public int Capacity { get; set; }
-        public bool IsDeleted { get; set; }
+        // 0: Chưa ss, 1: SS, 2: Xóa
+        public int Status { get; set; }
 
         public virtual ICollection<Area> Areas { get; set; }
         public virtual ICollection<Image> Images { get; set; }

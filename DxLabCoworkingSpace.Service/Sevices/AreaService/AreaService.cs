@@ -71,9 +71,21 @@ namespace DxLabCoworkingSpace
             try
             {
                 await _unitOfWork.AreaRepository.Update(entity);
+                var areaInRoom = await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == entity.RoomId && x.Status == 1);
+                if (areaInRoom != null)
+                {
+                    if (areaInRoom.Count() == 1 && areaInRoom.FirstOrDefault().AreaId == entity.AreaId)
+                    {
+                        var room = await _unitOfWork.RoomRepository.Get(x => x.RoomId == entity.RoomId && x.Status != 2);
+                        room.Status = 0;
+                        await _unitOfWork.RoomRepository.Update(room);
+                    }
+                }
+
                 await _unitOfWork.CommitAsync();
 
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
             }

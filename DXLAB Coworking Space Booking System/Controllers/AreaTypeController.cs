@@ -27,10 +27,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> CreateAreaType([FromForm] AreaTypeForAddDTO areTypeDto)
         {
-            var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName);
+            var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName && x.Status == 1);
             if (existedAreaType != null)
             {
-
                 var response = new ResponseDTO<object>(400, "Tên phòng đã tồn tại. Vui lòng nhập tên phòng khác", null);
                 return BadRequest(response);
             }
@@ -39,13 +38,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var areaType = _mapper.Map<AreaType>(areTypeDto);
                 var rs = await ImageSerive.AddImage(areTypeDto.Images);
-                if(rs.Item1 == true)
+                if (rs.Item1 == true)
                 {
-                    foreach(var i in rs.Item2)
+                    foreach (var i in rs.Item2)
                     {
-                        areaType.Images.Add(new Image() { ImageUrl = i});
+                        areaType.Images.Add(new Image() { ImageUrl = i });
                     }
                 }
+                areaType.Status = 1;
                 await _areaTypeService.Add(areaType);
                 var areTypeDtoResult = _mapper.Map<AreaTypeDTO>(areaType);
 
@@ -69,7 +69,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                var areaType = await _areaTypeService.Get(x => x.AreaTypeId == id);
+                var areaType = await _areaTypeService.Get(x => x.AreaTypeId == id && x.Status == 1);
                 if (areaType == null)
                 {
                     var responseNotFound = new ResponseDTO<object>(404, "Mã AreaType không tồn tại", null);
@@ -94,7 +94,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var areaTypes = await _areaTypeService.GetAll();
                 if (fil.Equals("1"))
                 {
-                    areaTypes = areaTypes.Where(x => x.IsDeleted == false);
+                    areaTypes = areaTypes.Where(x => x.Status == 1);
                     var areaTypesDTO = _mapper.Map<IEnumerable<AreaTypeDTO>>(areaTypes);
                     var response = new ResponseDTO<object>(200, "Lấy thành công", areaTypesDTO);
                     return Ok(response);
@@ -130,89 +130,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
         }
 
-        //[HttpPatch("{id}")]
-        //[Authorize(Roles = "Admin")]
-        //public async Task<IActionResult> PatchRoom(int id, [FromBody] JsonPatchDocument<AreaType> patchDoc)
-        //{
-        //    try
-        //    {
-        //        if (patchDoc == null)
-        //        {
-        //            var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
-        //            return BadRequest(response);
-        //        }
-        //        var allowedPaths = new HashSet<string>
-        //    {
-        //               "areaTypeName",
-        //                "areaDescription",
-        //                "price",
-        //                "images"
 
-        //    };
-        //        var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
-        //        if(areaTypeNameOp != null)
-        //        {
-        //            var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp.value.ToString());
-        //            if (existedAreaType != null)
-        //            {
-        //                var response = new ResponseDTO<object>(400, $"Tên loại phòng {areaTypeNameOp} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
-        //                return BadRequest(response);
-        //            }
-        //        }
-
-        //        foreach (var operation in patchDoc.Operations)
-        //        {
-        //            if (!allowedPaths.Contains(operation.path))
-        //            {
-        //                var response1 = new ResponseDTO<object>(400, $"Không thể cập nhật trường: {operation.path}", null);
-        //                return BadRequest(response1);
-        //            }
-        //        }
-
-        //        var areaTypeFromDb = await _areaTypeService.Get(x => x.AreaTypeId == id);
-        //        if (areaTypeFromDb == null)
-        //        {
-        //            var response2 = new ResponseDTO<object>(404, "Không tìm thấy phòng. Vui lòng nhập lại mã loại phòng!", null);
-        //            return NotFound(response2);
-        //        }
-
-        //        patchDoc.ApplyTo(areaTypeFromDb, ModelState);
-
-        //        if (!ModelState.IsValid)
-        //        {
-        //            var allErrors = ModelState
-        //            .SelectMany(ms => ms.Value.Errors
-        //            .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
-        //            .ToList();
-        //            string errorString = string.Join(" | ", allErrors);
-        //            var response = new ResponseDTO<object>(400, errorString, null);
-        //            return BadRequest(response);
-        //        }
-
-        //        var areaTypeDTO = _mapper.Map<AreaTypeDTO>(areaTypeFromDb);
-
-        //        bool isValid = TryValidateModel(areaTypeDTO);
-        //        if (!isValid)
-        //        {
-        //            var allErrors = ModelState
-        //            .SelectMany(ms => ms.Value.Errors
-        //            .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
-        //            .ToList();
-
-        //            string errorString = string.Join(" | ", allErrors);
-        //            var response = new ResponseDTO<object>(404, errorString, null);
-        //            return BadRequest(response);
-        //        }
-        //        await _areaTypeService.Update(areaTypeFromDb);
-        //        var response3 = new ResponseDTO<object>(200, "Cập nhập thành công!", null);
-        //        return Ok(response3);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        var response = new ResponseDTO<object>(01, "Lỗi khi cập nhập dữ liệu!", null);
-        //        return StatusCode(500, response);
-        //    }
-        //}
 
         [HttpPatch("{id}")]
         //[Authorize(Roles = "Admin")]
@@ -230,13 +148,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                        "areaTypeName",
                         "areaDescription",
-                        "price",
-                        "isDeleted"
-
-
+                        "price"
             };
                 var areaTypeNameOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("areaTypeName", StringComparison.OrdinalIgnoreCase));
-                if(areaTypeNameOp != null)
+                if (areaTypeNameOp != null)
                 {
                     var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp.value.ToString());
                     if (existedAreaType != null)
@@ -245,7 +160,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         return BadRequest(response);
                     }
                 }
-                
+
                 foreach (var operation in patchDoc.Operations)
                 {
                     if (!allowedPaths.Contains(operation.path))

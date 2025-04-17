@@ -24,7 +24,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<AccountDTO, User>()
                 .ForMember(dest => dest.RoleId, opt => opt.Ignore())
                 .ForMember(dest => dest.Role, opt => opt.Ignore());
-                    
+
             // Mapping cho Facilities
             CreateMap<Facility, FacilitiesDTO>().ReverseMap();
 
@@ -58,20 +58,20 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<RoomDTO, Room>()
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null))
                 .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area
-                    {
-                        AreaName = a.AreaName,
-                        AreaTypeId = a.AreaTypeId,
-                        Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
-                    }).ToList() : null));
+                {
+                    AreaName = a.AreaName,
+                    AreaTypeId = a.AreaTypeId,
+                    Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
+                }).ToList() : null));
             CreateMap<RoomDTO, Room>()
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null))
                 .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area
-                    {
-                        AreaName = a.AreaName,
-                        AreaTypeId = a.AreaTypeId,
-                        AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
-                        Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
-                    }).ToList() : null));
+                {
+                    AreaName = a.AreaName,
+                    AreaTypeId = a.AreaTypeId,
+                    AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
+                    Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
+                }).ToList() : null));
             CreateMap<Room, RoomDTO>()
                 .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null))
                 .ForMember(dest => dest.Area_DTO, opt => opt.MapFrom(x => x.Areas != null ? x.Areas.Select(a => new AreaDTO
@@ -79,7 +79,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     AreaId = a.AreaId,
                     AreaName = a.AreaName,
                     AreaTypeId = a.AreaTypeId,
-                    IsAvail = a.IsAvail,
+                    Status = a.Status,
                     AreaTypeName = a.AreaType != null ? a.AreaType.AreaTypeName : null,
                     AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
                     Images = a.Images != null ? a.Images.Select(i => i.ImageUrl).ToList() : null // Thêm ánh xạ Images
@@ -134,7 +134,7 @@ namespace DXLAB_Coworking_Space_Booking_System
 
             // Mapping cho AreaTypeCategory
             CreateMap<AreaTypeCategoryDTO, AreaTypeCategory>()
-                .ForMember(x => x.Images, opt => 
+                .ForMember(x => x.Images, opt =>
                     opt.MapFrom(src => src.Images != null ? src.Images.Select(url => new Image { ImageUrl = url }).ToList() : null));
             CreateMap<AreaTypeCategory, AreaTypeCategoryDTO>()
                .ForMember(x => x.Images, opt =>
@@ -151,12 +151,12 @@ namespace DXLAB_Coworking_Space_Booking_System
               .ForMember(x => x.Images, opt =>
                   opt.Ignore())
               .ForMember(dest => dest.Areas, opt => opt.MapFrom(x => x.Area_DTO != null ? x.Area_DTO.Select(a => new Area
-                {
-                    AreaName = a.AreaName,
-                    AreaTypeId = a.AreaTypeId,
-                    IsAvail = a.IsAvail,
-                    Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
-                }).ToList() : null));
+              {
+                  AreaName = a.AreaName,
+                  AreaTypeId = a.AreaTypeId,
+                  Status = a.Status,
+                  Images = a.Images != null ? a.Images.Select(url => new Image { ImageUrl = url }).ToList() : null
+              }).ToList() : null));
 
             // Mapping cho Report
             CreateMap<ReportRequestDTO, Report>()

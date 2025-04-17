@@ -54,7 +54,13 @@ namespace DxLabCoworkingSpace
                     var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == entity.AreaId);
                     if (area != null)
                     {
-                        area.IsAvail = true;
+                        area.Status = 1;
+                        var room = await  _unitOfWork.RoomRepository.Get(x => x.RoomId == area.RoomId);
+                        if(room.Status == 0)
+                        {
+                            room.Status = 1;
+                        }
+                        await _unitOfWork.RoomRepository.Update(room);
                         await _unitOfWork.AreaRepository.Update(area);
                     }
                 }
@@ -110,7 +116,7 @@ namespace DxLabCoworkingSpace
                     var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == areaid);
                     if (area != null)
                     {
-                        area.IsAvail = false;
+                        area.Status = 1;
                         await _unitOfWork.AreaRepository.Update(area);
                     }
 
@@ -179,13 +185,14 @@ namespace DxLabCoworkingSpace
                 }
                 var listFaciInArea = await _unitOfWork.UsingFacilityRepository.GetAll(x => x.FacilityId == removedFaciDTO.FacilityId &&
                  x.AreaId == removedFaciDTO.AreaId);
+
                 int quantity = 0;
                 foreach (var faci in listFaciInArea)
                 {
                     quantity += faci.Quantity;
                 }
 
-                if (quantity < removedFaciDTO.Quantity || removedFaciDTO.Quantity <= 0)
+                if (quantity < removedFaciDTO.Quantity )
                 {
                     throw new ArgumentException("Số lượng cần thay đổi lớn hơn số lượng thiết bị hiện có!");
                 }
@@ -203,7 +210,7 @@ namespace DxLabCoworkingSpace
                     if (item.Quantity <= removedFaciDTO.Quantity)
                     {
                         _unitOfWork.UsingFacilityRepository.Delete(item);
-                        //Cập nhập status 1 là đã sử dụng, khi hồi mình chỉ hồi về đã sử dụng
+                       
                         if (faciStatus == null)
                         {
                             faciStatus = await _unitOfWork.FacilitiesStatusRepository.Get(x => x.FacilityId == item.FacilityId
@@ -274,7 +281,19 @@ namespace DxLabCoworkingSpace
                 var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == removedFaciDTO.AreaId);
                 if (area != null)
                 {
-                    area.IsAvail = false;
+                    area.Status = 0;
+
+                    var availAreaInRoom =  await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == area.RoomId && x.Status == 1);
+                    if (availAreaInRoom.Any())
+                    {
+                        if(availAreaInRoom.Count() == 1 && availAreaInRoom.First().AreaId == area.AreaId)
+                        {
+                            var room = await _unitOfWork.RoomRepository.Get(x => x.RoomId == area.RoomId);
+                            room.Status = 0;
+                           await _unitOfWork.RoomRepository.Update(room);
+                        } 
+                    }
+
                     await _unitOfWork.AreaRepository.Update(area);
                 }
 
@@ -295,22 +314,36 @@ namespace DxLabCoworkingSpace
             try
             {
                 await _unitOfWork.UsingFacilityRepository.Update(existedFaciInArea);
+                var faciInArea = await _unitOfWork.UsingFacilityRepository.Get(x => x.FacilityId == existedFaciInArea.FacilityId &&
+                x.BatchNumber == existedFaciInArea.BatchNumber && x.ImportDate == existedFaciInArea.ImportDate
+                );
+                int removeQuantity = 0;
+                if (faciInArea != null)
+                {
+                    removeQuantity = existedFaciInArea.Quantity - faciInArea.Quantity;
+                }
                 var updateFaciStatus = await _facilityStatusService.Get(x => x.FacilityId == existedFaciInArea.FacilityId && x.BatchNumber == existedFaciInArea.BatchNumber
                     && x.ImportDate == existedFaciInArea.ImportDate && x.Status == status);
                 if (updateFaciStatus == null)
                 {
                     throw new Exception("Lỗi khi cập nhập trạng thái của thiết bị");
                 }
-                updateFaciStatus.Quantity -= existedFaciInArea.Quantity;
+                updateFaciStatus.Quantity -= removeQuantity;
                 await _unitOfWork.FacilitiesStatusRepository.Update(updateFaciStatus);
                 if (isAvail)
                 {
                     var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == existedFaciInArea.AreaId);
                     if (area != null)
                     {
-                        area.IsAvail = true;
+                        area.Status = 1;
                         await _unitOfWork.AreaRepository.Update(area);
                     }
+                    var room = await _unitOfWork.RoomRepository.Get(x => x.RoomId == area.RoomId);
+                    if (room.Status == 0)
+                    {
+                        room.Status = 1;
+                    }
+                    await _unitOfWork.RoomRepository.Update(room);
                 }
                 await _unitOfWork.CommitAsync();
             }
