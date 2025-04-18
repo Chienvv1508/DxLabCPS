@@ -231,11 +231,6 @@ namespace DxLabCoworkingSpace
 
                 entity.Property(e => e.Message).HasMaxLength(255);
 
-                entity.HasOne(d => d.Booking)
-                    .WithMany(p => p.Notifications)
-                    .HasForeignKey(d => d.BookingId)
-                    .HasConstraintName("FK_Notifications_Bookings");
-
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Notifications)
                     .HasForeignKey(d => d.UserId)
