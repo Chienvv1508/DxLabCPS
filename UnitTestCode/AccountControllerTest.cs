@@ -18,6 +18,7 @@ namespace UnitTestCode
     public class AccountControllerTest
     {
         private readonly Mock<IAccountService> _mockAccountService;
+        private readonly Mock<IRoleService> _mockRoleService;
         private readonly Mock<IMapper> _mockMapper;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly AccountController _controller;
@@ -25,9 +26,35 @@ namespace UnitTestCode
         public AccountControllerTest()
         {
             _mockAccountService = new Mock<IAccountService>();
+            _mockRoleService = new Mock<IRoleService>();
             _mockMapper = new Mock<IMapper>();
             _mockUnitOfWork = new Mock<IUnitOfWork>();
-            _controller = new AccountController(_mockAccountService.Object, _mockMapper.Object, _mockUnitOfWork.Object);
+            _controller = new AccountController(_mockAccountService.Object, _mockRoleService.Object, _mockMapper.Object, _mockUnitOfWork.Object);
+        }
+
+        // Helper method to create a mock Excel file with data
+        private MemoryStream CreateExcelFile(string roleName)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet1");
+                // Add headers
+                worksheet.Cells[1, 1].Value = "Email";
+                worksheet.Cells[1, 2].Value = "FullName";
+                worksheet.Cells[1, 3].Value = "RoleName";
+                worksheet.Cells[1, 4].Value = "Status";
+
+                // Add data
+                worksheet.Cells[2, 1].Value = "ducnguyen11042002@gmail.com";
+                worksheet.Cells[2, 2].Value = "Đức Staff";
+                worksheet.Cells[2, 3].Value = roleName; // RoleName will be passed as a parameter
+                worksheet.Cells[2, 4].Value = "true";
+
+                // Convert ExcelPackage to MemoryStream
+                var stream = new MemoryStream(package.GetAsByteArray());
+                return stream;
+            }
         }
 
         // Tests cho API AddFromExcel
@@ -37,24 +64,23 @@ namespace UnitTestCode
         {
             // Arrange
             var fileMock = new Mock<IFormFile>();
-            var content = new byte[] { }; // Fake Excel content
-            var fileName = "test.xlsx";
-            var stream = new MemoryStream(content);
+            var stream = CreateExcelFile("Staff"); // Create Excel file with valid RoleName = "Staff"
             fileMock.Setup(f => f.Length).Returns(stream.Length);
-            fileMock.Setup(f => f.FileName).Returns(fileName);
-            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default)).Callback<Stream>(s => stream.CopyTo(s));
+            fileMock.Setup(f => f.FileName).Returns("test.xlsx");
+            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
+                    .Callback<Stream, CancellationToken>((s, ct) => stream.CopyTo(s));
 
-            var role = new Role { RoleId = 1, RoleName = "Staff" };
+            var role = new Role { RoleId = 2, RoleName = "Staff" };
             var users = new List<User>
             {
-                new User { Email = "test@example.com", FullName = "Test User", RoleId = 1, Status = true }
+                new User { Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleId = 2, Status = true }
             };
             var accountDtos = new List<AccountDTO>
             {
-                new AccountDTO { UserId = 1, Email = "test@example.com", FullName = "Test User", RoleName = "Staff", Status = true }
+                new AccountDTO { UserId = 1, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleName = "Staff", Status = true }
             };
 
-            _mockAccountService.Setup(s => s.GetRoles()).ReturnsAsync(new List<Role> { role });
+            _mockRoleService.Setup(s => s.GetAll()).ReturnsAsync(new List<Role> { role });
             _mockAccountService.Setup(s => s.AddFromExcel(It.IsAny<List<User>>())).Returns(Task.CompletedTask);
             _mockMapper.Setup(m => m.Map<IEnumerable<AccountDTO>>(It.IsAny<List<User>>())).Returns(accountDtos);
 
@@ -87,12 +113,11 @@ namespace UnitTestCode
         {
             // Arrange
             var fileMock = new Mock<IFormFile>();
-            var content = new byte[] { };
-            var fileName = "test.txt"; // Sai định dạng
-            var stream = new MemoryStream(content);
+            var stream = CreateExcelFile("Staff"); // Create Excel file (even though extension is wrong)
             fileMock.Setup(f => f.Length).Returns(stream.Length);
-            fileMock.Setup(f => f.FileName).Returns(fileName);
-            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default)).Callback<Stream>(s => stream.CopyTo(s));
+            fileMock.Setup(f => f.FileName).Returns("Account.xls"); // Wrong extension
+            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
+                    .Callback<Stream, CancellationToken>((s, ct) => stream.CopyTo(s));
 
             // Act
             var result = await _controller.AddFromExcel(fileMock.Object);
@@ -109,14 +134,13 @@ namespace UnitTestCode
         {
             // Arrange
             var fileMock = new Mock<IFormFile>();
-            var content = new byte[] { };
-            var fileName = "test.xlsx";
-            var stream = new MemoryStream(content);
+            var stream = CreateExcelFile("InvalidRole"); // Create Excel file with invalid RoleName
             fileMock.Setup(f => f.Length).Returns(stream.Length);
-            fileMock.Setup(f => f.FileName).Returns(fileName);
-            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default)).Callback<Stream>(s => stream.CopyTo(s));
+            fileMock.Setup(f => f.FileName).Returns("WrongRole.xlsx");
+            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
+                    .Callback<Stream, CancellationToken>((s, ct) => stream.CopyTo(s));
 
-            _mockAccountService.Setup(s => s.GetRoles()).ReturnsAsync(new List<Role>()); // Không có role nào
+            _mockRoleService.Setup(s => s.GetAll()).ReturnsAsync(new List<Role>()); // No roles available
 
             // Act
             var result = await _controller.AddFromExcel(fileMock.Object);
@@ -133,15 +157,14 @@ namespace UnitTestCode
         {
             // Arrange
             var fileMock = new Mock<IFormFile>();
-            var content = new byte[] { };
-            var fileName = "test.xlsx";
-            var stream = new MemoryStream(content);
+            var stream = CreateExcelFile("Staff"); // Create Excel file with valid RoleName = "Staff"
             fileMock.Setup(f => f.Length).Returns(stream.Length);
-            fileMock.Setup(f => f.FileName).Returns(fileName);
-            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default)).Callback<Stream>(s => stream.CopyTo(s));
+            fileMock.Setup(f => f.FileName).Returns("Account.xlsx");
+            fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
+                    .Callback<Stream, CancellationToken>((s, ct) => stream.CopyTo(s));
 
-            var role = new Role { RoleId = 1, RoleName = "Staff" };
-            _mockAccountService.Setup(s => s.GetRoles()).ReturnsAsync(new List<Role> { role });
+            var role = new Role { RoleId = 2, RoleName = "Staff" };
+            _mockRoleService.Setup(s => s.GetAll()).ReturnsAsync(new List<Role> { role });
             _mockAccountService.Setup(s => s.AddFromExcel(It.IsAny<List<User>>())).ThrowsAsync(new Exception("Database error"));
 
             // Act
@@ -162,11 +185,11 @@ namespace UnitTestCode
             // Arrange
             var users = new List<User>
             {
-                new User { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleId = 1, Status = true }
+                new User { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleId = 2, Status = true }
             };
             var accountDtos = new List<AccountDTO>
             {
-                new AccountDTO { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleName = "Staff", Status = true }
+                new AccountDTO { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleName = "Staff", Status = true }
             };
             _mockAccountService.Setup(s => s.GetAll()).ReturnsAsync(users);
             _mockMapper.Setup(m => m.Map<IEnumerable<AccountDTO>>(users)).Returns(accountDtos);
@@ -222,46 +245,46 @@ namespace UnitTestCode
         public async Task GetAccountById_ValidId_ReturnsOk()
         {
             // Arrange
-            var user = new User { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleId = 1, Status = true };
-            var accountDto = new AccountDTO { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleName = "Staff", Status = true };
-            _mockAccountService.Setup(s => s.GetById(1)).ReturnsAsync(user);
+            var user = new User { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleId = 2, Status = true };
+            var accountDto = new AccountDTO { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleName = "Staff", Status = true };
+            _mockAccountService.Setup(s => s.GetById(2)).ReturnsAsync(user);
             _mockMapper.Setup(m => m.Map<AccountDTO>(user)).Returns(accountDto);
 
             // Act
-            var result = await _controller.GetAccountById(1);
+            var result = await _controller.GetAccountById(2);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ResponseDTO<AccountDTO>>(okResult.Value);
             Assert.Equal(200, response.StatusCode);
             Assert.Equal("Tài khoản được lấy thành công!", response.Message);
-            Assert.Equal(1, response.Data.UserId);
+            Assert.Equal(2, response.Data.UserId);
         }
 
         [Fact]
         public async Task GetAccountById_NotFound_ReturnsNotFound()
         {
             // Arrange
-            _mockAccountService.Setup(s => s.GetById(1)).ReturnsAsync((User)null);
+            _mockAccountService.Setup(s => s.GetById(8)).ReturnsAsync((User)null);
 
-            // Act
-            var result = await _controller.GetAccountById(1);
+            // Act 
+            var result = await _controller.GetAccountById(8);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             var response = Assert.IsType<ResponseDTO<object>>(notFoundResult.Value);
             Assert.Equal(404, response.StatusCode);
-            Assert.Equal("Người dùng với ID: 1 không tìm thấy!", response.Message);
+            Assert.Equal("Người dùng với ID: 8 không tìm thấy!", response.Message);
         }
 
         [Fact]
         public async Task GetAccountById_ThrowsException_ReturnsInternalServerError()
         {
             // Arrange
-            _mockAccountService.Setup(s => s.GetById(1)).ThrowsAsync(new Exception("Database error"));
+            _mockAccountService.Setup(s => s.GetById(2)).ThrowsAsync(new Exception("Database error"));
 
             // Act
-            var result = await _controller.GetAccountById(1);
+            var result = await _controller.GetAccountById(2);
 
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
@@ -278,11 +301,11 @@ namespace UnitTestCode
             // Arrange
             var users = new List<User>
             {
-                new User { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleId = 1, Status = true }
+                new User { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleId = 2, Status = true }
             };
             var accountDtos = new List<AccountDTO>
             {
-                new AccountDTO { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleName = "Staff", Status = true }
+                new AccountDTO { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleName = "Staff", Status = true }
             };
             _mockAccountService.Setup(s => s.GetUsersByRoleName("Staff")).ReturnsAsync(users);
             _mockMapper.Setup(m => m.Map<IEnumerable<AccountDTO>>(users)).Returns(accountDtos);
@@ -339,26 +362,26 @@ namespace UnitTestCode
         {
             // Arrange
             var request = new UpdateRoleRequest { RoleName = "Staff" };
-            var user = new User { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleId = 1, Status = true };
-            var updatedUser = new User { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleId = 2, Status = true };
-            var updatedDto = new AccountDTO { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleName = "Staff", Status = true };
+            var user = new User { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleId = 2, Status = true };
+            var updatedUser = new User { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleId = 1, Status = true };
+            var updatedDto = new AccountDTO { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleName = "Student", Status = true };
 
-            _mockAccountService.Setup(s => s.GetById(1)).ReturnsAsync(user).Callback<int>(id =>
+            _mockAccountService.Setup(s => s.GetById(2)).ReturnsAsync(user).Callback<int>(id =>
             {
-                if (id == 1) _mockAccountService.Setup(s => s.GetById(1)).ReturnsAsync(updatedUser);
+                if (id == 2) _mockAccountService.Setup(s => s.GetById(2)).ReturnsAsync(updatedUser);
             });
             _mockAccountService.Setup(s => s.Update(It.IsAny<User>())).Returns(Task.CompletedTask);
             _mockMapper.Setup(m => m.Map<AccountDTO>(updatedUser)).Returns(updatedDto);
 
             // Act
-            var result = await _controller.UpdateAccountRole(1, request);
+            var result = await _controller.UpdateAccountRole(2, request);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ResponseDTO<AccountDTO>>(okResult.Value);
             Assert.Equal(200, response.StatusCode);
             Assert.Equal("Role của người dùng đã được cập nhật thành công!", response.Message);
-            Assert.Equal("Staff", response.Data.RoleName);
+            Assert.Equal("Student", response.Data.RoleName);
         }
 
         [Fact]
@@ -366,16 +389,16 @@ namespace UnitTestCode
         {
             // Arrange
             var request = new UpdateRoleRequest { RoleName = "Staff" };
-            _mockAccountService.Setup(s => s.GetById(1)).ReturnsAsync((User)null);
+            _mockAccountService.Setup(s => s.GetById(2)).ReturnsAsync((User)null);
 
             // Act
-            var result = await _controller.UpdateAccountRole(1, request);
+            var result = await _controller.UpdateAccountRole(2, request);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             var response = Assert.IsType<ResponseDTO<object>>(notFoundResult.Value);
             Assert.Equal(404, response.StatusCode);
-            Assert.Equal("Người dùng với ID: 1 không tìm thấy!", response.Message);
+            Assert.Equal("Người dùng với ID: 2 không tìm thấy!", response.Message);
         }
 
         [Fact]
@@ -383,12 +406,12 @@ namespace UnitTestCode
         {
             // Arrange
             var request = new UpdateRoleRequest { RoleName = "" }; // RoleName rỗng, không hợp lệ
-            var user = new User { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleId = 1, Status = true };
-            _mockAccountService.Setup(s => s.GetById(1)).ReturnsAsync(user);
+            var user = new User { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleId = 2, Status = true };
+            _mockAccountService.Setup(s => s.GetById(2)).ReturnsAsync(user);
             _mockAccountService.Setup(s => s.Update(It.IsAny<User>())).ThrowsAsync(new InvalidOperationException("RoleName không hợp lệ!"));
 
             // Act
-            var result = await _controller.UpdateAccountRole(1, request);
+            var result = await _controller.UpdateAccountRole(2, request);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
@@ -402,12 +425,12 @@ namespace UnitTestCode
         {
             // Arrange
             var request = new UpdateRoleRequest { RoleName = "Staff" };
-            var user = new User { UserId = 1, Email = "user1@example.com", FullName = "User One", RoleId = 1, Status = true };
-            _mockAccountService.Setup(s => s.GetById(1)).ReturnsAsync(user);
+            var user = new User { UserId = 2, Email = "ducnguyen11042002@gmail.com", FullName = "Đức Staff", RoleId = 2, Status = true };
+            _mockAccountService.Setup(s => s.GetById(2)).ReturnsAsync(user);
             _mockAccountService.Setup(s => s.Update(It.IsAny<User>())).ThrowsAsync(new Exception("Database error"));
 
             // Act
-            var result = await _controller.UpdateAccountRole(1, request);
+            var result = await _controller.UpdateAccountRole(2, request);
 
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
@@ -422,43 +445,43 @@ namespace UnitTestCode
         public async Task SoftDeleteAccount_ValidId_ReturnsOk()
         {
             // Arrange
-            _mockAccountService.Setup(s => s.SoftDelete(1)).Returns(Task.CompletedTask);
+            _mockAccountService.Setup(s => s.SoftDelete(2)).Returns(Task.CompletedTask);
 
             // Act
-            var result = await _controller.SoftDeleteAccount(1);
+            var result = await _controller.SoftDeleteAccount(2);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var response = Assert.IsType<ResponseDTO<object>>(okResult.Value);
             Assert.Equal(200, response.StatusCode);
-            Assert.Equal("Tài khoản với ID: 1 đã được lưu vào Bin Storage!", response.Message);
+            Assert.Equal("Tài khoản với ID: 2 đã được lưu vào Bin Storage!", response.Message);
         }
 
         [Fact]
         public async Task SoftDeleteAccount_NotFound_ReturnsNotFound()
         {
             // Arrange
-            _mockAccountService.Setup(s => s.SoftDelete(1))
-                .ThrowsAsync(new InvalidOperationException("Người dùng với ID: 1 không tìm thấy!"));
+            _mockAccountService.Setup(s => s.SoftDelete(2))
+                .ThrowsAsync(new InvalidOperationException("Người dùng với ID: 2 không tìm thấy!"));
 
             // Act
-            var result = await _controller.SoftDeleteAccount(1);
+            var result = await _controller.SoftDeleteAccount(2);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             var response = Assert.IsType<ResponseDTO<object>>(notFoundResult.Value);
             Assert.Equal(404, response.StatusCode);
-            Assert.Equal("Người dùng với ID: 1 không tìm thấy!", response.Message);
+            Assert.Equal("Người dùng với ID: 2 không tìm thấy!", response.Message);
         }
 
         [Fact]
         public async Task SoftDeleteAccount_ThrowsException_ReturnsInternalServerError()
         {
             // Arrange
-            _mockAccountService.Setup(s => s.SoftDelete(1)).ThrowsAsync(new Exception("Database error"));
+            _mockAccountService.Setup(s => s.SoftDelete(2)).ThrowsAsync(new Exception("Database error"));
 
             // Act
-            var result = await _controller.SoftDeleteAccount(1);
+            var result = await _controller.SoftDeleteAccount(2);
 
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);

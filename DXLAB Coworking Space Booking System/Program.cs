@@ -143,7 +143,7 @@ builder.Services.AddDbContext<DxLabSystemContext>(options =>
 });
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IRoleSevice, RoleService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<ISlotService, SlotService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -195,8 +195,8 @@ builder.Services.AddHangfireServer(options =>
 {
     options.WorkerCount = 20;                  // Số lượng worker
     options.Queues = new[] { "default" };      // Listening queues: 'default'
-    options.ShutdownTimeout = TimeSpan.FromSeconds(15)/*FromSeconds(30)*/; // Shutdown timeout
-    options.SchedulePollingInterval = TimeSpan.FromSeconds(15)/*FromSeconds(30)*/; // Schedule polling interval
+    options.ShutdownTimeout = TimeSpan.FromSeconds(30)/*FromSeconds(30)*/; // Shutdown timeout
+    options.SchedulePollingInterval = TimeSpan.FromSeconds(30)/*FromSeconds(30)*/; // Schedule polling interval
 });
 
 // Cập nhật CORS

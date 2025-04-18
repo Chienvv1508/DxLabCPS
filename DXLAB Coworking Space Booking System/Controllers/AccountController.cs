@@ -20,12 +20,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly IRoleService _roleService;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
 
-        public AccountController(IAccountService accountService, IMapper mapper, IUnitOfWork unitOfWork)
+        public AccountController(IAccountService accountService, IRoleService roleSevice, IMapper mapper, IUnitOfWork unitOfWork)
         {
             _accountService = accountService;
+            _roleService = roleSevice;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
         }
@@ -62,7 +64,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         for (int row = 2; row <= rowCount; row++)
                         {
                             var roleName = worksheet.Cells[row, 3].Value?.ToString();
-                            var role = (await _unitOfWork.RoleRepository.GetAll())
+                            var role = (await _roleService.GetAll())
                                 .FirstOrDefault(r => r.RoleName == roleName);
 
                             if (string.IsNullOrEmpty(roleName) || role == null)
