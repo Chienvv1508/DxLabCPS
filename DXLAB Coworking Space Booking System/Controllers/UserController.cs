@@ -96,7 +96,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                     // Mint token nếu WalletAddress hợp lệ
                     bool mintSuccess = false;
-                    if (!string.IsNullOrEmpty(user.WalletAddress) && user.WalletAddress != "NULL")
+                    if (!string.IsNullOrEmpty(user.WalletAddress) && user.WalletAddress != "NULL" && user.RoleId == 3)
                     {
                         mintSuccess = await _labBookingJobService.MintTokenForUser(user.WalletAddress);
                     }
@@ -147,7 +147,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                     // Mint token nếu WalletAddress hợp lệ (cho user mới)
                     bool mintSuccess = false;
-                    if (!string.IsNullOrEmpty(savedUser.WalletAddress) && savedUser.WalletAddress != "NULL")
+                    if (!string.IsNullOrEmpty(savedUser.WalletAddress) && savedUser.WalletAddress != "NULL" && savedUser.RoleId == 3)
                     {
                         mintSuccess = await _labBookingJobService.MintTokenForUser(savedUser.WalletAddress);
                     }
