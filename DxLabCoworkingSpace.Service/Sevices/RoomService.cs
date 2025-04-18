@@ -41,7 +41,8 @@ namespace DxLabCoworkingSpace {
 
     public async Task<IEnumerable<Room>> GetAll(Expression<Func<Room, bool>> expression)
     {
-            return await _unitOfWork.RoomRepository.GetAll(expression);
+           var x =   await _unitOfWork.RoomRepository.GetAllWithInclude(x => x.Images, x => x.Areas);
+            return x.AsQueryable().Where(expression);
     }
 
      public Task<IEnumerable<Room>> GetAllWithInclude(params Expression<Func<Room, object>>[] includes)
