@@ -28,9 +28,9 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<DepreciationSum> Get(Expression<Func<DepreciationSum, bool>> expression)
+        public async Task<DepreciationSum> Get(Expression<Func<DepreciationSum, bool>> expression)
         {
-            throw new NotImplementedException();
+           return await _unitOfWork.DepreciationSumRepository.Get(expression);
         }
 
         public Task<IEnumerable<DepreciationSum>> GetAll()

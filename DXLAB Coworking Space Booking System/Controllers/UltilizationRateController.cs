@@ -28,9 +28,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                //int checkTime = int.Parse(DateTime.Now.ToString("HHmmss"));
-                //if (checkTime >= 180000)
-                //{
+                var isTH = await _ultilizationRateService.Get(x => x.THDate.Date == DateTime.Now.Date);
+                if (isTH != null) return Ok("Đã tổng hợp cho ngày hôm nay");
                 DateTime firtPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
                 DateTime secondPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 18, 0, 0);
                 var bookingdetailList = await _bookingDetailService.GetAll(x => x.CheckinTime >= firtPara && x.CheckinTime <= secondPara);

@@ -57,9 +57,9 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<UltilizationRate> Get(Expression<Func<UltilizationRate, bool>> expression)
+        public async Task<UltilizationRate> Get(Expression<Func<UltilizationRate, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.UltilizationRateRepository.Get(expression);
         }
 
         public Task<IEnumerable<UltilizationRate>> GetAll()

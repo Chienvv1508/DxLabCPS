@@ -24,12 +24,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
+                
                 _logger.LogInformation("Chạy job tổng hợp chi phí");
                 //Check date xem ngày có hơp lệ ko
                 if(tHJobExpenseDTO.dateSum > DateTime.Now)
                 {
                     return BadRequest("Date không hợp lệ");
                 }
+
+                var isTH = await _sumaryExpenseService.Get(x => x.SumaryDate.Month == tHJobExpenseDTO.dateSum.Month && x.SumaryDate.Year == tHJobExpenseDTO.dateSum.Year);
+                if (isTH != null) return Ok($"Đã tổng hợp cho tháng: {tHJobExpenseDTO.dateSum.Month}");
                 DateTime sumDate = tHJobExpenseDTO.dateSum;
 
                 DateTime firstDay = new DateTime(sumDate.Year, sumDate.Month, 1, 0, 0, 0);
