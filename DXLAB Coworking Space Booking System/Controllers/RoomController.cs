@@ -355,11 +355,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             return Ok(response);
         }
 
+        //Cho student xem
         [HttpGet("{id}")]
         public async Task<ActionResult<RoomDTO>> GetRoomById(int id)
         {
             // Tải Room với Areas và Images của Room
-            var room = await _roomService.Get(x => x.RoomId == id && x.Status != 2);
+            var room = await _roomService.Get(x => x.RoomId == id && x.Status == 1);
             if (room == null)
             {
                 var responseNotFound = new ResponseDTO<object>(404, "Mã Room không tồn tại", null);
@@ -370,7 +371,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 // Tải Images và AreaType cho mỗi Area
                 var areaWithDetails = await _areaService.GetWithInclude(
-                    x => x.AreaId == a.AreaId && x.Status != 2,
+                    x => x.AreaId == a.AreaId && x.Status == 1,
                     x => x.Images,
                     x => x.AreaType
                 );
