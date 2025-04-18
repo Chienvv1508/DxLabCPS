@@ -22,9 +22,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
+                var isTH = await _depreciationService.Get(x => x.SumDate.Year == DateTime.Now.Year && x.SumDate.Month == DateTime.Now.Month);
+                if (isTH != null) return Ok("Đã tổng hợp khấu hao cho tháng này");
                 //if (DateTime.Now.Day == DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month))
                 //{
-                    var faciKHList = await _facilityService.GetAll(x => x.RemainingValue > 0);
+                var faciKHList = await _facilityService.GetAll(x => x.RemainingValue > 0);
                     await _facilityService.Update(faciKHList);
                     return Ok();
                 //}

@@ -38,6 +38,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         {
             try
             {
+               
                 // Thêm kiểm tra giới hạn 2 tuần
                 var maxBookingDate = DateTime.Now.Date.AddDays(14); // 2 tuần từ hôm nay
                 var outOfRangeDates = bookingDTO.bookingTimes.Where(x => x.BookingDate.Date > maxBookingDate);
@@ -52,14 +53,14 @@ namespace DXLAB_Coworking_Space_Booking_System
                 var bookingDates = bookingDTO.bookingTimes;
 
                 //Check RoomId
-                Room room = await _roomService.GetRoomWithAllInClude(x => x.RoomId == bookingDTO.RoomId);
+                Room room = await _roomService.GetRoomWithAllInClude(x => x.RoomId == bookingDTO.RoomId && x.Status == 1);
                 if (room == null)
                 {
                     var reponse = new ResponseDTO<object>(400, "Không tìm thấy phòng cần đặt!", null);
                     return BadRequest(reponse);
                 }
                 //Check AraeTypeId
-                var areasInRoom = room.Areas.Where(x => x.AreaTypeId == areaTypeId);
+                var areasInRoom = room.Areas.Where(x => x.AreaTypeId == areaTypeId && x.Status == 1);
                 if (!areasInRoom.Any())
                 {
                     var reponse = new ResponseDTO<object>(400, "Trong phòng không có khu vực nào có loại khu vực như đã nhập!", null);
@@ -76,7 +77,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 //Get All Information
                 foreach (var ar in areasInRoom)
                 {
-                    var x = await _areaService.GetWithInclude(x => x.AreaId == ar.AreaId, x => x.AreaType, x => x.Positions);
+                    var x = await _areaService.GetWithInclude(x => x.AreaId == ar.AreaId && x.Status == 1, x => x.AreaType, x => x.Positions);
                     newAreaInRoom.Add(x);
                 }
                 areasInRoom = newAreaInRoom;
@@ -508,14 +509,14 @@ namespace DXLAB_Coworking_Space_Booking_System
                 var room = await _roomService.Get(x => x.RoomId == id && x.Status == 1);
                 if (room == null)
                 {
-                    var response = new ResponseDTO<object>(400, "Không tìm thấy room", null);
+                    var response = new ResponseDTO<object>(400, "Không tìm thấy phòng", null);
                     return NotFound(response);
 
                 }
                 var areas = await _areaService.GetAll(x => x.RoomId == room.RoomId && x.Status == 1);
                 if (areas == null)
                 {
-                    var response = new ResponseDTO<object>(400, "Không tìm thấy room", null);
+                    var response = new ResponseDTO<object>(400, "Không tìm thấy khu vực sẵn sàng", null);
                     return NotFound(response);
                 }
                 List<AreaType> areaTypes = new List<AreaType>();
