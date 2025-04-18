@@ -367,11 +367,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return NotFound(responseNotFound);
             }
 
-            foreach (var a in room.Areas)
+            foreach (var a in room.Areas.Where(x => x.Status != 2))
             {
                 // Tải Images và AreaType cho mỗi Area
                 var areaWithDetails = await _areaService.GetWithInclude(
-                    x => x.AreaId == a.AreaId && x.Status == 1,
+                    x => x.AreaId == a.AreaId && x.Status != 2,
                     x => x.Images,
                     x => x.AreaType
                 );
