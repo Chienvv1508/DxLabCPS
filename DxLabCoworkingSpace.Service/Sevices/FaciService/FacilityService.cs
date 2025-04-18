@@ -87,6 +87,12 @@ namespace DxLabCoworkingSpace
                     break;
                 }
 
+                if (facility.ImportDate > DateTime.UtcNow)
+                {
+                    validationErrors.Add("Ngày nhập phải nhỏ hơn hoặc bằng thời gian hiện tại");
+                    break;
+                }
+
                 validFacilities.Add(facility);
             }
 
@@ -109,6 +115,12 @@ namespace DxLabCoworkingSpace
             {
                 throw new ArgumentException("Ngày hết hạn phải lớn hơn ngày nhập");
             }
+
+            if(entity.ImportDate > DateTime.UtcNow)
+            {
+                throw new ArgumentException("Ngày nhập phải nhỏ hơn hoặc bằng thời gian hiện tại");
+            }
+
             var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate);
             if (existingFacility != null)
             {
