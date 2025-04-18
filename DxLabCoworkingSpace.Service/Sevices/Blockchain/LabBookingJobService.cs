@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -29,6 +30,8 @@ namespace DxLabCoworkingSpace
         private readonly string _fptContractAbi;
         private Web3 _web3;
         private Contract _contract;
+        // Lưu trữ thời gian mint gần nhất trong bộ nhớ
+        private static readonly ConcurrentDictionary<string, DateTime> _mintedUsers = new ConcurrentDictionary<string, DateTime>();
 
         public LabBookingJobService(
             ILabBookingCrawlerService crawler,
@@ -112,7 +115,7 @@ namespace DxLabCoworkingSpace
 
                 for (int i = fromBlock; i <= toBlock; i += initialBatchSize)
                 {
-                    int batchFrom = i;
+                    int batchFrom = i;  
                     int batchTo = Math.Min(i + initialBatchSize - 1, toBlock);
 
                     Console.WriteLine($"Crawling from block {batchFrom} to {batchTo}...");
@@ -171,12 +174,16 @@ namespace DxLabCoworkingSpace
         {
             Console.WriteLine($"Starting minting job at {DateTime.UtcNow}");
 
+            // Tính giờ Việt Nam (UTC+7)
+            DateTime currentTime = DateTime.UtcNow.AddHours(7);
+
             using var scope = _serviceProvider.CreateScope();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
             var usersQuery = await unitOfWork.UserRepository.GetAll(u =>
                 u.Status == true &&
-                !string.IsNullOrEmpty(u.WalletAddress));
+                !string.IsNullOrEmpty(u.WalletAddress) &&
+                u.RoleId == 3);
 
             var users = usersQuery
                 .AsEnumerable()
@@ -191,13 +198,46 @@ namespace DxLabCoworkingSpace
                 return;
             }
 
+            int eligibleUsers = 0;
             foreach (var user in users)
             {
-                await MintTokenForUser(user.WalletAddress);
+                bool shouldMint = false;
+                if (_mintedUsers.TryGetValue(user.WalletAddress, out var lastMintedTime))
+                {
+                    if ((currentTime - lastMintedTime).TotalHours >= 24)
+                    {
+                        shouldMint = true;
+                        Console.WriteLine($"Minting tokens for {user.WalletAddress}: Last minted at {lastMintedTime}, now eligible.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Mint skipped for {user.WalletAddress}: Last minted at {lastMintedTime}, too soon.");
+                    }
+                }
+                else
+                {
+                    shouldMint = true;
+                    Console.WriteLine($"First time minting for {user.WalletAddress}");
+                }
+
+                if (shouldMint)
+                {
+                    eligibleUsers++;
+                    bool mintSuccess = await MintTokenForUser(user.WalletAddress);
+                    if (mintSuccess)
+                    {
+                        _mintedUsers[user.WalletAddress] = currentTime;
+                        Console.WriteLine($"Updated mint time for {user.WalletAddress} to {currentTime}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Mint failed for {user.WalletAddress}");
+                    }
+                }
                 await Task.Delay(15000);
             }
 
-            Console.WriteLine($"[MintingJob] End at {DateTime.UtcNow}");
+            Console.WriteLine($"[MintingJob] End at {DateTime.UtcNow}, {eligibleUsers} users were eligible for minting.");
         }
 
         public async Task<bool> MintTokenForUser(string walletAddress)
