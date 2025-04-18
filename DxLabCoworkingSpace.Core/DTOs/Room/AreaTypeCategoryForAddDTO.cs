@@ -14,6 +14,6 @@ namespace DxLabCoworkingSpace
         public string CategoryDescription { get; set; }
         public List<IFormFile> Images { get; set; }
 
-        public int Status { get; set; }
+        //public int Status { get; set; }
     }
 }

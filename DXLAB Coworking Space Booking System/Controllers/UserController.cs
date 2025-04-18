@@ -17,13 +17,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     {
         private readonly IConfiguration _config;
         private IUserService _userService;
-        private IUserTokenService _userTokenService;
+        private ILabBookingJobService _labBookingJobService;
 
-        public UserController(IConfiguration config, IUserService userService, IUserTokenService userTokenService)
+        public UserController(IConfiguration config, IUserService userService, ILabBookingJobService labBookingJobService)
         {
             _config = config;
             _userService = userService;
-            _userTokenService = userTokenService;
+            _labBookingJobService = labBookingJobService;
         }
 
         // Generate Token
@@ -93,6 +93,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         user.WalletAddress = userinfo.WalletAddress;
                         await _userService.Update(user);
                     }
+
+                    // Mint token nếu WalletAddress hợp lệ
+                    bool mintSuccess = false;
+                    if (!string.IsNullOrEmpty(user.WalletAddress) && user.WalletAddress != "NULL")
+                    {
+                        mintSuccess = await _labBookingJobService.MintTokenForUser(user.WalletAddress);
+                    }
+
                     user.AccessToken = token;
                     await _userService.Update(user);
 
@@ -110,8 +118,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     {
                         Token = token,
                         User = userDto,
-                        //GrantTransactionHash = grantTransactionHash ?? "N/A",
-                        //FptBalance = fptBalance.ToString()
+                        MintStatus = mintSuccess ? "Minted 100 tokens successfully" : "No tokens minted (invalid wallet or mint failed)"
                     };
                     return Ok(new ResponseDTO<object>(200, "Người dùng đã được xác thực thành công!", responseData));
                 }
@@ -136,33 +143,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         return StatusCode(500, new ResponseDTO<object>(500, "Lỗi: Không thể load Role cho user mới!", null));
                     }
 
-                    //Console.WriteLine($"New user created: {savedUser.Email}, RoleId: {savedUser.RoleId}");
-                    //string registerTransactionHash = null;
-                    //string grantTransactionHash = null;
-                    //BigInteger fptBalance = 0;
-
-                    //if (savedUser.RoleId == 3) // Chỉ cấp token cho Student
-                    //{
-                    //    var isStaff = false;
-                    //    Console.WriteLine("Registering user on blockchain...");
-                    //    registerTransactionHash = await _userTokenService.RegisterUserAsync(
-                    //        savedUser.WalletAddress,
-                    //        savedUser.Email,
-                    //        isStaff
-                    //    );
-
-                    //    // Cấp 50 FPT cho Student
-                    //    BigInteger bonusAmount = new BigInteger(50) * BigInteger.Pow(10, 18); // 50 FPT với 18 decimals
-                    //    Console.WriteLine("Granting token to student...");
-                    //    grantTransactionHash = await _userTokenService.GrantTokenAsync(
-                    //        savedUser.WalletAddress,
-                    //        bonusAmount
-                    //    );
-
-                    //    fptBalance = await _userTokenService.GetFptBalanceAsync(savedUser.WalletAddress);
-                    //}
-
                     var token = GenerateJwtToken(savedUser);
+
+                    // Mint token nếu WalletAddress hợp lệ (cho user mới)
+                    bool mintSuccess = false;
+                    if (!string.IsNullOrEmpty(savedUser.WalletAddress) && savedUser.WalletAddress != "NULL")
+                    {
+                        mintSuccess = await _labBookingJobService.MintTokenForUser(savedUser.WalletAddress);
+                    }
+
                     savedUser.AccessToken = token;
                     await _userService.Update(savedUser);
 
@@ -180,9 +169,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     {
                         Token = token,
                         User = userDto,
-                        //RegisterTransactionHash = registerTransactionHash ?? "N/A",
-                        //GrantTransactionHash = grantTransactionHash ?? "N/A",
-                        //FptBalance = fptBalance.ToString()
+                        MintStatus = mintSuccess ? "Minted 100 tokens successfully" : "No tokens minted (invalid wallet or mint failed)"
                     };
                     return Ok(new ResponseDTO<object>(201, "Người dùng mới (Student) đã được tạo, xác thực và cấp token thành công!", responseData));
                 }
@@ -200,4 +187,3 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
     }
 }
-

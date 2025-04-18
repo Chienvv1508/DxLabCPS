@@ -19,7 +19,7 @@ namespace DxLabCoworkingSpace
         public string? AreaDescription { get; set; }
         public virtual AreaType AreaType { get; set; } = null!;
 
-        public bool IsAvail { get; set; }
+        public int Status { get; set; }
         public virtual Room Room { get; set; } = null!;
         public virtual ICollection<BookingDetail> BookingDetails { get; set; }
         public virtual ICollection<Position> Positions { get; set; }

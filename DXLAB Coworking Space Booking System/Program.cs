@@ -84,7 +84,7 @@ var audience = builder.Configuration.GetSection("Jwt")["Audience"];
 
 // Đọc các giá trị từ configuration
 var providerCrawl = builder.Configuration.GetSection("Network")["providerCrawl"];
-var contractAddress = builder.Configuration.GetSection("ContractAddresses:Sepolia:LabBookingSystem").Value;
+var contractAddress = builder.Configuration.GetSection("ContractAddresses:Sepolia:Booking").Value;
 
 // Kiểm tra giá trị null
 if (string.IsNullOrEmpty(providerCrawl))
@@ -93,7 +93,7 @@ if (string.IsNullOrEmpty(contractAddress))
     throw new Exception("ContractAddress is missing in appsettings.json");
 
 // Đọc contract ABI từ file với đường dẫn chính xác
-var contractAbiPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "LabBookingSystem.json");
+var contractAbiPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "Booking.json");
 if (!File.Exists(contractAbiPath))
     throw new Exception($"Contract ABI file not found at: {contractAbiPath}");
 
@@ -102,7 +102,7 @@ var contractAbiJson = File.ReadAllText(contractAbiPath);
 var jsonObject = Newtonsoft.Json.Linq.JObject.Parse(contractAbiJson);
 var contractAbi = jsonObject["abi"]?.ToString();
 if (string.IsNullOrEmpty(contractAbi))
-    throw new Exception("ABI not found in LabBookingSystem.json");
+    throw new Exception("ABI not found in Booking.json");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -193,10 +193,10 @@ builder.Services.AddHangfire(config => config
 
 builder.Services.AddHangfireServer(options =>
 {
-    options.WorkerCount = 20;                  // Số lượng worker
+    options.WorkerCount = 10;                  // Số lượng worker
     options.Queues = new[] { "default" };      // Listening queues: 'default'
     options.ShutdownTimeout = TimeSpan.FromSeconds(30)/*FromSeconds(30)*/; // Shutdown timeout
-    options.SchedulePollingInterval = TimeSpan.FromSeconds(30)/*FromSeconds(30)*/; // Schedule polling interval
+    options.SchedulePollingInterval = TimeSpan.FromSeconds(10)/*FromSeconds(30)*/; // Schedule polling interval
 });
 
 // Cập nhật CORS
@@ -239,13 +239,13 @@ app.MapHub<BlogHub>("/blogHub");
 app.MapHub<ReportHub>("/reportHub");
 
 // Khởi động job crawl sau khi Hangfire server đã khởi động
-//app.Lifetime.ApplicationStarted.Register(() =>
-//{
-//    using (var scope = app.Services.CreateScope())
-//    {
-//        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
-//        jobService.ScheduleJob();
-//    }
-//});
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
+        jobService.ScheduleJob();
+    }
+});
 app.MapControllers();
 app.Run();
