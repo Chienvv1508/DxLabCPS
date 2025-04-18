@@ -8,6 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Numerics;
 using System.Text;
+using System.Collections.Concurrent;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -17,13 +18,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     {
         private readonly IConfiguration _config;
         private IUserService _userService;
-        private IUserTokenService _userTokenService;
-
-        public UserController(IConfiguration config, IUserService userService, IUserTokenService userTokenService)
+        private ILabBookingJobService _labBookingJobService;
+        // Lưu trữ thời gian mint gần nhất trong bộ nhớ
+        private static readonly ConcurrentDictionary<string, DateTime> _mintedUsers = new ConcurrentDictionary<string, DateTime>();
+        public UserController(IConfiguration config, IUserService userService, ILabBookingJobService labBookingJobService)
         {
             _config = config;
             _userService = userService;
-            _userTokenService = userTokenService;
+            _labBookingJobService = labBookingJobService;
         }
 
         // Generate Token
@@ -50,7 +52,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(ClaimTypes.Role, user.Role.RoleName), // Thêm RoleName
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
+            };
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
@@ -74,9 +76,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
+                // Tính giờ Việt Nam (UTC+7)
+                DateTime currentTime = DateTime.UtcNow.AddHours(7);
+
                 // Sử dụng GetWithInclude thay vì Get
                 var user = await _userService.GetWithInclude(x => x.Email == userinfo.Email, u => u.Role);
-
                 // Trường hợp user đã tồn tại
                 if (user != null)
                 {
@@ -84,37 +88,64 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     {
                         return StatusCode(500, new ResponseDTO<object>(500, "Lỗi: Người dùng chưa được gán Role!", null));
                     }
-
-                    Console.WriteLine($"User already exists: {user.Email}, RoleId: {user.RoleId}");
+                    Console.WriteLine($"Nguoi dung da ton tai: {user.Email}, RoleId: {user.RoleId}");
                     var token = GenerateJwtToken(user);
 
                     // Kiểm tra và cập nhật WalletAddress
                     if ((string.IsNullOrEmpty(user.WalletAddress) || user.WalletAddress == "NULL") && !string.IsNullOrEmpty(userinfo.WalletAddress))
                     {
-                        Console.WriteLine($"Updating WalletAddress for user {user.UserId} from {user.WalletAddress} to {userinfo.WalletAddress}");
+                        Console.WriteLine($"Cap nhat dia chi vi cho nguoi dung {user.UserId} tu {user.WalletAddress} den {userinfo.WalletAddress}");
                         user.WalletAddress = userinfo.WalletAddress;
                         await _userService.Update(user);
                     }
 
-                    //string grantTransactionHash = null;
-                    //BigInteger fptBalance = 0;
+                    // Mint token nếu WalletAddress hợp lệ
+                    bool mintSuccess = false;
+                    string mintStatus = "Không có token nào được tạo (ví không hợp lệ hoặc tạo không thành công)";
+                    if (!string.IsNullOrEmpty(user.WalletAddress) && user.WalletAddress != "NULL" && user.RoleId == 3)
+                    {
+                        if (_mintedUsers.TryGetValue(user.WalletAddress, out var lastMintedTime))
+                        {
+                            if ((currentTime - lastMintedTime).TotalHours >= 24)
+                            {
+                                Console.WriteLine($"Tao token cho {user.WalletAddress}: Lan tao moi nhat tai {lastMintedTime}, du dieu kien bay gio.");
+                                mintSuccess = await _labBookingJobService.MintTokenForUser(user.WalletAddress);
+                                if (mintSuccess)
+                                {
+                                    _mintedUsers[user.WalletAddress] = currentTime;
+                                    mintStatus = "Tạo 100 tokens thành công!";
+                                    Console.WriteLine($"Cap nhat thoi gian tao cho {user.WalletAddress} toi {currentTime}");
+                                }
+                                else
+                                {
+                                    mintStatus = "Tạo token thất bại!";
+                                    Console.WriteLine($"Tao token that bai cho {user.WalletAddress}");
+                                }
+                            }
+                            else
+                            {
+                                mintStatus = "Token đã được tạo hôm nay!";
+                                Console.WriteLine($"Bo qua viec tao cho {user.WalletAddress}: Lan tao moi nhat o {lastMintedTime}, qua som.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Tao lan dau cho {user.WalletAddress}");
+                            mintSuccess = await _labBookingJobService.MintTokenForUser(user.WalletAddress);
+                            if (mintSuccess)
+                            {
+                                _mintedUsers[user.WalletAddress] = currentTime;
+                                mintStatus = "Tạo 100 tokens thành công!";
+                                Console.WriteLine($"Dat thoi gian tao cho {user.WalletAddress} toi {currentTime}");
+                            }
+                            else
+                            {
+                                mintStatus = "Tạo token thất bại!";
+                                Console.WriteLine($"Tao that bai cho {user.WalletAddress}");
+                            }
+                        }
+                    }
 
-                    //// Cấp token bonus nếu là Student (RoleId = 3)
-                    //if (user.RoleId == 3)   
-                    //{
-                    //    // Kiểm tra WalletAddress trước khi gọi GrantTokenAsync
-                    //    if (string.IsNullOrEmpty(user.WalletAddress))
-                    //    {
-                    //        return BadRequest(new ResponseDTO<object>(400, "Lỗi: WalletAddress của người dùng không được để trống!", null));
-                    //    }
-
-                    //    BigInteger bonusAmount = new BigInteger(50) * BigInteger.Pow(10, 18); // 50 FPT với 18 decimals
-                    //    Console.WriteLine($"Granting token to existing Student...");
-                    //    grantTransactionHash = await _userTokenService.GrantTokenAsync(user.WalletAddress, bonusAmount);
-                    //    fptBalance = await _userTokenService.GetFptBalanceAsync(user.WalletAddress);
-                    //}
-
-                    // Chỉ cập nhật AccessToken, không cập nhật các trường khác
                     user.AccessToken = token;
                     await _userService.Update(user);
 
@@ -132,8 +163,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     {
                         Token = token,
                         User = userDto,
-                        //GrantTransactionHash = grantTransactionHash ?? "N/A",
-                        //FptBalance = fptBalance.ToString()
+                        MintStatus = mintSuccess ? "Tạo 100 tokens thành công!" : "Không có token nào được tạo (ví không hợp lệ hoặc tạo không thành công)"
                     };
                     return Ok(new ResponseDTO<object>(200, "Người dùng đã được xác thực thành công!", responseData));
                 }
@@ -155,36 +185,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     var savedUser = await _userService.GetWithInclude(x => x.UserId == newUser.UserId, u => u.Role);
                     if (savedUser == null || savedUser.Role == null)
                     {
-                        return StatusCode(500, new ResponseDTO<object>(500, "Lỗi: Không thể load Role cho user mới!", null));
+                        return StatusCode(500, new ResponseDTO<object>(500, "Lỗi: Không thể tải Role cho user mới!", null));
                     }
 
-                    //Console.WriteLine($"New user created: {savedUser.Email}, RoleId: {savedUser.RoleId}");
-                    //string registerTransactionHash = null;
-                    //string grantTransactionHash = null;
-                    //BigInteger fptBalance = 0;
-
-                    //if (savedUser.RoleId == 3) // Chỉ cấp token cho Student
-                    //{
-                    //    var isStaff = false;
-                    //    Console.WriteLine("Registering user on blockchain...");
-                    //    registerTransactionHash = await _userTokenService.RegisterUserAsync(
-                    //        savedUser.WalletAddress,
-                    //        savedUser.Email,
-                    //        isStaff
-                    //    );
-
-                    //    // Cấp 50 FPT cho Student
-                    //    BigInteger bonusAmount = new BigInteger(50) * BigInteger.Pow(10, 18); // 50 FPT với 18 decimals
-                    //    Console.WriteLine("Granting token to student...");
-                    //    grantTransactionHash = await _userTokenService.GrantTokenAsync(
-                    //        savedUser.WalletAddress,
-                    //        bonusAmount
-                    //    );
-
-                    //    fptBalance = await _userTokenService.GetFptBalanceAsync(savedUser.WalletAddress);
-                    //}
-
                     var token = GenerateJwtToken(savedUser);
+
+                    // Mint token nếu WalletAddress hợp lệ (cho user mới)
+                    bool mintSuccess = false;
+                    if (!string.IsNullOrEmpty(savedUser.WalletAddress) && savedUser.WalletAddress != "NULL" && savedUser.RoleId == 3)
+                    {
+                        mintSuccess = await _labBookingJobService.MintTokenForUser(savedUser.WalletAddress);
+                    }
+
                     savedUser.AccessToken = token;
                     await _userService.Update(savedUser);
 
@@ -202,15 +214,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     {
                         Token = token,
                         User = userDto,
-                        //RegisterTransactionHash = registerTransactionHash ?? "N/A",
-                        //GrantTransactionHash = grantTransactionHash ?? "N/A",
-                        //FptBalance = fptBalance.ToString()
+                        MintStatus = mintSuccess ? "Tạo 100 tokens thành công!" : "Không có token nào được tạo (ví không hợp lệ hoặc tạo không thành công)"
                     };
-                    return Ok(new ResponseDTO<object>(201, "Người dùng mới (Student) đã được tạo, xác thực và cấp token thành công!", responseData));
+                    return Ok(new ResponseDTO<object>(201, "Người dùng mới (Sinh viên) đã được tạo, xác thực và cấp token thành công!", responseData));
                 }
                 else
                 {
-                    Console.WriteLine($"Email {userinfo.Email} does not end with @fpt.edu.vn");
+                    Console.WriteLine($"Email {userinfo.Email} khong có đuoi @fpt.edu.vn");
                     return Unauthorized(new ResponseDTO<object>(401, "Email không tồn tại trong hệ thống!", null));
                 }
             }
@@ -222,4 +232,3 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
     }
 }
-

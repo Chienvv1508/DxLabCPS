@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public class AreaGetDTO
+    public class AreaAdd
     {
-        public int AreaId { get; set; }
+        public int AreaTypeId { get; set; }
         public string AreaName { get; set; }
-
     }
 }

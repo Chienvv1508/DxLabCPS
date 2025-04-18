@@ -34,7 +34,7 @@ namespace DxLabCoworkingSpace
         public decimal Price { get; set; }
 
         [Required(ErrorMessage = "Trạng thái xóa không được để trống.")]
-        public bool IsDeleted { get; set; }
+        public int Status { get; set; }
 
         public List<string>? Images { get; set; }
     }

@@ -36,6 +36,7 @@ namespace DxLabCoworkingSpace
         public virtual DbSet<SumaryExpense> SumaryExpenses { get; set; } = null!;
         public virtual DbSet<AreaTypeCategory> AreaTypeCategory { get; set; } = null!;
         public virtual DbSet<UltilizationRate> UltilizationRate { get; set; } = null!;
+        public virtual DbSet<DepreciationSum> DepreciationSums { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -72,7 +73,7 @@ namespace DxLabCoworkingSpace
 
                 entity.Property(e => e.AreaTypeName).HasMaxLength(250);
 
-                entity.Property(e => e.IsDeleted).HasColumnName("isDeleted");
+                entity.Property(e => e.Status).HasColumnName("Status");
 
                 entity.Property(e => e.Price).HasColumnType("decimal(10, 0)");
 
@@ -109,7 +110,7 @@ namespace DxLabCoworkingSpace
 
             modelBuilder.Entity<BookingDetail>(entity =>
             {
-                
+
 
                 entity.Property(e => e.CheckinTime).HasColumnType("datetime");
 
@@ -136,7 +137,7 @@ namespace DxLabCoworkingSpace
                     .WithMany(p => p.BookingDetails)
                     .HasForeignKey(d => d.SlotId)
                     .HasConstraintName("FK_BookingDetails_Slots")
-                    .OnDelete(DeleteBehavior.Restrict); 
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<ContractCrawl>(entity =>
@@ -170,28 +171,38 @@ namespace DxLabCoworkingSpace
             });
             modelBuilder.Entity<DepreciationSum>(entity =>
             {
-               
+                entity.ToTable("DepreciationSum");
+
+                entity.Property(e => e.BatchNumber).HasMaxLength(50);
+
+                entity.Property(e => e.DepreciationAmount).HasColumnType("money");
+
+                entity.Property(e => e.ImportDate).HasColumnType("datetime");
+
+                entity.Property(e => e.SumDate).HasColumnType("datetime");
 
                 entity.HasOne(d => d.Facility)
                     .WithMany(p => p.DepreciationSums)
                     .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_DepreciationSum_Facilities");
             });
 
             modelBuilder.Entity<Facility>(entity =>
             {
-                entity.HasKey(e => new { e.FacilityId, e.BatchNumber, e.ImportDate})
-                    .HasName("PK_Facilities_1");
+                entity.HasKey(e => new { e.FacilityId, e.BatchNumber, e.ImportDate });
 
                 entity.Property(e => e.FacilityId).ValueGeneratedOnAdd();
 
                 entity.Property(e => e.BatchNumber).HasMaxLength(50);
 
+                entity.Property(e => e.ImportDate).HasColumnType("datetime");
+
                 entity.Property(e => e.Cost).HasColumnType("decimal(10, 2)");
 
                 entity.Property(e => e.ExpiredTime).HasColumnType("datetime");
 
-                entity.Property(e => e.ImportDate).HasColumnType("datetime");
+                entity.Property(e => e.RemainingValue).HasColumnType("decimal(10, 2)");
             });
 
             modelBuilder.Entity<Image>(entity =>
@@ -230,11 +241,6 @@ namespace DxLabCoworkingSpace
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
 
                 entity.Property(e => e.Message).HasMaxLength(255);
-
-                entity.HasOne(d => d.Booking)
-                    .WithMany(p => p.Notifications)
-                    .HasForeignKey(d => d.BookingId)
-                    .HasConstraintName("FK_Notifications_Bookings");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Notifications)
@@ -276,14 +282,13 @@ namespace DxLabCoworkingSpace
 
             modelBuilder.Entity<Room>(entity =>
             {
-                entity.Property(e => e.IsDeleted).HasColumnName("isDeleted");
+                entity.Property(e => e.Status).HasColumnName("Status");
 
                 entity.Property(e => e.RoomName).HasMaxLength(50);
             });
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.Property(e => e.Avatar).HasMaxLength(255);
 
                 entity.Property(e => e.Email).HasMaxLength(255);
 
@@ -297,13 +302,39 @@ namespace DxLabCoworkingSpace
                     .HasConstraintName("FK_Users_Roles");
             });
 
+            modelBuilder.Entity<UltilizationRate>(entity =>
+            {
+                entity.ToTable("UltilizationRate");
+
+                entity.Property(e => e.AreaName).HasMaxLength(250);
+
+                entity.Property(e => e.AreaTypeCategoryTitle).HasMaxLength(250);
+
+                entity.Property(e => e.AreaTypeName).HasMaxLength(250);
+
+                entity.Property(e => e.Rate).HasColumnType("decimal(3, 2)");
+
+                entity.Property(e => e.RoomName).HasMaxLength(50);
+
+                entity.Property(e => e.THDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("THDate");
+            });
+
+            modelBuilder.Entity<SumaryExpense>(entity =>
+            {
+                entity.Property(e => e.Amout).HasColumnType("money");
+
+                entity.Property(e => e.SumaryDate).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<UsingFacility>(entity =>
             {
                 entity.Property(e => e.UsingFacilityId).HasMaxLength(50);
 
                 entity.Property(e => e.BatchNumber).HasMaxLength(50);
 
-                
+
 
                 entity.HasOne(d => d.Area)
                     .WithMany(p => p.UsingFacilities)
@@ -312,7 +343,7 @@ namespace DxLabCoworkingSpace
 
                 entity.HasOne(d => d.Facility)
                     .WithMany(p => p.UsingFacilities)
-                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber,d.ImportDate })
+                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
                     .HasConstraintName("FK_UsingFacilities_Facilities");
             });
 

@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using DXLAB_Coworking_Space_Booking_System.Hubs;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -12,18 +14,20 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     public class ReportController : ControllerBase
     {
         private readonly IReportService _reportService;
-        private readonly IBookingDetailService _bookDetailService;
+        private readonly IBookingDetailService _bookDetailService;  
         private readonly IUserService _userService;
         private readonly IAreaService _areaService;
         private readonly IMapper _mapper;
+        private readonly IHubContext<ReportHub> _hubContext;
 
-        public ReportController(IReportService reportService, IBookingDetailService bookingDetailService, IUserService userService, IAreaService areaService,IMapper mapper)
+        public ReportController(IReportService reportService, IBookingDetailService bookingDetailService, IUserService userService, IAreaService areaService,IMapper mapper, IHubContext<ReportHub> hubContext)
         {
             _reportService = reportService;
             _bookDetailService = bookingDetailService;
             _userService = userService;
             _areaService = areaService;
             _mapper = mapper;
+            _hubContext = hubContext;
         }
 
         // Tạo báo cáo cơ sở vật chất
@@ -127,6 +131,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 var staff = await _userService.GetById(staffId);
                 responseData.StaffName = staff?.FullName ?? "N/A";
+
+                // Gửi thông báo real-time tới Admin
+                var reportData = new
+                {
+                    responseData.ReportId,
+                    responseData.BookingDetailId,
+                    responseData.CreatedDate,
+                    responseData.StaffName,
+                    responseData.Position,
+                    responseData.AreaName,
+                    responseData.AreaTypeName,
+                    responseData.RoomName,
+                    ReportDescription = request.ReportDescription // Thêm mô tả báo cáo
+                };
+                await _hubContext.Clients.Group("Admins").SendAsync("ReceiveNewReport", reportData);
 
                 return Ok(new ResponseDTO<ReportResponseDTO>(200, "Tạo báo cáo cơ sở vật chất thành công!", responseData));
             }

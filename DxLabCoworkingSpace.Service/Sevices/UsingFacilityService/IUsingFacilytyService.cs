@@ -7,11 +7,13 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public interface IUsingFacilytyService:IGenericeService<UsingFacility>
+    public interface IUsingFacilytyService : IGenericeService<UsingFacility>
     {
 
-        public Task<IEnumerable<UsingFacility>> GetAllWithInclude(Expression<Func<UsingFacility, bool>> expression , params Expression<Func<UsingFacility, object>>[] includes);
-        public Task Add(UsingFacility entity, int status);
+        public Task<IEnumerable<UsingFacility>> GetAllWithInclude(Expression<Func<UsingFacility, bool>> expression, params Expression<Func<UsingFacility, object>>[] includes);
+        public Task Add(UsingFacility entity, int status, bool statusOfArea);
         Task Update(RemovedFaciDTO removedFaciDTO);
+        Task Delete(IEnumerable<UsingFacility> faciInArea);
+        Task Update(UsingFacility existedFaciInArea, int status, bool statusOfArea);
     }
 }

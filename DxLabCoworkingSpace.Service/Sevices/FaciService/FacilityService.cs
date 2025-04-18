@@ -22,7 +22,7 @@ namespace DxLabCoworkingSpace
         {
             if (facilities == null || !facilities.Any())
             {
-                throw new ArgumentException("Danh sách facility không được rỗng hoặc null");
+                throw new ArgumentException("Danh sách cơ sở vật chất không được rỗng hoặc null");
             }
 
             var existingBatchNumbers = (await _unitOfWork.FacilityRepository.GetAll())
@@ -39,7 +39,7 @@ namespace DxLabCoworkingSpace
 
             if (duplicateBatchNumbersInFile.Any())
             {
-                throw new InvalidOperationException("BatchNumber, ImportDate bị trùng trong file!");
+                throw new InvalidOperationException("Số lô, Ngày nhập bị trùng trong file!");
             }
 
             var duplicateBatchNumbersInDB = batchNumbersInFile
@@ -48,7 +48,7 @@ namespace DxLabCoworkingSpace
 
             if (duplicateBatchNumbersInDB.Any())
             {
-                throw new InvalidOperationException("BatchNumber, ImportDate đã tồn tại trong database!");
+                throw new InvalidOperationException("Số lô, Ngày nhập đã tồn tại trong database!");
             }
 
             var validationErrors = new List<string>();
@@ -83,7 +83,13 @@ namespace DxLabCoworkingSpace
 
                 if (facility.ExpiredTime <= facility.ImportDate)
                 {
-                    validationErrors.Add("ExpiredTime phải lớn hơn ImportDate!");
+                    validationErrors.Add("Ngày hết hạn phải lớn hơn ngày nhập!");
+                    break;
+                }
+
+                if (facility.ImportDate > DateTime.UtcNow)
+                {
+                    validationErrors.Add("Ngày nhập phải nhỏ hơn hoặc bằng thời gian hiện tại");
                     break;
                 }
 
@@ -109,10 +115,16 @@ namespace DxLabCoworkingSpace
             {
                 throw new ArgumentException("Ngày hết hạn phải lớn hơn ngày nhập");
             }
+
+            if(entity.ImportDate > DateTime.UtcNow)
+            {
+                throw new ArgumentException("Ngày nhập phải nhỏ hơn hoặc bằng thời gian hiện tại");
+            }
+
             var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate);
             if (existingFacility != null)
             {
-                throw new InvalidOperationException("BatchNumber đã tồn tại!");
+                throw new InvalidOperationException("Số lô đã tồn tại!");
             }
 
             await _unitOfWork.FacilityRepository.Add(entity);
@@ -182,7 +194,7 @@ namespace DxLabCoworkingSpace
                                 FacilityId = faci.FacilityId,
                                 BatchNumber = faci.BatchNumber,
                                 ImportDate = faci.ImportDate,
-                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value,
+                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value*faci.Quantity,
                                 SumDate = DateTime.Now.Date
                             });
                             faci.RemainingValue = 0;
@@ -192,7 +204,13 @@ namespace DxLabCoworkingSpace
                         else
                         {
                             int daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-                            int daysKH = (faci.ExpiredTime - faci.ImportDate).Days;
+                       
+                            if (faci.ImportDate.Month == DateTime.Now.Month && faci.ImportDate.Year == DateTime.Now.Year)
+                            {
+                                daysInMonth = (DateTime.Now.Date - faci.ImportDate.Date).Days;
+                            }
+                           
+                            int daysKH = (faci.ExpiredTime.Date - faci.ImportDate.Date).Days;
 
                             decimal? depreciationAmount = faci.Cost * daysInMonth  / daysKH;
                             await _unitOfWork.DepreciationSumRepository.Add(new DepreciationSum()
@@ -200,10 +218,11 @@ namespace DxLabCoworkingSpace
                                 FacilityId = faci.FacilityId,
                                 BatchNumber = faci.BatchNumber,
                                 ImportDate = faci.ImportDate,
-                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value,
+                                DepreciationAmount = depreciationAmount == null ? 0 : depreciationAmount.Value*faci.Quantity,
                                 SumDate = DateTime.Now.Date
                             });
                             faci.RemainingValue -= depreciationAmount;
+                            
                             await _unitOfWork.FacilityRepository.Update(faci);
                         }
                     }

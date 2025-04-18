@@ -20,19 +20,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly IRoleService _roleService;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
 
-        public AccountController(IAccountService accountService, IMapper mapper, IUnitOfWork unitOfWork)
+        public AccountController(IAccountService accountService, IRoleService roleSevice, IMapper mapper, IUnitOfWork unitOfWork)
         {
             _accountService = accountService;
+            _roleService = roleSevice;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
         }
 
         // Add Account For Excel File
         [HttpPost("importexcel")]
-        public async Task<IActionResult> AddFromExcel(IFormFile file)
+        public async Task<IActionResult> AddFromExcel(IFormFile? file)
         {
             try
             {
@@ -62,7 +64,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         for (int row = 2; row <= rowCount; row++)
                         {
                             var roleName = worksheet.Cells[row, 3].Value?.ToString();
-                            var role = (await _unitOfWork.RoleRepository.GetAll())
+                            var role = (await _roleService.GetAll())
                                 .FirstOrDefault(r => r.RoleName == roleName);
 
                             if (string.IsNullOrEmpty(roleName) || role == null)
@@ -138,13 +140,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Get All Account By Role Name
         [HttpGet("role/{rolename}")]
-        public async Task<IActionResult> GetUsersByRoleName(string roleName)
+        public async Task<IActionResult> GetUsersByRoleName(string rolename)
         {
             try
             {
-                var users = (await _accountService.GetUsersByRoleName(roleName)).ToList();
+                var users = (await _accountService.GetUsersByRoleName(rolename)).ToList();
                 var accountDTOs = _mapper.Map<IEnumerable<AccountDTO>>(users);
-                return Ok(new ResponseDTO<IEnumerable<AccountDTO>>(200, $"Người dùng với RoleName: {roleName} được lấy thành công!", accountDTOs));
+                return Ok(new ResponseDTO<IEnumerable<AccountDTO>>(200, $"Người dùng với RoleName: {rolename} được lấy thành công!", accountDTOs));
             }
             catch (InvalidOperationException ex)
             {

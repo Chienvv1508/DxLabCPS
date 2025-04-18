@@ -13,7 +13,7 @@ namespace DxLabCoworkingSpace
         void ScheduleJob();
         Task RunBookingLogJobAsync();
         Task ExecuteMintingJob();
-        Task<TransactionReceipt> WaitForReceipt(Web3 web3, string transactionHash);
+        Task<bool> MintTokenForUser(string walletAddress);
 
     }
 }

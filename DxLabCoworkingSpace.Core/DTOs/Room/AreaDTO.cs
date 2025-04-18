@@ -17,6 +17,8 @@ namespace DxLabCoworkingSpace
         public string? AreaTypeName { get; set; }
         [Required(ErrorMessage = "Bạn chưa nhập tên khu vực")]
         public string AreaName { get; set; }
+
+        public int Status { get; set; }
         public string? AreaDescription { get; set; }
 
         public List<String>? Images { get; set; }

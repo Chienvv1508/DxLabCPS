@@ -37,7 +37,7 @@ namespace DxLabCoworkingSpace
 
         public async Task<IEnumerable<AreaType>> GetAll()
         {
-            return await _unitOfWork.AreaTypeRepository.GetAllWithInclude( x => x.Images);
+            return await _unitOfWork.AreaTypeRepository.GetAllWithInclude(x => x.Images);
         }
 
         public async Task<IEnumerable<AreaType>> GetAll(Expression<Func<AreaType, bool>> expression)
@@ -57,7 +57,7 @@ namespace DxLabCoworkingSpace
         }
         public async Task<object> GetAreaTypeForAddRoom()
         {
-            var listAreaType = await _unitOfWork.AreaTypeRepository.GetAll();
+            var listAreaType = await _unitOfWork.AreaTypeRepository.GetAll(x => x.Status == 1);
             var listAreaTypeResult = listAreaType.Select(x => new AreaAddDTO() { AreaTypeId = x.AreaTypeId, AreaTypeName = x.AreaTypeName, Size = x.Size });
             return listAreaTypeResult;
         }

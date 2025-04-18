@@ -1,5 +1,4 @@
-﻿using DxLabCoworkingSpac;
-using DxLabCoworkingSpace;
+﻿using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,12 +24,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
+                
                 _logger.LogInformation("Chạy job tổng hợp chi phí");
                 //Check date xem ngày có hơp lệ ko
                 if(tHJobExpenseDTO.dateSum > DateTime.Now)
                 {
                     return BadRequest("Date không hợp lệ");
                 }
+
+                var isTH = await _sumaryExpenseService.Get(x => x.SumaryDate.Month == tHJobExpenseDTO.dateSum.Month && x.SumaryDate.Year == tHJobExpenseDTO.dateSum.Year);
+                if (isTH != null) return Ok($"Đã tổng hợp cho tháng: {tHJobExpenseDTO.dateSum.Month}");
                 DateTime sumDate = tHJobExpenseDTO.dateSum;
 
                 DateTime firstDay = new DateTime(sumDate.Year, sumDate.Month, 1, 0, 0, 0);
@@ -44,7 +47,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     decimal amount = 0;
                     foreach(var item in group)
                     {
-                        amount += item.Cost;
+                        amount += item.Cost*item.Quantity;
                     }
                     var sum = new SumaryExpense()
                     {
@@ -94,13 +97,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             
         }
         [HttpGet("year")]
-        public async Task<IActionResult> GetSumaryExpenseYear(DateTime date)
+        public async Task<IActionResult> GetSumaryExpenseYear(int year)
         {
             try
             {
                 //if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year))
                 //{
-                    var sums = await _sumaryExpenseService.GetAll(x => x.SumaryDate.Year == date.Year);
+                if (year > 9999 || year < 2000 )
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Nhập năm không hợp lệ!", null));
+                }
+
+                DateTime date = new DateTime(year, 1, 1);
+                var sums = await _sumaryExpenseService.GetAll(x => x.SumaryDate.Year == date.Year);
                     return Ok(new ResponseDTO<object>(200, "Lấy dữ liệu thành công", sums));
                 //}
                 //else

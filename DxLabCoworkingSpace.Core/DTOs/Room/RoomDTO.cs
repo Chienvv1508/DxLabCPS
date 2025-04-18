@@ -23,7 +23,7 @@ namespace DxLabCoworkingSpace
         public string? RoomDescription { get; set; }
         [Range(1, 40, ErrorMessage = "Số lượng chỗ phải từ 1 đến 40.")]
         public int Capacity { get; set; }
-        public bool IsDeleted { get; set; }
+        public int Status { get; set; }
 
         public List<String>? Images { get; set; }
 

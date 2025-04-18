@@ -1,4 +1,4 @@
-﻿using DxLabCoworkingSpac;
+﻿using DxLabCoworkingSpace;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,9 +38,9 @@ namespace DxLabCoworkingSpace
             throw new NotImplementedException();
         }
 
-        public Task<SumaryExpense> Get(Expression<Func<SumaryExpense, bool>> expression)
+        public async Task<SumaryExpense> Get(Expression<Func<SumaryExpense, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.SumaryExpenseRepository.Get(expression);
         }
 
         public async Task<IEnumerable<SumaryExpense>> GetAll()
