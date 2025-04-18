@@ -15,9 +15,10 @@ namespace DxLabCoworkingSpace
         public int CategoryId { get; set; }
         public string Title { get; set; }
 
-        public bool IsAvail { get; set; }
+        public int Status { get; set; }
 
         public int FaciAmount { get; set; }
+        public int FaciAmountCh { get; set; }
 
         public int Size { get; set; }
     }

@@ -73,7 +73,7 @@ namespace DxLabCoworkingSpace
 
                 entity.Property(e => e.AreaTypeName).HasMaxLength(250);
 
-                entity.Property(e => e.IsDeleted).HasColumnName("isDeleted");
+                entity.Property(e => e.Status).HasColumnName("Status");
 
                 entity.Property(e => e.Price).HasColumnType("decimal(10, 0)");
 
@@ -110,7 +110,7 @@ namespace DxLabCoworkingSpace
 
             modelBuilder.Entity<BookingDetail>(entity =>
             {
-                
+
 
                 entity.Property(e => e.CheckinTime).HasColumnType("datetime");
 
@@ -137,7 +137,7 @@ namespace DxLabCoworkingSpace
                     .WithMany(p => p.BookingDetails)
                     .HasForeignKey(d => d.SlotId)
                     .HasConstraintName("FK_BookingDetails_Slots")
-                    .OnDelete(DeleteBehavior.Restrict); 
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<ContractCrawl>(entity =>
@@ -282,7 +282,7 @@ namespace DxLabCoworkingSpace
 
             modelBuilder.Entity<Room>(entity =>
             {
-                entity.Property(e => e.IsDeleted).HasColumnName("isDeleted");
+                entity.Property(e => e.Status).HasColumnName("Status");
 
                 entity.Property(e => e.RoomName).HasMaxLength(50);
             });
@@ -334,7 +334,7 @@ namespace DxLabCoworkingSpace
 
                 entity.Property(e => e.BatchNumber).HasMaxLength(50);
 
-                
+
 
                 entity.HasOne(d => d.Area)
                     .WithMany(p => p.UsingFacilities)
@@ -343,7 +343,7 @@ namespace DxLabCoworkingSpace
 
                 entity.HasOne(d => d.Facility)
                     .WithMany(p => p.UsingFacilities)
-                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber,d.ImportDate })
+                    .HasForeignKey(d => new { d.FacilityId, d.BatchNumber, d.ImportDate })
                     .HasConstraintName("FK_UsingFacilities_Facilities");
             });
 

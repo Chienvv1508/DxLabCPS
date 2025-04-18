@@ -18,13 +18,14 @@ namespace DxLabCoworkingSpace
         public string AreaDescription { get; set; } = null!;
         public int Size { get; set; }
         public decimal Price { get; set; }
-        public bool IsDeleted { get; set; }
+        public int Status { get; set; }
+
         [JsonIgnore]
         public virtual ICollection<Area> Areas { get; set; }
 
         public virtual AreaTypeCategory AreaTypeCategory { get; set; }
         public virtual ICollection<Image> Images { get; set; }
 
-       
+
     }
 }

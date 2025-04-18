@@ -31,61 +31,61 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 //int checkTime = int.Parse(DateTime.Now.ToString("HHmmss"));
                 //if (checkTime >= 180000)
                 //{
-                    DateTime firtPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
-                    DateTime secondPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 18, 0, 0);
-                    var bookingdetailList = await _bookingDetailService.GetAll(x => x.CheckinTime >= firtPara && x.CheckinTime <= secondPara);
-                    var bookingdetailgroup = bookingdetailList.GroupBy(x => x.AreaId);
-                    var slots = await _slotService.GetAll();
-                    int numberOfSlot = slots.Count();
-                    List<UltilizationRate> ultilizationRates = new List<UltilizationRate>();
-                    foreach (var item in bookingdetailgroup)
+                DateTime firtPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
+                DateTime secondPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 18, 0, 0);
+                var bookingdetailList = await _bookingDetailService.GetAll(x => x.CheckinTime >= firtPara && x.CheckinTime <= secondPara);
+                var bookingdetailgroup = bookingdetailList.GroupBy(x => x.AreaId);
+                var slots = await _slotService.GetAll();
+                int numberOfSlot = slots.Count();
+                List<UltilizationRate> ultilizationRates = new List<UltilizationRate>();
+                foreach (var item in bookingdetailgroup)
+                {
+                    var area = await _areaService.GetWithInclude(x => x.AreaId == item.Key, x => x.AreaType, x => x.Room);
+                    if (area != null)
                     {
-                        var area = await _areaService.GetWithInclude(x => x.AreaId == item.Key, x => x.AreaType, x => x.Room);
-                        if (area != null)
+                        decimal rate = 0;
+                        if (area.AreaType.AreaCategory == 1)
                         {
-                            decimal rate = 0;
-                            if (area.AreaType.AreaCategory == 1)
-                            {
-                                int m = area.AreaType.Size * numberOfSlot;
-                                rate = Math.Round((decimal)item.Count() / m, 2);
-                            }
-                            else
-                            {
-                                rate = Math.Round((decimal)item.Count() / numberOfSlot, 2);
-                            }
-
-                            int roomid = area.RoomId;
-                            string roomName = area.Room.RoomName;
-                            int areaTypeId = area.AreaType.AreaTypeId;
-                            string areaTypeName = area.AreaType.AreaTypeName;
-                            int areaTypeCategoryId = area.AreaType.AreaCategory;
-                            var areaTypeCategory = await _areaTypeCategoryService.Get(x => x.CategoryId == areaTypeCategoryId);
-                            string areaTypeCategoryName = "";
-                            if (areaTypeCategory != null)
-                                areaTypeCategoryName = areaTypeCategory.Title;
-                            var newUlRate = new UltilizationRate()
-                            {
-                                THDate = DateTime.Now,
-                                AreaId = area.AreaId,
-                                AreaName = area.AreaName,
-                                AreaTypeCategoryId = areaTypeCategoryId,
-                                AreaTypeCategoryTitle = areaTypeCategoryName,
-                                AreatypeId = areaTypeId,
-                                AreaTypeName = areaTypeName,
-                                RoomId = roomid,
-                                RoomName = roomName,
-                                Rate = rate
-                            };
-                            ultilizationRates.Add(newUlRate);
-
+                            int m = area.AreaType.Size * numberOfSlot;
+                            rate = Math.Round((decimal)item.Count() / m, 2);
                         }
+                        else
+                        {
+                            rate = Math.Round((decimal)item.Count() / numberOfSlot, 2);
+                        }
+
+                        int roomid = area.RoomId;
+                        string roomName = area.Room.RoomName;
+                        int areaTypeId = area.AreaType.AreaTypeId;
+                        string areaTypeName = area.AreaType.AreaTypeName;
+                        int areaTypeCategoryId = area.AreaType.AreaCategory;
+                        var areaTypeCategory = await _areaTypeCategoryService.Get(x => x.CategoryId == areaTypeCategoryId);
+                        string areaTypeCategoryName = "";
+                        if (areaTypeCategory != null)
+                            areaTypeCategoryName = areaTypeCategory.Title;
+                        var newUlRate = new UltilizationRate()
+                        {
+                            THDate = DateTime.Now,
+                            AreaId = area.AreaId,
+                            AreaName = area.AreaName,
+                            AreaTypeCategoryId = areaTypeCategoryId,
+                            AreaTypeCategoryTitle = areaTypeCategoryName,
+                            AreatypeId = areaTypeId,
+                            AreaTypeName = areaTypeName,
+                            RoomId = roomid,
+                            RoomName = roomName,
+                            Rate = rate
+                        };
+                        ultilizationRates.Add(newUlRate);
+
                     }
+                }
                 var allArea = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Room);
-                allArea = allArea.AsQueryable().Where(x => x.IsAvail == true);
-                foreach(var area in allArea)
+                allArea = allArea.AsQueryable().Where(x => x.Status == 1);
+                foreach (var area in allArea)
                 {
                     var areaExisted = ultilizationRates.FirstOrDefault(x => x.AreaId == area.AreaId);
-                    if(areaExisted == null)
+                    if (areaExisted == null)
                     {
                         decimal rate = 0;
                         int roomid = area.RoomId;
@@ -113,18 +113,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         ultilizationRates.Add(newUlRate);
                     }
                 }
-                    await _ultilizationRateService.Add(ultilizationRates);
-                    return Ok();
+                await _ultilizationRateService.Add(ultilizationRates);
+                return Ok();
                 //}
                 //else
                 //    return BadRequest("Chỉ tổng hợp sau 18h!");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest();
             }
 
-           
+
         }
 
         [HttpGet("date")]
