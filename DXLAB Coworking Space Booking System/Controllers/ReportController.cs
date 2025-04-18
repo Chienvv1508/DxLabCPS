@@ -14,7 +14,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
     public class ReportController : ControllerBase
     {
         private readonly IReportService _reportService;
-        private readonly IBookingDetailService _bookDetailService;
+        private readonly IBookingDetailService _bookDetailService;  
         private readonly IUserService _userService;
         private readonly IAreaService _areaService;
         private readonly IMapper _mapper;
