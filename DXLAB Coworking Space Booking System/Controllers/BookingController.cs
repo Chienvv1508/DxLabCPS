@@ -434,6 +434,9 @@ namespace DXLAB_Coworking_Space_Booking_System
         [HttpGet("availiblepos")]
         public async Task<IActionResult> GetAvailableSlot([FromQuery] AvailableSlotRequestDTO availableSlotRequestDTO)
         {
+            var maxBookingDate = DateTime.Now.Date.AddDays(14);
+            if (availableSlotRequestDTO.BookingDate.Date > maxBookingDate.Date)
+                return BadRequest();
             var room = await _roomService.GetWithInclude(x => x.Status == 1 && x.RoomId == availableSlotRequestDTO.RoomId, x => x.Areas);
            
             if (room == null)
@@ -521,6 +524,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         {
             try
             {
+                
                 var room = await _roomService.Get(x => x.RoomId == id && x.Status == 1);
                 if (room == null)
                 {
