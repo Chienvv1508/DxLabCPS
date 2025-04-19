@@ -14,6 +14,7 @@ namespace DxLabCoworkingSpace
         Task RunBookingLogJobAsync();
         Task ExecuteMintingJob();
         Task<bool> MintTokenForUser(string walletAddress);
+        //Task<bool> PayForBooking(string walletAddress, decimal amount);
 
     }
 }
