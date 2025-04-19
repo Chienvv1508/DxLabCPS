@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using DXLAB_Coworking_Space_Booking_System.Hubs;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -18,7 +20,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         private readonly IAreaService _areaService;
         private readonly IAreaTypeService _areaTypeService;
         private readonly IMapper _mapper;
-        public StaffBookingHistoryController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper)
+        private readonly IHubContext<BookingHistoryHub> _hubContext;
+        public StaffBookingHistoryController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService, IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper, IHubContext<BookingHistoryHub> hubContext)
         {
             _roomService = roomService;
             _slotService = slotService;
@@ -27,6 +30,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _areaService = areaService;
             _areaTypeService = areaTypeService;
             _mapper = mapper;
+            _hubContext = hubContext;
         }
 
         [HttpGet]
@@ -232,6 +236,29 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 await _bookDetailService.UpdateStatus(bookingDetailId, 1); // 1 = CheckedIn
 
+                // Chuẩn bị dữ liệu thông báo real-time
+                var area = bookingDetail.Position != null ? bookingDetail.Position.Area : bookingDetail.Area;
+                var areaType = area != null ? await _areaTypeService.Get(at => at.AreaTypeId == area.AreaTypeId) : null;
+                var bookingDetailData = new
+                {
+                    BookingDetailId = bookingDetail.BookingDetailId,
+                    BookingId = bookingDetail.BookingId,
+                    Position = bookingDetail.Position?.PositionNumber.ToString() ?? areaType?.AreaTypeName ?? "N/A",
+                    AreaName = area?.AreaName ?? "N/A",
+                    AreaTypeName = areaType?.AreaTypeName ?? "N/A",
+                    RoomName = area?.Room?.RoomName ?? "N/A",
+                    SlotNumber = bookingDetail.Slot?.SlotNumber,
+                    CheckinTime = bookingDetail.CheckinTime,
+                    CheckoutTime = bookingDetail.CheckoutTime,
+                    Status = 1, 
+                    UserId = bookingDetail.Booking.UserId
+                };
+
+                // Gửi thông báo real-time tới Student và Staff
+                await _hubContext.Clients.User(bookingDetail.Booking.UserId.ToString())
+                    .SendAsync("ReceiveBookingStatus", bookingDetailData);
+                await _hubContext.Clients.Group("Staff").SendAsync("ReceiveBookingStatus", bookingDetailData);
+
                 return Ok(new ResponseDTO<object>(200, $"Check-in thành công cho BookingDetail {bookingDetailId}!", null));
             }
             catch (Exception ex)
@@ -276,12 +303,35 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(new ResponseDTO<object>(400, $"Chưa đến thời gian check-out ({bookingDetail.CheckoutTime})!", null));
                 }
 
-                if (currentTime > slotEndDateTime)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, $"Đã quá thời gian check-out, hiện tại là thời gian nghỉ ({slotEndDateTime})!", null));
-                }
+                //if (currentTime > slotEndDateTime)
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, $"Đã quá thời gian check-out, hiện tại là thời gian nghỉ ({slotEndDateTime})!", null));
+                //}
 
                 await _bookDetailService.UpdateStatus(bookingDetailId, 2); // 2 = Completed
+
+                // Chuẩn bị dữ liệu thông báo real-time
+                var area = bookingDetail.Position != null ? bookingDetail.Position.Area : bookingDetail.Area;
+                var areaType = area != null ? await _areaTypeService.Get(at => at.AreaTypeId == area.AreaTypeId) : null;
+                var bookingDetailData = new
+                {
+                    BookingDetailId = bookingDetail.BookingDetailId,
+                    BookingId = bookingDetail.BookingId,
+                    Position = bookingDetail.Position?.PositionNumber.ToString() ?? areaType?.AreaTypeName ?? "N/A",
+                    AreaName = area?.AreaName ?? "N/A",
+                    AreaTypeName = areaType?.AreaTypeName ?? "N/A",
+                    RoomName = area?.Room?.RoomName ?? "N/A",
+                    SlotNumber = bookingDetail.Slot?.SlotNumber,
+                    CheckinTime = bookingDetail.CheckinTime,
+                    CheckoutTime = bookingDetail.CheckoutTime,
+                    Status = 2, 
+                    UserId = bookingDetail.Booking.UserId
+                };
+
+                // Gửi thông báo real-time tới Student và Staff
+                await _hubContext.Clients.User(bookingDetail.Booking.UserId.ToString())
+                    .SendAsync("ReceiveBookingStatus", bookingDetailData);
+                await _hubContext.Clients.Group("Staff").SendAsync("ReceiveBookingStatus", bookingDetailData);
 
                 return Ok(new ResponseDTO<object>(200, $"Check-out thành công cho BookingDetail {bookingDetailId}!", null));
             }
