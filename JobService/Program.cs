@@ -1,5 +1,4 @@
 using JobService;
-using JobService.BackGroundTask;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
