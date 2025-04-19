@@ -377,8 +377,9 @@ namespace DxLabCoworkingSpace
 
             return receipt;
         }
-    }
 
+
+    }
     public class ContractAddresses
     {
         public string Booking { get; set; }
