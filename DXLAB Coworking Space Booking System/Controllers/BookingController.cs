@@ -435,18 +435,26 @@ namespace DXLAB_Coworking_Space_Booking_System
         public async Task<IActionResult> GetAvailableSlot([FromQuery] AvailableSlotRequestDTO availableSlotRequestDTO)
         {
             var room = await _roomService.GetWithInclude(x => x.Status == 1 && x.RoomId == availableSlotRequestDTO.RoomId, x => x.Areas);
+           
             if (room == null)
             {
                 var responseDTO = new ResponseDTO<object>(404, "Phòng không tồn tại. Vui lòng nhập lại!", null);
                 return NotFound(responseDTO);
 
             }
+            var areas = room.Areas.Where(x => x.Status == 1);
+            room.Areas = areas.ToList();
             if (availableSlotRequestDTO.BookingDate.Date < DateTime.Now.Date)
             {
                 var responseDTO = new ResponseDTO<object>(404, $"Phải nhập ngày lớn hoặc bằng ngày: {DateTime.Now.Date}", null);
                 return BadRequest(responseDTO);
             }
-            var areaType = await _areaTypeService.Get(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId);
+            var areaType = await _areaTypeService.Get(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId && x.Status == 1);
+            if(areaType == null)
+            {
+                var responseDTO = new ResponseDTO<object>(404, $"Không tìm thấy loại khu vực cho thuê", null);
+                return BadRequest(responseDTO);
+            }
             var areasInRoom = room.Areas.Where(x => x.AreaTypeId == availableSlotRequestDTO.AreaTypeId);
             if (!areasInRoom.Any())
             {
@@ -454,7 +462,12 @@ namespace DXLAB_Coworking_Space_Booking_System
                 return NotFound(responseDTO);
             }
             var bookingDetails = await _bookDetailService.GetAll(x => x.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date);
-            var slots = await _slotService.GetAll();
+            var slots = await _slotService.GetAll( x => x.Status == 1);
+            if (!slots.Any())
+            {
+                var responseDTO = new ResponseDTO<object>(404, $"Chưa có slot cho thuê", null);
+                return NotFound(responseDTO);
+            }
 
             // Lọc các slot còn hợp lệ dựa trên thời gian hiện tại
             var currentDateTime = DateTime.Now;
