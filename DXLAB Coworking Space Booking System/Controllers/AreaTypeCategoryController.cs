@@ -219,10 +219,10 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (images == null)
                     return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
                 var imageList = areaTypeCateFromDb.Images;
-                if (imageList.Count <= images.Count)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
-                }
+                //if (imageList.Count <= images.Count)
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
+                //}
 
                 foreach (var image in images)
                 {
