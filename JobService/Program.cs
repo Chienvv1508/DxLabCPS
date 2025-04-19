@@ -1,4 +1,5 @@
 using JobService;
+using JobService.BackGroundTask;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -6,6 +7,7 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddHttpClient();
         services.AddHostedService<Worker>();
         services.AddHostedService<DepreciationTHBackGroundTask>();
+        services.AddHostedService<UltilizationRateBackGroundTask>();
     })
     .Build();
 
