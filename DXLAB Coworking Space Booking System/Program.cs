@@ -235,7 +235,7 @@ app.UseAuthorization();
 
 // Enpoint SIgnalR cho FE call
 app.MapHub<BlogHub>("/blogHub");
-app.MapHub<ReportHub>("reportHub");
+app.MapHub<ReportHub>("/reportHub");
 
 // Khởi động job crawl sau khi Hangfire server đã khởi động
 //app.Lifetime.ApplicationStarted.Register(() =>

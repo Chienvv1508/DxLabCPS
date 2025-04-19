@@ -276,10 +276,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(new ResponseDTO<object>(400, $"Chưa đến thời gian check-out ({bookingDetail.CheckoutTime})!", null));
                 }
 
-                if (currentTime > slotEndDateTime)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, $"Đã quá thời gian check-out, hiện tại là thời gian nghỉ ({slotEndDateTime})!", null));
-                }
+                //if (currentTime > slotEndDateTime)
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, $"Đã quá thời gian check-out, hiện tại là thời gian nghỉ ({slotEndDateTime})!", null));
+                //}
 
                 await _bookDetailService.UpdateStatus(bookingDetailId, 2); // 2 = Completed
 

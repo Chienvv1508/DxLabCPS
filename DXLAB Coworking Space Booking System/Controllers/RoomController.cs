@@ -354,7 +354,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 if (room.Areas.Any())
                 {
                     var areas = room.Areas.Where(x => x.Status != 2);
-                    room.Areas = (ICollection<Area>)areas;
+                    room.Areas = areas.ToList();
                 }
             }
             if (room == null)

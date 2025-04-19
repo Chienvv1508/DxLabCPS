@@ -1,6 +1,7 @@
 ﻿using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 
 namespace DXLAB_Coworking_Space_Booking_System.Hubs
 {
@@ -22,43 +23,41 @@ namespace DXLAB_Coworking_Space_Booking_System.Hubs
         // Thông báo trạng thái blog tới Staff, Admin và Student
         public async Task NotifyBlogStatus(string userId, object blog)
         {
-            await Clients.User(userId).SendAsync("ReceiveBlogStatus", blog); // Blog owner (Staff)
-            await Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blog); // Admin
-            // Gửi tới Student nếu blog được duyệt
-            if (blog.GetType().GetProperty("Status")?.GetValue(blog)?.ToString() == BlogDTO.BlogStatus.Approve.ToString())
-            {
-                await Clients.Group("Students").SendAsync("ReceiveBlogStatus", blog);
-            }
+            await Clients.Group("Staff").SendAsync("ReceiveBlogStatus", blog);
+            await Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blog);
         }
 
         // Thông báo blog bị xóa tới Staff và Admin
         public async Task NotifyBlogDeleted(string userId, int blogId)
         {
-            await Clients.User(userId).SendAsync("ReceiveBlogDeleted", blogId); // Blog owner (Staff)
-            await Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", blogId); // Admin
-            await Clients.Group("Students").SendAsync("ReceiveBlogDeleted", blogId); // Student
+            await Clients.Group("Staff").SendAsync("ReceiveBlogDeleted", blogId);
+            await Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", blogId);
         }
 
         public override async Task OnConnectedAsync()
         {
-            var roleClaim = Context.User.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+            var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleClaim = Context.User.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role")?.Value;
+            Console.WriteLine($"User connected: ID={userId}, Role={roleClaim}, ConnectionId={Context.ConnectionId}");
+
             if (roleClaim != null)
             {
-                switch (roleClaim.Value)
+                if (roleClaim == "Admin")
                 {
-                    case "Admin":
-                        await Groups.AddToGroupAsync(Context.ConnectionId, "Admins");
-                        break;
-                    case "Student":
-                        await Groups.AddToGroupAsync(Context.ConnectionId, "Students");
-                        break;
+                    await Groups.AddToGroupAsync(Context.ConnectionId, "Admins");
+                    Console.WriteLine($"Added user {userId} to Admins group");
                 }
-                Console.WriteLine($"User {Context.User.Identity?.Name} connected with role {roleClaim.Value}");
+                if (roleClaim == "Staff")
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, "Staff");
+                    Console.WriteLine($"Added user {userId} to Staff group");
+                }
             }
             else
             {
-                Console.WriteLine($"User {Context.User.Identity?.Name} connected without role.");
+                Console.WriteLine($"No role claim found for user {userId}");
             }
+
             await base.OnConnectedAsync();
         }
     }
