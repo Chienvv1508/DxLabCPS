@@ -235,7 +235,8 @@ app.UseHangfireDashboard();
 
 // Enpoint SIgnalR cho FE call
 app.MapHub<BlogHub>("/blogHub");
-app.MapHub<ReportHub>("/reportHub");
+app.MapHub<ReportHub>("reportHub");
+app.MapHub<ReportHub>("bookingHistoryHub");
 
 // Khởi động job crawl sau khi Hangfire server đã khởi động
 //app.Lifetime.ApplicationStarted.Register(() =>

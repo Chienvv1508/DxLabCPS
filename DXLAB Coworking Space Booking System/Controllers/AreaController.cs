@@ -35,11 +35,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost("faci")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFaciToArea(int areaid, int status, FaciAddDTO faciAddDTO)
         {
             try
             {
+               
                 // item 1: check item2: lỗi, item3: areaInroom
                 Tuple<bool, string, Area> checkAreaAndStatus = await CheckExistedAreaAndStatus(areaid, status);
                 if (checkAreaAndStatus.Item1 == false)
@@ -88,7 +89,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         BatchNumber = faciAddDTO.BatchNumber,
                         FacilityId = faciAddDTO.FacilityId,
 
-                        Quantity = faciAddDTO.Quantity,
+                        Quantity = faciAddDTO.Quantity.,
                         ImportDate = faciAddDTO.ImportDate
                     };
 
