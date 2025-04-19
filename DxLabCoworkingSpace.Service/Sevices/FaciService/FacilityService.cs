@@ -124,7 +124,7 @@ namespace DxLabCoworkingSpace
             var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate);
             if (existingFacility != null)
             {
-                throw new InvalidOperationException("Số lô đã tồn tại!");
+                throw new InvalidOperationException("Lô hàng đã nhập rồi. Không tạo được nữa!");
             }
 
             await _unitOfWork.FacilityRepository.Add(entity);

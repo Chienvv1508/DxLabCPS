@@ -75,10 +75,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 return BadRequest(new ResponseDTO<object>(400, "ExpiredTime phải có định dạng yyyy/MM/dd!", null));
                             }
 
-                            if (!DateTime.TryParseExact(importDateText, "yyyy/MM/dd",
-                                CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime import))
+                            if (!DateTime.TryParseExact(importDateText, "yyyy/MM/dd HH:mm:ss",
+                              CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime import))
                             {
-                                return BadRequest(new ResponseDTO<object>(400, "ImportDate phải có định dạng yyyy/MM/dd!", null));
+                                return BadRequest(new ResponseDTO<object>(400, "ImportDate phải có định dạng yyyy/MM/dd HH:mm:ss!", null));
                             }
 
                             if (!decimal.TryParse(worksheet.Cells[row, 3].Value?.ToString(), out decimal cost))
