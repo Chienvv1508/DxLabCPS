@@ -181,23 +181,22 @@ builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
 
 //// Đăng ký LabBookingJobService
 builder.Services.AddScoped<ILabBookingJobService, LabBookingJobService>();
-builder.Services.AddScoped<IUserTokenService, UserTokenService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 //// Thêm Hangfire với MemoryStorage
-builder.Services.AddHangfire(config => config
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseMemoryStorage()); // Dùng MemoryStorage
+//builder.Services.AddHangfire(config => config
+//    .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+//    .UseSimpleAssemblyNameTypeSerializer()
+//    .UseRecommendedSerializerSettings()
+//    .UseMemoryStorage()); // Dùng MemoryStorage
 
-builder.Services.AddHangfireServer(options =>
-{
-    options.WorkerCount = 10;                  // Số lượng worker
-    options.Queues = new[] { "default" };      // Listening queues: 'default'
-    options.ShutdownTimeout = TimeSpan.FromSeconds(30)/*FromSeconds(30)*/; // Shutdown timeout
-    options.SchedulePollingInterval = TimeSpan.FromSeconds(10)/*FromSeconds(30)*/; // Schedule polling interval
-});
+//builder.Services.AddHangfireServer(options =>
+//{
+//    options.WorkerCount = 10;                  // Số lượng worker
+//    options.Queues = new[] { "default" };      // Listening queues: 'default'
+//    options.ShutdownTimeout = TimeSpan.FromSeconds(30)/*FromSeconds(30)*/; // Shutdown timeout
+//    options.SchedulePollingInterval = TimeSpan.FromSeconds(10)/*FromSeconds(30)*/; // Schedule polling interval
+//});
 
 // Cập nhật CORS
 builder.Services.AddCors(options =>
@@ -232,20 +231,20 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Thêm Hangfire Dashboard
-app.UseHangfireDashboard();
+//app.UseHangfireDashboard();
 
 // Enpoint SIgnalR cho FE call
 app.MapHub<BlogHub>("/blogHub");
 app.MapHub<ReportHub>("reportHub");
 
 // Khởi động job crawl sau khi Hangfire server đã khởi động
-app.Lifetime.ApplicationStarted.Register(() =>
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
-        jobService.ScheduleJob();
-    }
-});
+//app.Lifetime.ApplicationStarted.Register(() =>
+//{
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var jobService = scope.ServiceProvider.GetRequiredService<ILabBookingJobService>();
+//        jobService.ScheduleJob();
+//    }
+//});
 app.MapControllers();
 app.Run();

@@ -335,21 +335,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             // Tải tất cả Room với Areas, Images của Areas và AreaType
             var rooms = await _roomService.GetAll(x => x.Status != 2);
+            
 
-            foreach (var r in rooms)
-            {
-                foreach (var a in r.Areas)
-                {
-                    // Tải Images và AreaType cho mỗi Area
-                    var areaWithDetails = await _areaService.GetWithInclude(
-                        x => x.AreaId == a.AreaId && x.Status != 2,
-                        x => x.Images,
-                        x => x.AreaType
-                    );
-                    a.Images = areaWithDetails.Images.ToList();
-                    a.AreaType = areaWithDetails.AreaType;
-                }
-            }
+
             var roomDtos = _mapper.Map<IEnumerable<RoomDTO>>(rooms);
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDtos);
             return Ok(response);
@@ -361,23 +349,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             // Tải Room với Areas và Images của Room
             var room = await _roomService.Get(x => x.RoomId == id && x.Status != 2);
+            if(room.Areas != null)
+            {
+                if (room.Areas.Any())
+                {
+                    var areas = room.Areas.Where(x => x.Status != 2);
+                    room.Areas = (ICollection<Area>)areas;
+                }
+            }
             if (room == null)
             {
                 var responseNotFound = new ResponseDTO<object>(404, "Mã Room không tồn tại", null);
                 return NotFound(responseNotFound);
             }
 
-            foreach (var a in room.Areas)
-            {
-                // Tải Images và AreaType cho mỗi Area
-                var areaWithDetails = await _areaService.GetWithInclude(
-                    x => x.AreaId == a.AreaId && x.Status == 1,
-                    x => x.Images,
-                    x => x.AreaType
-                );
-                a.Images = areaWithDetails.Images.ToList();
-                a.AreaType = areaWithDetails.AreaType;
-            }
+           
 
             var roomDto = _mapper.Map<RoomDTO>(room);
             var response = new ResponseDTO<object>(200, "Lấy thành công", roomDto);
