@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JobService.BackGroundTask
+namespace JobService
 {
     public class UltilizationRateBackGroundTask : BackgroundService
     {
