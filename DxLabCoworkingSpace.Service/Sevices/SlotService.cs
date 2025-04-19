@@ -103,7 +103,7 @@ namespace DxLabCoworkingSpace
         }
         public async Task<IEnumerable<Slot>> GetAll(Expression<Func<Slot, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.SlotRepository.GetAll(expression);
         }
          public async Task<Slot> GetById(int id)
         {
