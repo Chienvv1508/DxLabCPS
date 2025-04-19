@@ -86,7 +86,7 @@ namespace DxLabCoworkingSpace
             RecurringJob.AddOrUpdate(
                 "minting-job",
                 () => ExecuteMintingJob(),
-                "*/0 0 * * *", // Chạy mỗi ngày lúc 0 giờ
+                "0 0 * * *", // Chạy mỗi ngày lúc 0 giờ
                 TimeZoneInfo.Local
             );
 

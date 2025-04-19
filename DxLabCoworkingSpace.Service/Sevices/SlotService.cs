@@ -95,7 +95,7 @@ namespace DxLabCoworkingSpace
         }
         public async Task<IEnumerable<Slot>> GetAll()
         {
-            return await _unitOfWork.SlotRepository.GetAll(s => s.Status == 1);
+            return await _unitOfWork.SlotRepository.GetAll();
         }
         public async Task<Slot> Get(Expression<Func<Slot, bool>> expression)
         {
