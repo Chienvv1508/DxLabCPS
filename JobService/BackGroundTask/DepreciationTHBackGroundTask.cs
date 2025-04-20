@@ -28,11 +28,11 @@ namespace JobService
                 try
                 {
                     int.TryParse(_configuration["DepreciationTH:Start"], out int start);
-                    _logger.LogInformation($"{start}");
+                    _logger.LogInformation($"Khấu hao: {start}");
                     int.TryParse(_configuration["DepreciationTH:End"], out int end);
                     _logger.LogInformation($"{end}");
                     int.TryParse(DateTime.Now.ToString("HHmm"), out int realTime);
-                    _logger.LogInformation($"{realTime}");
+                    _logger.LogInformation($"Khấu hao: {realTime}");
                    
                     if (DateTime.Now.Day == DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month) && realTime >= start && realTime <= end)
                     {
@@ -40,7 +40,7 @@ namespace JobService
                         var response = await _httpClient.PostAsync(apiUrl, null, stoppingToken);
                         if (response.IsSuccessStatusCode)
                         {
-                            _logger.LogInformation("Chạy thành công");
+                            _logger.LogInformation("Chạy thành công khấu hao");
                         }
                         else
                             _logger.LogInformation("Chạy thất bại");
