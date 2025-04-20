@@ -145,7 +145,7 @@ namespace DxLabCoworkingSpace
             return await _unitOfWork.UsingFacilityRepository.GetAll(expression);
         }
 
-        public async Task<ResponseDTO<List<UsingFacility>>> GetAllBrokenFaciFromReport(RemovedFaciDTO removedFaciDTO)
+        public async Task<ResponseDTO<List<UsingFacility>>> GetAllBrokenFaciFromReport(BrokernFaciReportDTO removedFaciDTO)
         {
             try
             {

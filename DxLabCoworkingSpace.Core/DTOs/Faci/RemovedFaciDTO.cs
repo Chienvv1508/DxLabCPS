@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
 {
-    public class RemovedFaciDTO
+    public class BrokernFaciReportDTO
     {
         [Required(ErrorMessage ="Bạn bắt buộc nhập khu vực")]
         public int AreaId { get; set; }

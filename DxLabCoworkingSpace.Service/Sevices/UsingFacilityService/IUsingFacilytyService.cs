@@ -16,6 +16,6 @@ namespace DxLabCoworkingSpace
         Task Delete(IEnumerable<UsingFacility> faciInArea);
         Task Update(UsingFacility existedFaciInArea, int status, bool statusOfArea);
 
-        Task<ResponseDTO<List<UsingFacility>>> GetAllBrokenFaciFromReport(RemovedFaciDTO removedFaciDTO);
+        Task<ResponseDTO<List<UsingFacility>>> GetAllBrokenFaciFromReport(BrokernFaciReportDTO removedFaciDTO);
     }
 }

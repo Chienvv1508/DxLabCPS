@@ -288,7 +288,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         }
         [HttpPost("faciremovereport")]
-        public async Task<IActionResult> GetAllBrokenFaciReport([FromBody] RemovedFaciDTO removedFaciDTO)
+        public async Task<IActionResult> GetAllBrokenFaciReport([FromBody] BrokernFaciReportDTO removedFaciDTO)
         {
             var result  = await _usingFaclytyService.GetAllBrokenFaciFromReport(removedFaciDTO);
             if(result.StatusCode == 200)
