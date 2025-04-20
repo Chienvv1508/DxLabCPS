@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using DXLAB_Coworking_Space_Booking_System.Controllers;
+using DXLAB_Coworking_Space_Booking_System.Hubs;
 using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -24,6 +26,8 @@ namespace UnitTestCode
         private readonly Mock<IAreaTypeService> _mockAreaTypeService;
         private readonly Mock<IMapper> _mockMapper;
         private readonly StaffBookingHistoryController _controller;
+        private readonly Mock<IHubContext<BookingHistoryHub>> _mockHubContext;
+
 
         public StaffBookingHistoryControllerTest()
         {
@@ -34,6 +38,7 @@ namespace UnitTestCode
             _mockAreaService = new Mock<IAreaService>();
             _mockAreaTypeService = new Mock<IAreaTypeService>();
             _mockMapper = new Mock<IMapper>();
+            _mockHubContext = new Mock<IHubContext<BookingHistoryHub>>();
 
             _controller = new StaffBookingHistoryController(
                 _mockRoomService.Object,
@@ -42,7 +47,8 @@ namespace UnitTestCode
                 _mockBookingDetailService.Object,
                 _mockAreaService.Object,
                 _mockAreaTypeService.Object,
-                _mockMapper.Object
+                _mockMapper.Object,
+                _mockHubContext.Object
             );
         }
 
