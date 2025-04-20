@@ -367,7 +367,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
            
                 foreach (var area in room.Areas)
                 {
-                    area.AreaType = await _areaTypeService.Get(x => x.AreaTypeId == area.AreaTypeId);
+                    area.AreaType = await _areaTypeService.GetWithInclude(x => x.AreaTypeId == area.AreaTypeId, x => x.AreaTypeCategory);
+   
                 }
           
             if (room == null)
@@ -483,10 +484,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 if (images == null)
                     return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
                 var imageList = roomFromDb.Images;
-                if (imageList.Count <= images.Count)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
-                }
+                //if (imageList.Count <= images.Count)
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
+                //}
 
                 foreach (var image in images)
                 {

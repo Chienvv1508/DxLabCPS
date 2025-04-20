@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
-using DXLAB_Coworking_Space_Booking_System;
-namespace DXLAB_Coworking_Space_Booking_System
+//using DXLAB_Coworking_Space_Booking_System;
+namespace DxLabCoworkingSpaceForService
+
 {
     public class AutoMapperProfile : Profile
     {
@@ -82,12 +83,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     Status = a.Status,
                     AreaTypeName = a.AreaType != null ? a.AreaType.AreaTypeName : null,
                     AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
-                    Images = a.Images != null ? a.Images.Select(i => i.ImageUrl).ToList() : null, // Thêm ánh xạ Images
-                    AreaTypeCategoryId = a.AreaType != null ? a.AreaType.AreaTypeCategory != null ? a.AreaType.AreaTypeCategory.CategoryId : 0 : 0,
-                    AreaTypeCategoryTitle = a.AreaType != null ? a.AreaType.AreaTypeCategory != null ? a.AreaType.AreaTypeCategory.Title : "" : ""
-
-
-
+                    Images = a.Images != null ? a.Images.Select(i => i.ImageUrl).ToList() : null // Thêm ánh xạ Images
                 }).ToList() : null));
 
             // Mapping cho AreaType

@@ -1,11 +1,15 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Org.BouncyCastle.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using DxLabCoworkingSpaceForService;
+
 
 namespace DxLabCoworkingSpace
 {
@@ -13,6 +17,7 @@ namespace DxLabCoworkingSpace
     {
         private readonly IUnitOfWork _unitOfWork;
         
+
 
         public AreaTypeCategoryService(IUnitOfWork unitOfWork)
         {
@@ -23,6 +28,42 @@ namespace DxLabCoworkingSpace
         {
             await _unitOfWork.AreaTypeCategoryRepository.Add(entity);
             await _unitOfWork.CommitAsync();
+        }
+
+        public async Task<ResponseDTO<AreaTypeCategoryForAddDTO>> CreateNewAreaTypeCategoory(AreaTypeCategoryForAddDTO areaTypeCategoryDTO)
+        {
+            try
+            {
+
+
+                var existedName = await _unitOfWork.AreaTypeCategoryRepository.Get(x => x.Title == areaTypeCategoryDTO.Title && x.Status == 1);
+                if (existedName != null)
+                {
+                    return new ResponseDTO<AreaTypeCategoryForAddDTO>(400, $"Đã có tên loại dịch vụ:{areaTypeCategoryDTO.Title} trong cơ sở dữ liệu!", null);
+                }
+               
+                IMapper mapper = GenerateMapper.GenerateMapperForService();
+                var areaTypeCategory = mapper.Map<AreaTypeCategory>(areaTypeCategoryDTO);
+                var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images); 
+                if (!result.Item1)
+                {
+                    return new ResponseDTO<AreaTypeCategoryForAddDTO>(400, "Lỗi nhập ảnh", null);
+                }
+
+                foreach (var imageUrl in result.Item2)
+                {
+                    areaTypeCategory.Images.Add(new Image { ImageUrl = imageUrl });
+                }
+                areaTypeCategory.Status = 1;
+                await _unitOfWork.AreaTypeCategoryRepository.Add(areaTypeCategory);
+                await _unitOfWork.CommitAsync();
+                return new ResponseDTO<AreaTypeCategoryForAddDTO>(201, "Thêm dịch vụ thành công!", null);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                return new ResponseDTO<AreaTypeCategoryForAddDTO>(500, "Thêm dịch vụ thất bại", null);
+            }
         }
 
         public Task Delete(int id)

@@ -16,7 +16,6 @@ namespace DxLabCoworkingSpace
         [Required(ErrorMessage = "Bắt buộc nhập ngày nhập")]
         public DateTime ImportDate { get; set; }
         [Required(ErrorMessage ="Bạn chưa nhập số lượng")]
-        [RegularExpression(@"^\d+$", ErrorMessage = "Số lượng phải là số nguyên!")]
         [Range(1, 40, ErrorMessage = "Số lượng phải là số nguyên lớn hơn 1 và nhỏ hơn 40!")]
         public int Quantity { get; set; }
         
