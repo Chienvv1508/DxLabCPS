@@ -137,7 +137,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 // Map lại thành DTO để trả về
                 var updatedSlotDto = _mapper.Map<SlotDTO>(existingSlot);
                 updatedSlotDto.Status = newStatus; // Đảm bảo DTO phản ánh Status mới
-                return Ok(new ResponseDTO<SlotDTO>(200, $"Cập nhật trạng thái slot thành công! Trạng thái mới: {newStatus}", updatedSlotDto));
+                return Ok(new ResponseDTO<SlotDTO>(200, $"Cập nhật trạng thái slot thành công!", updatedSlotDto));
             }
             catch (InvalidOperationException ex)
             {

@@ -35,11 +35,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost("faci")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFaciToArea(int areaid, int status, FaciAddDTO faciAddDTO)
         {
             try
             {
+               
                 // item 1: check item2: lỗi, item3: areaInroom
                 Tuple<bool, string, Area> checkAreaAndStatus = await CheckExistedAreaAndStatus(areaid, status);
                 if (checkAreaAndStatus.Item1 == false)
@@ -261,13 +262,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
 
         [HttpPost("faciremoving")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RemoveFaciFromArea([FromBody] RemovedFaciDTO removedFaciDTO)
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RemoveFaciFromArea([FromBody] RemoveFaciDTO removedFaciDTO)
         {
             try
             {
                 var existedFaciInArea = await _usingFaclytyService.Get(x => x.FacilityId == removedFaciDTO.FacilityId &&
-                 x.AreaId == removedFaciDTO.AreaId
+                 x.AreaId == removedFaciDTO.AreaId && x.BatchNumber == removedFaciDTO.BatchNumber && x.ImportDate == removedFaciDTO.ImportDate
                  );
                 if (existedFaciInArea == null)
                 {
@@ -285,6 +286,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return StatusCode(500, new ResponseDTO<object>(500, "Lỗi cơ sở dữ liệu", null));
             }
 
+        }
+        [HttpPost("faciremovereport")]
+        public async Task<IActionResult> GetAllBrokenFaciReport([FromBody] BrokernFaciReportDTO removedFaciDTO)
+        {
+            var result  = await _usingFaclytyService.GetAllBrokenFaciFromReport(removedFaciDTO);
+            if(result.StatusCode == 200)
+            {
+                var usingFacilityDTOs = _mapper.Map<List<UsingFacilityDTO>>(result.Data);
+
+                return Ok(new ResponseDTO<object>(200, "Lấy thành công danh sách thiết bị cần xóa", usingFacilityDTOs));
+            }
+            return StatusCode(result.StatusCode,result);
         }
 
         [HttpGet("areainroom")]

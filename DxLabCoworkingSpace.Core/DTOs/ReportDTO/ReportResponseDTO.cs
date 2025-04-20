@@ -10,7 +10,12 @@ namespace DxLabCoworkingSpace
     {
         public int ReportId { get; set; }
         public int? BookingDetailId { get; set; }
+        public string ReportDescription { get; set; } = null!;
+        public int? FacilityId { get; set; }
+        public string BatchNumber { get; set; }
+        public string FacilityTitle { get; set; }
         public string Position { get; set; }
+        public int? AreaId { get; set; }
         public string AreaName { get; set; }
         public string AreaTypeName { get; set; }
         public string RoomName { get; set; }

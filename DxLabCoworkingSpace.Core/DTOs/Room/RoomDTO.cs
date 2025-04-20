@@ -25,6 +25,8 @@ namespace DxLabCoworkingSpace
         public int Capacity { get; set; }
         public int Status { get; set; }
 
+       
+
         public List<String>? Images { get; set; }
 
         public List<AreaDTO> Area_DTO { get; set; }

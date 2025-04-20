@@ -24,11 +24,11 @@ namespace JobService
                 try
                 {
                     int.TryParse(_configuration["ExpenseJob:Start"], out int start);
-                    _logger.LogInformation($"{start}");
+                    _logger.LogInformation($"Chi phí: {start}");
                     int.TryParse(_configuration["ExpenseJob:End"], out int end);
-                    _logger.LogInformation($"{end}");
+                    _logger.LogInformation($"Chi phí: {end}");
                     int.TryParse(DateTime.Now.ToString("HHmm"), out int realTime);
-                    _logger.LogInformation($"{realTime}");
+                    _logger.LogInformation($"Chi phí: {realTime}");
 
                     if (DateTime.Now.Day == DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month) && realTime >= start && realTime <= end)
                     {
@@ -39,7 +39,7 @@ namespace JobService
                         var response = await _httpClient.PostAsync(apiUrl, content, stoppingToken);
                         if (response.IsSuccessStatusCode)
                         {
-                            _logger.LogInformation("Chạy thành công");
+                            _logger.LogInformation("Chạy thành công chi phí");
                         }
                         else
                             _logger.LogInformation("Chạy thất bại");

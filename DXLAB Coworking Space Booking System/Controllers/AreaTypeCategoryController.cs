@@ -30,36 +30,40 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpPost("newareatypecategory")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> CreateAreaTypeCategory([FromForm] AreaTypeCategoryForAddDTO areaTypeCategoryDTO)
         {
-            try
-            {
-                var existedName = await _areaTypeCategoryService.Get(x => x.Title == areaTypeCategoryDTO.Title && x.Status == 1);
-                if (existedName != null)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, $"Đã có tên loại dịch vụ:{areaTypeCategoryDTO.Title} trong cơ sở dữ liệu!", null));
-                }
-                var areaTypeCategory = _mapper.Map<AreaTypeCategory>(areaTypeCategoryDTO);
-                var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images); // Typo: Fix "ImageSerive" to "ImageService"
-                if (!result.Item1)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, "Lỗi nhập ảnh", null));
-                }
 
-                foreach (var imageUrl in result.Item2)
-                {
-                    areaTypeCategory.Images.Add(new Image { ImageUrl = imageUrl });
-                }
-                areaTypeCategory.Status = 1;
-                await _areaTypeCategoryService.Add(areaTypeCategory);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500);
-            }
+            var result = await _areaTypeCategoryService.CreateNewAreaTypeCategoory(areaTypeCategoryDTO);
+            return StatusCode(result.StatusCode, result.Message);
+
+            //try
+            //{
+            //    var existedName = await _areaTypeCategoryService.Get(x => x.Title == areaTypeCategoryDTO.Title && x.Status == 1);
+            //    if (existedName != null)
+            //    {
+            //        return BadRequest(new ResponseDTO<object>(400, $"Đã có tên loại dịch vụ:{areaTypeCategoryDTO.Title} trong cơ sở dữ liệu!", null));
+            //    }
+            //    var areaTypeCategory = _mapper.Map<AreaTypeCategory>(areaTypeCategoryDTO);
+            //    var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images); // Typo: Fix "ImageSerive" to "ImageService"
+            //    if (!result.Item1)
+            //    {
+            //        return BadRequest(new ResponseDTO<object>(400, "Lỗi nhập ảnh", null));
+            //    }
+
+            //    foreach (var imageUrl in result.Item2)
+            //    {
+            //        areaTypeCategory.Images.Add(new Image { ImageUrl = imageUrl });
+            //    }
+            //    areaTypeCategory.Status = 1;
+            //    await _areaTypeCategoryService.Add(areaTypeCategory);
+            //    return Ok();
+            //}
+            //catch (Exception ex)
+            //{
+            //    return StatusCode(500);
+            //}
 
         }
 
@@ -219,10 +223,10 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (images == null)
                     return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
                 var imageList = areaTypeCateFromDb.Images;
-                if (imageList.Count <= images.Count)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
-                }
+                //if (imageList.Count <= images.Count)
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, "Không được xóa hết ảnh", null));
+                //}
 
                 foreach (var image in images)
                 {

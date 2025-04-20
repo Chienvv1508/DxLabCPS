@@ -72,7 +72,7 @@ namespace DxLabCoworkingSpace
                     throw new ArgumentException("Period không hợp lệ, phải là 'năm' hoặc 'tháng'");
             }
 
-            return query.Where(bd => bd.CheckinTime >= startDate && bd.CheckinTime < endDate);
+            return query.Where(bd => bd.Booking != null && bd.Booking.BookingCreatedDate >= startDate && bd.Booking.BookingCreatedDate < endDate);
         }
 
         private List<RevenueByPeriodDTO> GetRevenueByMonth(List<BookingDetail> bookingDetails, int year)
@@ -81,7 +81,7 @@ namespace DxLabCoworkingSpace
             for (int month = 1; month <= 12; month++)
             {
                 var monthDetails = bookingDetails
-                    .Where(bd => bd.CheckinTime.Year == year && bd.CheckinTime.Month == month)
+                    .Where(bd => bd.Booking != null && bd.Booking.BookingCreatedDate.Year == year && bd.Booking.BookingCreatedDate.Month == month)
                     .ToList();
 
                 var totalRevenue = monthDetails.Sum(bd => bd.Price);
@@ -110,7 +110,7 @@ namespace DxLabCoworkingSpace
             for (int day = 1; day <= daysInMonth; day++)
             {
                 var dayDetails = bookingDetails
-                    .Where(bd => bd.CheckinTime.Year == year && bd.CheckinTime.Month == month && bd.CheckinTime.Day == day)
+                    .Where(bd => bd.Booking != null && bd.Booking.BookingCreatedDate.Year == year && bd.Booking.BookingCreatedDate.Month == month && bd.Booking.BookingCreatedDate.Day == day)
                     .ToList();
 
                 var totalRevenue = dayDetails.Sum(bd => bd.Price);

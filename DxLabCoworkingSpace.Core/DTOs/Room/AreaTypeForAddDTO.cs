@@ -26,7 +26,7 @@ namespace DxLabCoworkingSpace
         public string AreaDescription { get; set; } = null!;
 
         [Required(ErrorMessage = "Số chỗ trong khu vực không được để trống.")]
-        [Range(0, 40, ErrorMessage = "Số chỗ trong khu vực phải lớn hơn 0.")]
+        [Range(0, 40, ErrorMessage = "Số chỗ trong khu vực phải lớn hơn 0 nhỏ hơn 40.")]
         public int Size { get; set; }
 
         [Required(ErrorMessage = "Giá không được để trống.")]
