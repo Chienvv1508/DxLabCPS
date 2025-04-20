@@ -178,7 +178,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(new ResponseDTO<object>(400, "Dữ liệu không hợp lệ!", ModelState));
                 }
 
-                var facility = _mapper.Map<Facility>(facilityDto);
+                var facility = _mapper.Map<Facility>(facilityDto);       
                 facility.RemainingValue = facility.Cost;
                 facility.FacilitiesStatuses.Add(new FacilitiesStatus { BatchNumber = facility.BatchNumber , ImportDate = facility.ImportDate,
                 Quantity = facility.Quantity, Status = 0
