@@ -50,6 +50,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 ReportId = report.ReportId,
                 BookingDetailId = report.BookingDetailId,
+                ReportDescription = report.ReportDescription ?? "N/A",
                 CreatedDate = report.CreatedDate.ToString("yyyy-MM-ddTHH:mm:ss"),
                 StaffName = report.User?.FullName ?? "N/A"
             };
@@ -57,6 +58,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             if (report.BookingDetail != null)
             {
                 string positionDisplay = null;
+                int? areaId = null;
                 string areaName = null;
                 string areaTypeName = null;
                 string roomName = null;
@@ -66,6 +68,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if (report.BookingDetail.Area?.AreaId != null)
                 {
+                    areaId = report.BookingDetail.Area.AreaId;
                     areaName = report.BookingDetail.Area.AreaName;
                     areaTypeName = report.BookingDetail.Area.AreaType?.AreaTypeName ?? "N/A";
                     roomName = report.BookingDetail.Area.Room?.RoomName ?? "N/A";
@@ -85,7 +88,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         if (areaWithFacilities?.UsingFacilities?.Any() == true)
                         {
                             var uf = areaWithFacilities.UsingFacilities.OrderByDescending(uf => uf.ImportDate).FirstOrDefault();
-                            Console.WriteLine($"[ReportId: {report.ReportId}] Found UsingFacility: FacilityId={uf?.FacilityId}, BatchNumber={uf?.BatchNumber}, FacilityTitle={uf?.Facility?.FacilityTitle}");
                             facilityId = uf?.FacilityId;
                             batchNumber = uf?.BatchNumber ?? uf?.Facility?.BatchNumber ?? "N/A";
                             facilityTitle = uf?.Facility?.FacilityTitle ?? "N/A";
@@ -98,13 +100,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     catch (Exception ex)
                     {
                         Console.WriteLine($"[ReportId: {report.ReportId}] Error fetching UsingFacilities: {ex.Message}\nStackTrace: {ex.StackTrace}");
-                        // Tiếp tục với giá trị mặc định nếu lỗi
                     }
                 }
                 else if (report.BookingDetail.Position != null)
                 {
                     positionDisplay = report.BookingDetail.Position.PositionNumber.ToString();
-                    Console.WriteLine($"[ReportId: {report.ReportId}] Fetching UsingFacilities for AreaId: {report.BookingDetail.Position.AreaId}");
                     try
                     {
                         var area = await _context.Areas
@@ -135,7 +135,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         }
                         else
                         {
-                            Console.WriteLine($"[ReportId: {report.ReportId}] No Area found for Position AreaId: {report.BookingDetail.Position.AreaId}");
                             areaName = "N/A";
                             areaTypeName = "N/A";
                             roomName = "N/A";
@@ -144,10 +143,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     catch (Exception ex)
                     {
                         Console.WriteLine($"[ReportId: {report.ReportId}] Error fetching UsingFacilities: {ex.Message}\nStackTrace: {ex.StackTrace}");
-                        // Tiếp tục với giá trị mặc định nếu lỗi
                     }
                 }
 
+                response.AreaId = areaId;
                 response.Position = positionDisplay ?? "N/A";
                 response.AreaName = areaName ?? "N/A";
                 response.AreaTypeName = areaTypeName ?? "N/A";
@@ -158,6 +157,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             else
             {
+                response.AreaId = null;
                 response.Position = "N/A";
                 response.AreaName = "N/A";
                 response.AreaTypeName = "N/A";
@@ -223,9 +223,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var report = _mapper.Map<Report>(request);
                 report.UserId = staffId;
 
-                // Ghi log để kiểm tra dữ liệu trước khi lưu
-                Console.WriteLine($"Creating Report: UserId={report.UserId}, BookingDetailId={report.BookingDetailId}, ReportDescription={report.ReportDescription}, CreatedDate={report.CreatedDate}");
-
                 await _reportService.Add(report);
 
                 // Sử dụng phương thức tiện ích để ánh xạ
@@ -235,16 +232,17 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     responseData.ReportId,
                     responseData.BookingDetailId,
+                    responseData.ReportDescription,
                     responseData.FacilityId,
                     responseData.BatchNumber,
                     responseData.FacilityTitle,
                     responseData.Position,
+                    responseData.AreaId,
                     responseData.AreaName,
                     responseData.AreaTypeName,
                     responseData.RoomName,
                     responseData.CreatedDate,
-                    responseData.StaffName,
-                    ReportDescription = request.ReportDescription
+                    responseData.StaffName
                 };
                 await _hubContext.Clients.Group("Admins").SendAsync("ReceiveNewReport", reportData);
 
@@ -254,7 +252,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 // Trả về chi tiết InnerException
                 var errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                Console.WriteLine($"Error in CreateReport: {errorMessage}\nStackTrace: {ex.StackTrace}");
                 return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi tạo báo cáo cơ sở vật chất", errorMessage));
             }
         }
@@ -300,7 +297,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             catch (Exception ex)
             {
                 var errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                Console.WriteLine($"Error in GetStaffReports: {errorMessage}\nStackTrace: {ex.StackTrace}");
                 return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi lấy danh sách báo cáo", errorMessage));
             }
         }
@@ -338,7 +334,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             catch (Exception ex)
             {
                 var errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                Console.WriteLine($"Error in GetAllReports: {errorMessage}\nStackTrace: {ex.StackTrace}");
                 return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi lấy danh sách báo cáo", errorMessage));
             }
         }
@@ -384,7 +379,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             catch (Exception ex)
             {
                 var errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                Console.WriteLine($"Error in GetReportById: {errorMessage}\nStackTrace: {ex.StackTrace}");
                 return StatusCode(500, new ResponseDTO<object>(500, "Lỗi khi lấy chi tiết báo cáo", errorMessage));
             }
         }
