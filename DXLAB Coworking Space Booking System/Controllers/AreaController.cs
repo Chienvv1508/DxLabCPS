@@ -89,7 +89,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         BatchNumber = faciAddDTO.BatchNumber,
                         FacilityId = faciAddDTO.FacilityId,
 
-                        Quantity = faciAddDTO.Quantity.,
+                        Quantity = faciAddDTO.Quantity,
                         ImportDate = faciAddDTO.ImportDate
                     };
 
