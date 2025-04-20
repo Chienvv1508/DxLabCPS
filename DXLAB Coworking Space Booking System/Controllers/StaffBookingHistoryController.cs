@@ -26,7 +26,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _roomService = roomService;
             _slotService = slotService;
             _bookingService = bookingService;
-            _bookDetailService = bookDetailService;
+            _bookDetailService = bookDetailService; 
             _areaService = areaService;
             _areaTypeService = areaTypeService;
             _mapper = mapper;
