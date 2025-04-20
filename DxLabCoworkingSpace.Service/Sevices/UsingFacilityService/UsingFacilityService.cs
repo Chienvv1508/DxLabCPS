@@ -157,7 +157,7 @@ namespace DxLabCoworkingSpace
                 var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == removedFaciDTO.AreaId && x.Status != 2);
                 if(area == null)
                 {
-                    return new ResponseDTO<List<UsingFacility>>(400, "Không tìm thấy phòng", null);
+                    return new ResponseDTO<List<UsingFacility>>(400, "Không tìm  khu vực", null);
                 }
            
                 var listFaciInArea = await _unitOfWork.UsingFacilityRepository.GetAllWithInclude( x => x.Area,
