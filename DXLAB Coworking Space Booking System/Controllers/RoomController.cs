@@ -367,7 +367,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
            
                 foreach (var area in room.Areas)
                 {
-                    area.AreaType = await _areaTypeService.Get(x => x.AreaTypeId == area.AreaTypeId);
+                    area.AreaType = await _areaTypeService.GetWithInclude(x => x.AreaTypeId == area.AreaTypeId, x => x.AreaTypeCategory);
+   
                 }
           
             if (room == null)
