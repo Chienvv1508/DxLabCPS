@@ -12,20 +12,19 @@ namespace UnitTestCode
     {
         private readonly Mock<IConfiguration> _mockConfig;
         private readonly Mock<IUserService> _mockUserService;
-        private readonly Mock<IUserTokenService> _mockUserTokenService;
+        private readonly Mock<ILabBookingJobService> _mockLabBookingJobService;
         private readonly UserController _controller;
 
         public UserControllerTest()
         {
             _mockConfig = new Mock<IConfiguration>();
             _mockUserService = new Mock<IUserService>();
-            _mockUserTokenService = new Mock<IUserTokenService>();
 
             _mockConfig.Setup(c => c["Jwt:Key"]).Returns("ThisIsASecretKeyThatIsAtLeast32BytesLong");
             _mockConfig.Setup(c => c["Jwt:Issuer"]).Returns("TestIssuer");
             _mockConfig.Setup(c => c["Jwt:Audience"]).Returns("TestAudience");
 
-            _controller = new UserController(_mockConfig.Object, _mockUserService.Object, _mockUserTokenService.Object);
+            _controller = new UserController(_mockConfig.Object, _mockUserService.Object, _mockLabBookingJobService.Object);
         }
 
         [Fact]
