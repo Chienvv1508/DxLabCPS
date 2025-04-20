@@ -15,8 +15,9 @@ namespace DxLabCoworkingSpace
         private readonly Contract _contract;    
         private readonly IUnitOfWork _unitOfWork;
         private readonly string _contractAddress;
-
-        public LabBookingCrawlerService(string providerCrawl, string contractAddress, string contractAbi, IUnitOfWork unitOfWork)
+        private readonly IAreaService _areaService;
+        private readonly IAreaTypeService _areaTypeService;
+        public LabBookingCrawlerService(string providerCrawl, string contractAddress, string contractAbi, IUnitOfWork unitOfWork, IAreaService areaService, IAreaTypeService areaTypeService)
         {
             var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             var client = new Nethereum.JsonRpc.Client.RpcClient(new Uri(providerCrawl), httpClient);
@@ -24,6 +25,8 @@ namespace DxLabCoworkingSpace
             _contractAddress = contractAddress;
             _contract = _web3.Eth.GetContract(contractAbi, contractAddress);
             _unitOfWork = unitOfWork;
+            _areaService = areaService;
+            _areaTypeService = areaTypeService;
         }
 
         private async Task SaveBookingEventAsync(
@@ -52,7 +55,7 @@ namespace DxLabCoworkingSpace
                         WalletAddress = userAddress,
                         Status = eventType == "UserBlocked" ? false : true
                     };
-                   // await _unitOfWork.UserRepository.Add(user);
+                    await _unitOfWork.UserRepository.Add(user);
                 }
                 else if (user != null)
                 {
@@ -69,77 +72,138 @@ namespace DxLabCoworkingSpace
                     {
                         user.Status = true;
                     }
-                    //_unitOfWork.UserRepository.Update(user);
+                    _unitOfWork.UserRepository.Update(user);
                 }
                 await _unitOfWork.CommitAsync();
                 Console.WriteLine($"Processed {eventType} for user {userAddress}, txHash: {transactionHash}");
             }
             else
             {
-                // Xử lý sự kiện booking (giữ nguyên logic cũ)
-                var existingDetail = await _unitOfWork.BookingDetailRepository.GetWithInclude(
-                    bd => bd.Booking != null && bd.Booking.BookingId.ToString() == bookingId && bd.Status == (eventType == "Created" ? 1 : eventType == "Cancelled" ? 0 : 2),
-                    bd => bd.Booking
-                );
-
-                if (existingDetail == null)
+                // Chuyển bookingId (bytes32) từ blockchain thành BookingId (int)
+                int parsedBookingId;
+                try
                 {
-                    Console.WriteLine($"Saving new booking event with transactionHash: {transactionHash}");
-
-                    var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress == userAddress);
-                    if (user == null && userAddress != null)
+                    var bigIntBookingId = BigInteger.Parse("0" + bookingId.Replace("0x", ""), System.Globalization.NumberStyles.HexNumber);
+                    parsedBookingId = (int)bigIntBookingId;
+                    if (parsedBookingId <= 0)
                     {
-                        user = new User
-                        {
-                            Email = $"{userAddress}@default.com",
-                            FullName = "Unknown",
-                            WalletAddress = userAddress,
-                            Status = true
-                        };
-                        //await _unitOfWork.UserRepository.Add(user);
-                        //await _unitOfWork.CommitAsync();
+                        throw new ArgumentException("BookingId must be a positive integer.");
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error converting bookingId {bookingId} to int: {ex.Message}");
+                    return;
+                }
 
-                    var booking = await _unitOfWork.BookingRepository.Get(b => b.BookingId.ToString() == bookingId);
-                    if (booking == null)
+                // Kiểm tra xem booking đã tồn tại trong database chưa
+                var existingBooking = await _unitOfWork.BookingRepository.Get(b => b.BookingId == parsedBookingId);
+                if (existingBooking != null)
+                {
+                    var existingDetail = await _unitOfWork.BookingDetailRepository.GetWithInclude(
+                        bd => bd.BookingId == existingBooking.BookingId &&
+                              bd.SlotId == slot &&
+                              bd.Status == (eventType == "Created" ? 1 : eventType == "Cancelled" ? 0 : 2),
+                        bd => bd.Booking
+                    );
+
+                    if (existingDetail != null)
                     {
-                        booking = new Booking
-                        {
-                            UserId = user?.UserId,
-                            BookingCreatedDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime,
-                            Price = eventType == "Created" ? 100m : 0m
-                        };
-                        //await _unitOfWork.BookingRepository.Add(booking);
-                        //await _unitOfWork.CommitAsync();
+                        Console.WriteLine($"Booking event with transactionHash: {transactionHash} and bookingId: {bookingId} already exists.");
+                        return;
                     }
+                }
 
-                    var bookingDetail = new BookingDetail
+                Console.WriteLine($"Processing booking event with transactionHash: {transactionHash}, bookingId: {bookingId}");
+
+                var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress == userAddress);
+                if (user == null && userAddress != null)
+                {
+                    user = new User
                     {
-                        Status = eventType switch
-                        {
-                            "Created" => 1,
-                            "Cancelled" => 0,
-                            "CheckedIn" => 2,
-                            _ => 1
-                        },
-                        CheckinTime = eventType == "CheckedIn" ? DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime : DateTime.MinValue,
-                        CheckoutTime = DateTime.MinValue,
-                        BookingId = booking.BookingId,
-                        SlotId = slot,
-                        AreaId = null,
-                        PositionId = null,
-                        Price = eventType == "Cancelled" && refundAmount != null ? decimal.Parse(refundAmount) : 100m
+                        Email = $"{userAddress}@default.com",
+                        FullName = "Unknown",
+                        WalletAddress = userAddress,
+                        Status = true
                     };
+                    await _unitOfWork.UserRepository.Add(user);
+                    await _unitOfWork.CommitAsync();
+                }
 
-                    //await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
-                    //await _unitOfWork.CommitAsync();
+                Booking booking;
+                if (existingBooking == null)
+                {
+                    // Booking chưa tồn tại, tạo mới
+                    booking = new Booking
+                    {
+                        BookingId = parsedBookingId, // Gán BookingId từ blockchain
+                        UserId = user?.UserId,
+                        BookingCreatedDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime,
+                        Price = 0m // Sẽ được tính sau khi có BookingDetail
+                    };
+                    await _unitOfWork.BookingRepository.Add(booking);
+                    await _unitOfWork.CommitAsync();
                 }
                 else
                 {
-                    Console.WriteLine($"Booking event with transactionHash: {transactionHash} already exists.");
+                    booking = existingBooking;
                 }
+
+                // Lấy giá từ AreaType thông qua Area
+                decimal areaTypePrice = 0m;
+                int? areaId = null;
+                if (!string.IsNullOrEmpty(roomId))
+                {
+                    var area = await _areaService.GetWithInclude(
+                        a => a.RoomId.ToString() == roomId && a.Status == 1,
+                        a => a.AreaType);
+                    if (area != null)
+                    {
+                        areaId = area.AreaId;
+                        var areaType = await _areaTypeService.Get(at => at.AreaTypeId == area.AreaTypeId);
+                        if (areaType != null)
+                        {
+                            areaTypePrice = areaType.Price;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"No AreaType found for AreaId: {area.AreaId}. Using price 0.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No Area found for RoomId: {roomId}. Using price 0.");
+                    }
+                }
+
+                var bookingDetail = new BookingDetail
+                {
+                    Status = eventType switch
+                    {
+                        "Created" => 1,
+                        "Cancelled" => 0,
+                        "CheckedIn" => 2,
+                        _ => 1
+                    },
+                    CheckinTime = eventType == "CheckedIn" ? DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime : DateTime.MinValue,
+                    CheckoutTime = DateTime.MinValue,
+                    BookingId = booking.BookingId,
+                    SlotId = slot,
+                    AreaId = areaId,
+                    PositionId = null,
+                    Price = areaTypePrice
+                };
+
+                await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
+                await _unitOfWork.CommitAsync();
+
+                // Cập nhật tổng giá trong Booking
+                var allDetails = await _unitOfWork.BookingDetailRepository.GetAll(bd => bd.BookingId == booking.BookingId);
+                booking.Price = allDetails.Sum(d => d.Price);
+                _unitOfWork.BookingRepository.Update(booking);
+                await _unitOfWork.CommitAsync();
             }
-        }       
+        }
 
         public async Task CrawlBookingEventsAsync(int fromBlock, int toBlock)
         {

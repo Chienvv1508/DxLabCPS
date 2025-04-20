@@ -16,6 +16,7 @@ using Microsoft.Extensions.Options;
 
 using DXLAB_Coworking_Space_Booking_System.Hubs;
 using System.Security.Claims;
+using DxLabCoworkingSpace.Service;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -176,11 +177,16 @@ builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
         providerCrawl,
         contractAddress,
         contractAbi,
-        sp.GetRequiredService<IUnitOfWork>()
+        sp.GetRequiredService<IUnitOfWork>(),
+        sp.GetRequiredService<IAreaService>(),
+        sp.GetRequiredService<IAreaTypeService>()
     ));
 
 // Đăng ký LabBookingJobService
 builder.Services.AddScoped<ILabBookingJobService, LabBookingJobService>();
+
+// Đăng ký BlockchainBookingService
+builder.Services.AddScoped<IBlockchainBookingService, BlockchainBookingService>();
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
 
 // Thêm Hangfire với MemoryStorage
