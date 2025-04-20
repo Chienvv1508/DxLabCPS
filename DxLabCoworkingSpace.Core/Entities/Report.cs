@@ -7,6 +7,7 @@ namespace DxLabCoworkingSpace
     {
         public int ReportId { get; set; }
         public string ReportDescription { get; set; } = null!;
+        public int? FacilityQuantity { get; set; }
         public DateTime CreatedDate { get; set; }
         public int? BookingDetailId { get; set; }
         public int? UserId { get; set; }
