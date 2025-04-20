@@ -108,7 +108,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 foreach (var dte in bookingDates)
                 {
                     booking.UserId = userId;
-                    booking.BookingCreatedDate = dte.BookingDate;
+                    booking.BookingCreatedDate = DateTime.Now;
                     // Tạo ma trận
                     Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areasInRoom, dte.BookingDate.Date);
                     int[] slotArray = new int[dte.SlotId.Count];
