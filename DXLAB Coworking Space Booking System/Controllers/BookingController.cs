@@ -189,7 +189,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                                     else
                                         //bookingDetail.CheckoutTime = null;
 
-                                        bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
+                                    bookingDetail.CheckoutTime = dte.BookingDate.Date.Add(slot.EndTime.Value);
                                     var areaBooks = await _areaService.GetAllWithInclude(x => x.AreaType);
                                     var areaBook = areaBooks.FirstOrDefault(x => x.AreaId == id);
                                     bookingDetail.Price = areaBook.AreaType.Price;
@@ -204,19 +204,19 @@ namespace DXLAB_Coworking_Space_Booking_System
                 booking.Price = bookingDetails.Sum(br => br.Price);
                 booking.BookingDetails = bookingDetails;
 
-                // Lấy slot đầu tiên để gọi smart contract (giả sử chỉ cần 1 slot cho đơn giản)
-                var firstSlot = bookingDetails.FirstOrDefault()?.SlotId;
-                if (firstSlot == null)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy slot để đặt phòng!", null));
-                }
+                //// Lấy slot đầu tiên để gọi smart contract (giả sử chỉ cần 1 slot cho đơn giản)
+                //var firstSlot = bookingDetails.FirstOrDefault()?.SlotId;
+                //if (firstSlot == null)
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy slot để đặt phòng!", null));
+                //}
 
-                // Gọi blockchain để trừ tiền và phát sự kiện BookingCreated
-                var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(booking.BookingId, userWalletAddress, (byte)firstSlot, booking.Price);
-                if (!success)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Số dư không đủ hoặc giao dịch không thành công.", null));
-                }
+                //// Gọi blockchain để trừ tiền và phát sự kiện BookingCreated
+                //var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(booking.BookingId, userWalletAddress, (byte)firstSlot, booking.Price);
+                //if (!success)
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Số dư không đủ hoặc giao dịch không thành công.", null));
+                //}
 
                 await _bookingService.Add(booking);
 
