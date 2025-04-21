@@ -152,7 +152,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 RoomId = group.Key,
                                 RoomName = result.FirstOrDefault(x => x.RoomId == group.Key).RoomName,
                                 Rate = rate,
-                                DateTH = DateTime.Now.Date
+                                DateTH = dateTime
                             };
                             ultilizationRoomGets.Add(ul);
 
