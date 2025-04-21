@@ -9,14 +9,18 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using DxLabCoworkingSpaceForService;
-
+using NBitcoin.Secp256k1;
+using Nethereum.Contracts.QueryHandlers.MultiCall;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.JsonPatch.Operations;
 
 namespace DxLabCoworkingSpace
 {
     public class AreaTypeCategoryService : IAreaTypeCategoryService
     {
         private readonly IUnitOfWork _unitOfWork;
-        
+
 
 
         public AreaTypeCategoryService(IUnitOfWork unitOfWork)
@@ -34,17 +38,20 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-
-
+                var checkValid = ValidationModel<AreaTypeCategoryForAddDTO>.ValidateModel(areaTypeCategoryDTO);
+                if (checkValid.Item1 == false)
+                {
+                    return new ResponseDTO<AreaTypeCategoryForAddDTO>(400, checkValid.Item2, null);
+                }
                 var existedName = await _unitOfWork.AreaTypeCategoryRepository.Get(x => x.Title == areaTypeCategoryDTO.Title && x.Status == 1);
                 if (existedName != null)
                 {
                     return new ResponseDTO<AreaTypeCategoryForAddDTO>(400, $"Đã có tên loại dịch vụ:{areaTypeCategoryDTO.Title} trong cơ sở dữ liệu!", null);
                 }
-               
+
                 IMapper mapper = GenerateMapper.GenerateMapperForService();
                 var areaTypeCategory = mapper.Map<AreaTypeCategory>(areaTypeCategoryDTO);
-                var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images); 
+                var result = await ImageSerive.AddImage(areaTypeCategoryDTO.Images);
                 if (!result.Item1)
                 {
                     return new ResponseDTO<AreaTypeCategoryForAddDTO>(400, "Lỗi nhập ảnh", null);
@@ -100,7 +107,117 @@ namespace DxLabCoworkingSpace
         public async Task<AreaTypeCategory> GetWithInclude(Expression<Func<AreaTypeCategory, bool>> expression, params Expression<Func<AreaTypeCategory, object>>[] includes)
         {
 
-            return await _unitOfWork.AreaTypeCategoryRepository.GetWithInclude(expression,includes);
+            return await _unitOfWork.AreaTypeCategoryRepository.GetWithInclude(expression, includes);
+
+        }
+
+        public async Task<ResponseDTO<AreaTypeCategory>> PatchAreaTypeCategory(int id, JsonPatchDocument<AreaTypeCategory> patchDoc)
+        {
+            try
+            {
+                Tuple<bool, string, AreaTypeCategory> checkValidAreaTypeCatgoryAndPatchDoc = await CheckValidAreaTypeCatgoryAndPatchDoc(id, patchDoc);
+                if (checkValidAreaTypeCatgoryAndPatchDoc.Item1 == false)
+                {
+                    return new ResponseDTO<AreaTypeCategory>(400, checkValidAreaTypeCatgoryAndPatchDoc.Item2, null);
+                }
+                var areaTypeCateFromDb = checkValidAreaTypeCatgoryAndPatchDoc.Item3;
+
+
+                Tuple<bool, string> patch = await UpdateAreaTypeCategory(patchDoc, areaTypeCateFromDb);
+                if (patch.Item1 == false)
+                {
+                    return new ResponseDTO<AreaTypeCategory>(400, patch.Item2, null);
+                }
+
+                _unitOfWork.CommitAsync();
+
+                return new ResponseDTO<AreaTypeCategory>(200, "Cập nhập thành công!", null);
+
+
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.RollbackAsync();
+                return new ResponseDTO<AreaTypeCategory>(500, "Lỗi khi cập nhập dữ liệu!", null);
+
+            }
+        }
+
+        private async Task<Tuple<bool, string>> UpdateAreaTypeCategory(JsonPatchDocument<AreaTypeCategory> patchDoc, AreaTypeCategory areaTypeCateFromDb)
+        {
+            try
+            {
+                if (patchDoc == null || areaTypeCateFromDb == null)
+                {
+                    return new Tuple<bool, string>(false, "Phải bắt buộc nhập dữ liệu");
+                }
+                patchDoc.ApplyTo(areaTypeCateFromDb);
+
+                IMapper mapper = GenerateMapper.GenerateMapperForService();
+                var areTypeCates = mapper.Map<AreaTypeCategoryDTO>(areaTypeCateFromDb);
+
+                var checkModel = ValidationModel<AreaTypeCategoryDTO>.ValidateModel(areTypeCates);
+                if (checkModel.Item1 == false)
+                {
+                    return new Tuple<bool, string>(false, checkModel.Item2);
+                }
+                await _unitOfWork.AreaTypeCategoryRepository.Update(areaTypeCateFromDb);
+                return new Tuple<bool, string>(true, "");
+
+            }
+            catch (Exception ex)
+            {
+                return new Tuple<bool, string>(false, "Lỗi cập nhập!");
+            }
+        }
+
+        private async Task<Tuple<bool, string, AreaTypeCategory>> CheckValidAreaTypeCatgoryAndPatchDoc(int id, JsonPatchDocument<AreaTypeCategory> patchDoc)
+        {
+            try
+            {
+                if (patchDoc == null)
+                {
+
+                    return new Tuple<bool, string, AreaTypeCategory>(false, "Bạn chưa truyền dữ liệu vào", null);
+                }
+                var areaTypeCateFromDb = await _unitOfWork.AreaTypeCategoryRepository.Get(x => x.CategoryId == id && x.Status == 1);
+                if (areaTypeCateFromDb == null)
+                {
+
+                    return new Tuple<bool, string, AreaTypeCategory>(false, "Không tìm loại dịch vụ!", null);
+                }
+
+                var allowedPaths = new HashSet<string>
+                {
+                       "title",
+                        "categoryDescription"
+                };
+                foreach (var operation in patchDoc.Operations)
+                {
+                    if (!allowedPaths.Contains(operation.path))
+                    {
+                        var response1 = new ResponseDTO<object>(400, $"Không thể cập nhật trường: {operation.path}", null);
+                        return new Tuple<bool, string, AreaTypeCategory>(false, $"Không thể cập nhật trường: {operation.path}", null);
+                    }
+                }
+
+                var areaTypeCategoryTitleOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("title", StringComparison.OrdinalIgnoreCase));
+                if (areaTypeCategoryTitleOp != null)
+                {
+                    var existedAreaTypeCategory = await _unitOfWork.AreaTypeCategoryRepository.Get(x => x.Title == areaTypeCategoryTitleOp.value.ToString() && x.Status == 1);
+                    if (existedAreaTypeCategory != null)
+                    {
+
+                        return new Tuple<bool, string, AreaTypeCategory>(false, $"Tên loại {areaTypeCategoryTitleOp.value.ToString()} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
+                    }
+                }
+                return new Tuple<bool, string, AreaTypeCategory>(true, "", areaTypeCateFromDb);
+            }
+            catch (Exception ex)
+            {
+                return new Tuple<bool, string, AreaTypeCategory>(false, $"Lỗi cập nhập!", null);
+            }
+
 
         }
 
@@ -177,17 +294,17 @@ namespace DxLabCoworkingSpace
                 var listImage = await _unitOfWork.ImageRepository.GetAll(x => x.AreaTypeCategoryId == areaTypeCateFromDb.CategoryId);
                 if (images == null)
                     throw new ArgumentNullException();
-                foreach(var item in images)
+                foreach (var item in images)
                 {
                     var x = listImage.FirstOrDefault(x => x.ImageUrl == item);
                     if (x == null) throw new Exception("Ảnh nhập vào không phù hợp");
-                   await _unitOfWork.ImageRepository.Delete(x.ImageId);
+                    await _unitOfWork.ImageRepository.Delete(x.ImageId);
 
                 }
                 await _unitOfWork.AreaTypeCategoryRepository.Update(areaTypeCateFromDb);
                 await _unitOfWork.CommitAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
             }

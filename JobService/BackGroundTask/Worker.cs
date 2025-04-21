@@ -19,8 +19,11 @@ namespace JobService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+
+            DateTime dateTH = DateTime.Now.AddDays(-1);
             while (!stoppingToken.IsCancellationRequested)
             {
+
                 try
                 {
                     int.TryParse(_configuration["ExpenseJob:Start"], out int start);
@@ -32,6 +35,10 @@ namespace JobService
 
                     if (DateTime.Now.Day == DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month) && realTime >= start && realTime <= end)
                     {
+                        if (dateTH.Date == DateTime.Now.Date)
+                        {
+                            continue;
+                        }
                         var requestData = new THJobExpenseDTO() { dateSum = DateTime.Now };
                         string jsonContent = JsonConvert.SerializeObject(requestData);
                         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
@@ -40,17 +47,19 @@ namespace JobService
                         if (response.IsSuccessStatusCode)
                         {
                             _logger.LogInformation("Chạy thành công chi phí");
+
+                            dateTH = DateTime.Now;
                         }
                         else
                             _logger.LogInformation("Chạy thất bại");
-                    }   
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError($"Error calling API: {ex.Message}");
                 }
 
-                await Task.Delay(TimeSpan.FromMinutes(20), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }
         }
     }
