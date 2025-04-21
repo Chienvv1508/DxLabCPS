@@ -77,21 +77,29 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         ? report.BookingDetail.Position.PositionNumber.ToString()
                         : report.BookingDetail.Area.AreaType?.AreaTypeName ?? "N/A";
 
-                    Console.WriteLine($"[ReportId: {report.ReportId}] Fetching UsingFacilities for AreaId: {report.BookingDetail.Area.AreaId}");
                     try
                     {
-                        var areaWithFacilities = await _context.Areas
-                            .Where(a => a.AreaId == report.BookingDetail.Area.AreaId)
-                            .Include(a => a.UsingFacilities)
-                            .ThenInclude(uf => uf.Facility)
+                        var usingFacility = await _context.UsingFacilities
+                            .Where(uf => uf.AreaId == report.BookingDetail.Area.AreaId)
+                            .OrderByDescending(uf => uf.ImportDate)
                             .FirstOrDefaultAsync();
 
-                        if (areaWithFacilities?.UsingFacilities?.Any() == true)
+                        if (usingFacility?.FacilityId != null)
                         {
-                            var uf = areaWithFacilities.UsingFacilities.OrderByDescending(uf => uf.ImportDate).FirstOrDefault();
-                            facilityId = uf?.FacilityId;
-                            batchNumber = uf?.BatchNumber ?? uf?.Facility?.BatchNumber ?? "N/A";
-                            facilityTitle = uf?.Facility?.FacilityTitle ?? "N/A";
+                            var facility = await _context.Facilities
+                                .Where(f => f.FacilityId == usingFacility.FacilityId)
+                                .FirstOrDefaultAsync();
+
+                            if (facility != null)
+                            {
+                                facilityId = facility.FacilityId;
+                                batchNumber = facility.BatchNumber ?? "N/A";
+                                facilityTitle = facility.FacilityTitle ?? "N/A";
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[ReportId: {report.ReportId}] No Facility found for FacilityId: {usingFacility.FacilityId}");
+                            }
                         }
                         else
                         {
@@ -100,7 +108,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[ReportId: {report.ReportId}] Error fetching UsingFacilities: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                        Console.WriteLine($"[ReportId: {report.ReportId}] Error fetching Facility: {ex.Message}\nStackTrace: {ex.StackTrace}");
                     }
                 }
                 else if (report.BookingDetail.Position != null)
@@ -112,26 +120,42 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             .Where(a => a.AreaId == report.BookingDetail.Position.AreaId)
                             .Include(a => a.Room)
                             .Include(a => a.AreaType)
-                            .Include(a => a.UsingFacilities)
-                            .ThenInclude(uf => uf.Facility)
                             .FirstOrDefaultAsync();
 
                         if (area != null)
                         {
+                            areaId = area.AreaId;
                             areaName = area.AreaName;
                             areaTypeName = area.AreaType?.AreaTypeName ?? "N/A";
                             roomName = area.Room?.RoomName ?? "N/A";
-                            if (area.UsingFacilities?.Any() == true)
+
+                            // SỬA: Chỉ lấy FacilityId từ UsingFacilities, rồi truy vấn Facilities
+                            var usingFacility = await _context.UsingFacilities
+                                .Where(uf => uf.AreaId == area.AreaId)
+                                .OrderByDescending(uf => uf.ImportDate)
+                                .FirstOrDefaultAsync();
+
+                            if (usingFacility?.FacilityId != null)
                             {
-                                var uf = area.UsingFacilities.OrderByDescending(uf => uf.ImportDate).FirstOrDefault();
-                                Console.WriteLine($"[ReportId: {report.ReportId}] Found UsingFacility: FacilityId={uf?.FacilityId}, BatchNumber={uf?.BatchNumber}, FacilityTitle={uf?.Facility?.FacilityTitle}");
-                                facilityId = uf?.FacilityId;
-                                batchNumber = uf?.BatchNumber ?? uf?.Facility?.BatchNumber ?? "N/A";
-                                facilityTitle = uf?.Facility?.FacilityTitle ?? "N/A";
+                                // Truy vấn Facilities để lấy BatchNumber, FacilityTitle
+                                var facility = await _context.Facilities
+                                    .Where(f => f.FacilityId == usingFacility.FacilityId)
+                                    .FirstOrDefaultAsync();
+
+                                if (facility != null)
+                                {
+                                    facilityId = facility.FacilityId;
+                                    batchNumber = facility.BatchNumber ?? "N/A";
+                                    facilityTitle = facility.FacilityTitle ?? "N/A";
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[ReportId: {report.ReportId}] No Facility found for FacilityId: {usingFacility.FacilityId}");
+                                }
                             }
                             else
                             {
-                                Console.WriteLine($"[ReportId: {report.ReportId}] No UsingFacilities found for AreaId: {report.BookingDetail.Position.AreaId}");
+                                Console.WriteLine($"[ReportId: {report.ReportId}] No UsingFacilities found for AreaId: {area.AreaId}");
                             }
                         }
                         else
@@ -143,7 +167,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[ReportId: {report.ReportId}] Error fetching UsingFacilities: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                        Console.WriteLine($"[ReportId: {report.ReportId}] Error fetching Facility: {ex.Message}\nStackTrace: {ex.StackTrace}");
                     }
                 }
 

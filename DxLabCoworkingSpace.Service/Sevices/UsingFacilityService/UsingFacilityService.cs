@@ -117,8 +117,19 @@ namespace DxLabCoworkingSpace
                     var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == areaid);
                     if (area != null)
                     {
-                        area.Status = 1;
+                        area.Status = 0;
                         await _unitOfWork.AreaRepository.Update(area);
+                    }
+                   
+                    var availAreaInRoom = await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == area.RoomId && x.Status == 1);
+                    if (availAreaInRoom.Any())
+                    {
+                        if (availAreaInRoom.Count() == 1 && availAreaInRoom.First().AreaId == area.AreaId)
+                        {
+                            var room = await _unitOfWork.RoomRepository.Get(x => x.RoomId == area.RoomId);
+                            room.Status = 0;
+                            await _unitOfWork.RoomRepository.Update(room);
+                        }
                     }
 
                     await _unitOfWork.CommitAsync();
@@ -157,7 +168,7 @@ namespace DxLabCoworkingSpace
                 var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == removedFaciDTO.AreaId && x.Status != 2);
                 if(area == null)
                 {
-                    return new ResponseDTO<List<UsingFacility>>(400, "Không tìm thấy phòng", null);
+                    return new ResponseDTO<List<UsingFacility>>(400, "Không tìm  khu vực", null);
                 }
            
                 var listFaciInArea = await _unitOfWork.UsingFacilityRepository.GetAllWithInclude( x => x.Area,
@@ -282,6 +293,24 @@ namespace DxLabCoworkingSpace
                     };
                     await _unitOfWork.FacilitiesStatusRepository.Add(newFaciStatus);
                 }
+
+                var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == removedFaciDTO.AreaId);
+                area.Status = 0;
+                var availAreaInRoom = await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == area.RoomId && x.Status == 1);
+                if (availAreaInRoom.Any())
+                {
+                    if (availAreaInRoom.Count() == 1 && availAreaInRoom.First().AreaId == area.AreaId)
+                    {
+                        var room = await _unitOfWork.RoomRepository.Get(x => x.RoomId == area.RoomId);
+                        room.Status = 0;
+                        await _unitOfWork.RoomRepository.Update(room);
+                    }
+                }
+
+                //    await _unitOfWork.AreaRepository.Update(area);
+
+
+
                 await _unitOfWork.CommitAsync();
                 //var listFaciInArea = await _unitOfWork.UsingFacilityRepository.GetAll(x => x.FacilityId == removedFaciDTO.FacilityId &&
                 // x.AreaId == removedFaciDTO.AreaId && x.BatchNumber == removedFaciDTO.BatchNumber && x.ImportDate == removedFaciDTO.ImportDate);
