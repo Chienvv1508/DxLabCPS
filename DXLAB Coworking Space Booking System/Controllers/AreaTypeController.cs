@@ -49,7 +49,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 await _areaTypeService.Add(areaType);
                 var areTypeDtoResult = _mapper.Map<AreaTypeDTO>(areaType);
 
-                var response = new ResponseDTO<AreaTypeDTO>(201, "Tạo loại khu vực thành công", areTypeDtoResult);
+                var response = new ResponseDTO<AreaTypeDTO>(201, "Tạo kiểu khu vực thành công", areTypeDtoResult);
                 return CreatedAtAction(nameof(GetAreTypeById), new { id = areaType.AreaTypeId }, response);
             }
             catch (DbUpdateException ex)
@@ -81,7 +81,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch (Exception ex)
             {
-                var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
+                var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả kiểu khu vực", null);
                 return StatusCode(500, response);
             }
         }
@@ -108,7 +108,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch (Exception ex)
             {
-                var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
+                var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả kiểu khu vực", null);
                 return StatusCode(500, response);
             }
         }
@@ -125,7 +125,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch (Exception ex)
             {
-                var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả loại khu vực", null);
+                var response = new ResponseDTO<object>(01, "Lỗi khi lấy tất cả kiểu khu vực", null);
                 return StatusCode(500, response);
             }
         }
@@ -156,7 +156,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areaTypeNameOp.value.ToString());
                     if (existedAreaType != null)
                     {
-                        var response = new ResponseDTO<object>(400, $"Tên loại phòng {areaTypeNameOp} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
+                        var response = new ResponseDTO<object>(400, $"Tên kiểu khu vực {areaTypeNameOp} đã tồn tại. Vui lòng nhập tên kiểu khu vực khác!", null);
                         return BadRequest(response);
                     }
                 }
@@ -173,7 +173,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var areaTypeFromDb = await _areaTypeService.Get(x => x.AreaTypeId == id);
                 if (areaTypeFromDb == null)
                 {
-                    var response2 = new ResponseDTO<object>(404, "Không tìm thấy phòng. Vui lòng nhập lại mã loại phòng!", null);
+                    var response2 = new ResponseDTO<object>(404, "Không tìm thấy kiểu khu vực. Vui lòng nhập lại mã kiểu khu vực!", null);
                     return NotFound(response2);
                 }
 
@@ -224,7 +224,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var areaTypeFromDb = await _areaTypeService.Get(x => x.AreaTypeId == id);
                 if (areaTypeFromDb == null)
-                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy kiểu này!", null));
                 if (Images == null)
                     return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
                 var result = await ImageSerive.AddImage(Images);
@@ -256,7 +256,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 var areaTypeFromDb = await _areaTypeService.GetWithInclude(x => x.AreaTypeId == id, x => x.Images);
                 if (areaTypeFromDb == null)
-                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy kiểu này!", null));
                 if (images == null)
                     return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
                 var imageList = areaTypeFromDb.Images;
@@ -269,7 +269,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     var item = imageList.FirstOrDefault(x => x.ImageUrl == $"{image}");
                     if (item == null)
-                        return BadRequest(new ResponseDTO<object>(400, "Ảnh không tồn tại trong loại khu vực!", null));
+                        return BadRequest(new ResponseDTO<object>(400, "Ảnh không tồn tại trong kiểu khu vực!", null));
                     areaTypeFromDb.Images.Remove(item);
 
                 }
