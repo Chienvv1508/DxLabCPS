@@ -117,7 +117,7 @@ namespace DxLabCoworkingSpace
                     var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == areaid);
                     if (area != null)
                     {
-                        area.Status = 1;
+                        area.Status = 0;
                         await _unitOfWork.AreaRepository.Update(area);
                     }
 

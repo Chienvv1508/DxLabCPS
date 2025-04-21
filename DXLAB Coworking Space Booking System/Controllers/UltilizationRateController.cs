@@ -127,12 +127,41 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("date")]
-        public async Task<IActionResult> GetRateOnDate(DateTime dateTime)
+        public async Task<IActionResult> GetRateOnDate(DateTime dateTime, int paraFilter)
         {
             try
             {
                 //Check ngày nhưng tạm thời bỏ để test
                 var result = await _ultilizationRateService.GetAll(x => x.THDate.Date == dateTime.Date);
+                if(paraFilter == 1)
+                {
+                    var groupBy = result.GroupBy(x => x.RoomId);
+                    List<UltilizationRoomGet> ultilizationRoomGets = new List<UltilizationRoomGet>();
+                    if(groupBy.Count() != 0)
+                    {
+                        decimal rate = 0;
+                        foreach(var group in groupBy)
+                        {
+                            foreach(var item in group)
+                            {
+                                rate += item.Rate;
+                            }
+                            rate /= groupBy.Count();
+                            UltilizationRoomGet ul = new UltilizationRoomGet()
+                            {
+                                RoomId = group.Key,
+                                RoomName = result.FirstOrDefault(x => x.RoomId == group.Key).RoomName,
+                                Rate = rate,
+                                DateTH = DateTime.Now.Date
+                            };
+                            ultilizationRoomGets.Add(ul);
+
+                        }
+                    }
+                    var response1 = new ResponseDTO<object>(200, "Danh sách rate: ", ultilizationRoomGets);
+                    return Ok(response1);
+
+                }
                 var response = new ResponseDTO<object>(200, "Danh sách rate: ", result);
                 return Ok(response);
             }
@@ -142,6 +171,24 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
 
         }
+
+        //[HttpGet("dateroom")]
+        //public async Task<IActionResult> GetRateOnDateRoom(DateTime dateTime)
+        //{
+        //    try
+        //    {
+        //        //Check ngày nhưng tạm thời bỏ để test
+        //        var result = await _ultilizationRateService.GetAll(x => x.THDate.Date == dateTime.Date);
+        //        var groupByRoom
+        //        var response = new ResponseDTO<object>(200, "Danh sách rate: ", result);
+        //        return Ok(response);
+        //    }
+        //    catch
+        //    {
+        //        return StatusCode(500);
+        //    }
+
+        //}
 
         [HttpGet("month")]
         public async Task<IActionResult> GetRateInMonth(int year, int month)
