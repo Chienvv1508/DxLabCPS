@@ -30,7 +30,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             var existedAreaType = await _areaTypeService.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName && x.Status == 1);
             if (existedAreaType != null)
             {
-                var response = new ResponseDTO<object>(400, "Tên phòng đã tồn tại. Vui lòng nhập tên phòng khác", null);
+                var response = new ResponseDTO<object>(400, "Tên kiểu khu vực đã tồn tại. Vui lòng nhập tên kiểu khu vực khác", null);
                 return BadRequest(response);
             }
 
