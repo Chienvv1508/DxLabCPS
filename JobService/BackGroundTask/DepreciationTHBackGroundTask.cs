@@ -23,6 +23,7 @@ namespace JobService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            DateTime dateTH = DateTime.Now.AddDays(-1);
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -33,13 +34,18 @@ namespace JobService
                     _logger.LogInformation($"{end}");
                     int.TryParse(DateTime.Now.ToString("HHmm"), out int realTime);
                     _logger.LogInformation($"Khấu hao: {realTime}");
-                   
+
                     if (DateTime.Now.Day == DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month) && realTime >= start && realTime <= end)
                     {
+                        if (dateTH.Date == DateTime.Now.Date)
+                        {
+                            continue;
+                        }
                         string apiUrl = _configuration["DepreciationTH:APIDepreciationTH"];
                         var response = await _httpClient.PostAsync(apiUrl, null, stoppingToken);
                         if (response.IsSuccessStatusCode)
                         {
+                            dateTH = DateTime.Now;
                             _logger.LogInformation("Chạy thành công khấu hao");
                         }
                         else
@@ -51,7 +57,7 @@ namespace JobService
                     _logger.LogError($"Error calling API: {ex.Message}");
                 }
 
-                await Task.Delay(TimeSpan.FromMinutes(20), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }
         }
     }
