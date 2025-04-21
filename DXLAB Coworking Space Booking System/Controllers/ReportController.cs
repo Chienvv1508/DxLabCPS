@@ -51,6 +51,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 ReportId = report.ReportId,
                 BookingDetailId = report.BookingDetailId,
                 ReportDescription = report.ReportDescription ?? "N/A",
+                FacilityQuantity = report.FacilityQuantity,
                 CreatedDate = report.CreatedDate.ToString("yyyy-MM-ddTHH:mm:ss"),
                 StaffName = report.User?.FullName ?? "N/A"
             };
@@ -233,6 +234,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     responseData.ReportId,
                     responseData.BookingDetailId,
                     responseData.ReportDescription,
+                    responseData.FacilityQuantity,
                     responseData.FacilityId,
                     responseData.BatchNumber,
                     responseData.FacilityTitle,

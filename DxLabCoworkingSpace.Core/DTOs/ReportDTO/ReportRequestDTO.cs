@@ -10,5 +10,6 @@ namespace DxLabCoworkingSpace
     {
         public int? BookingDetailId { get; set; }
         public string ReportDescription { get; set; } = null!;
+        public int? FacilityQuantity { get; set; }
     }
 }

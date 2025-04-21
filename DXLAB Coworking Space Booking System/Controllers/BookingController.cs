@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DxLabCoworkingSpace;
+using DxLabCoworkingSpace.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,8 +20,11 @@ namespace DXLAB_Coworking_Space_Booking_System
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly IAreaTypeCategoryService _areaTypeCategoryService;
+        private readonly IBlockchainBookingService _blockchainBookingService;
+        private readonly IUserService _userService;
         public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService,
-            IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper, IConfiguration configuration, IAreaTypeCategoryService areaTypeCategoryService)
+            IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper, IConfiguration configuration, IAreaTypeCategoryService areaTypeCategoryService,
+            IBlockchainBookingService blockchainBookingService, IUserService userService)
         {
             _roomService = roomService;
             _slotService = slotService;
@@ -31,6 +35,8 @@ namespace DXLAB_Coworking_Space_Booking_System
             _mapper = mapper;
             _configuration = configuration;
             _areaTypeCategoryService = areaTypeCategoryService;
+            _blockchainBookingService = blockchainBookingService;
+            _userService = userService;
         }
 
         [HttpPost]
@@ -89,7 +95,13 @@ namespace DXLAB_Coworking_Space_Booking_System
                     return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
                 }
 
-
+                // Lấy WalletAddress của user
+                var user = await _userService.Get(u => u.UserId == userId);
+                if (user == null || string.IsNullOrEmpty(user.WalletAddress))
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Người dùng không có địa chỉ ví blockchain!", null));
+                }
+                var userWalletAddress = user.WalletAddress;
 
                 Booking booking = new Booking();
                 List<BookingDetail> bookingDetails = new List<BookingDetail>();
@@ -191,6 +203,21 @@ namespace DXLAB_Coworking_Space_Booking_System
                 // Tính TotalPrice và lưu Booking
                 booking.Price = bookingDetails.Sum(br => br.Price);
                 booking.BookingDetails = bookingDetails;
+
+                // Lấy slot đầu tiên để gọi smart contract (giả sử chỉ cần 1 slot cho đơn giản)
+                var firstSlot = bookingDetails.FirstOrDefault()?.SlotId;
+                if (firstSlot == null)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy slot để đặt phòng!", null));
+                }
+
+                // Gọi blockchain để trừ tiền và phát sự kiện BookingCreated
+                var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(booking.BookingId, userWalletAddress, (byte)firstSlot, booking.Price);
+                if (!success)
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Số dư không đủ hoặc giao dịch không thành công.", null));
+                }
+
                 await _bookingService.Add(booking);
 
                 // Chuẩn bị dữ liệu trả về giống GetStudentBookingHistoryDetail
