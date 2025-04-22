@@ -76,12 +76,12 @@ namespace DxLabCoworkingSpace
 
         public void ScheduleJob()
         {
-            RecurringJob.AddOrUpdate(
-                "booking-log-job",
-                () => RunBookingLogJobAsync(),
-                "*/5 * * * *", // Chạy mỗi 5 phút
-                TimeZoneInfo.Local
-            );
+            //RecurringJob.AddOrUpdate(
+            //    "booking-log-job",
+            //    () => RunBookingLogJobAsync(),
+            //    "*/5 * * * *", // Chạy mỗi 5 phút
+            //    TimeZoneInfo.Local
+            //);
 
             RecurringJob.AddOrUpdate(
                 "minting-job",
