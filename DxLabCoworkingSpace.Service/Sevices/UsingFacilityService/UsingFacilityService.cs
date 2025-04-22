@@ -295,6 +295,7 @@ namespace DxLabCoworkingSpace
                 }
 
                 var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == removedFaciDTO.AreaId);
+                area.Status = 0;
                 var availAreaInRoom = await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == area.RoomId && x.Status == 1);
                 if (availAreaInRoom.Any())
                 {
