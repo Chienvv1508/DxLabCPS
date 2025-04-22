@@ -239,160 +239,160 @@ namespace DxLabCoworkingSpace
                     }
                 }
 
-                // BookingCancelled
-                var bookingCancelledEvent = _contract.GetEvent("BookingCancelled");
-                var bookingCancelledFilter = bookingCancelledEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var bookingCancelledLogs = await bookingCancelledEvent.GetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledFilter);
-                var bookingCancelledLogs = await RetryGetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledEvent, bookingCancelledFilter);
-                await Task.Delay(200);
+                //// BookingCancelled
+                //var bookingCancelledEvent = _contract.GetEvent("BookingCancelled");
+                //var bookingCancelledFilter = bookingCancelledEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
+                ////var bookingCancelledLogs = await bookingCancelledEvent.GetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledFilter);
+                //var bookingCancelledLogs = await RetryGetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledEvent, bookingCancelledFilter);
+                //await Task.Delay(200);
 
-                Console.WriteLine($"Found {bookingCancelledLogs.Count} BookingCancelled logs.");
-                foreach (var log in bookingCancelledLogs)
-                {
-                    try
-                    {
-                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-                        var refundAmount = Nethereum.Util.UnitConversion.Convert.FromWei(log.Event.RefundAmount).ToString();
-                        await SaveBookingEventAsync(
-                            log.Event.BookingId,
-                            (int)log.Log.BlockNumber.Value,
-                            log.Log.TransactionHash,
-                            null,
-                            0,
-                            null,
-                            (long)block.Timestamp.Value,
-                            "Cancelled",
-                            refundAmount
-                        );
-                    }
-                    catch (Exception decodeError)
-                    {
-                        Console.WriteLine($"Error processing BookingCancelled log: {decodeError.Message}");
-                    }
-                }
+                //Console.WriteLine($"Found {bookingCancelledLogs.Count} BookingCancelled logs.");
+                //foreach (var log in bookingCancelledLogs)
+                //{
+                //    try
+                //    {
+                //        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
+                //        var refundAmount = Nethereum.Util.UnitConversion.Convert.FromWei(log.Event.RefundAmount).ToString();
+                //        await SaveBookingEventAsync(
+                //            log.Event.BookingId,
+                //            (int)log.Log.BlockNumber.Value,
+                //            log.Log.TransactionHash,
+                //            null,
+                //            0,
+                //            null,
+                //            (long)block.Timestamp.Value,
+                //            "Cancelled",
+                //            refundAmount
+                //        );
+                //    }
+                //    catch (Exception decodeError)
+                //    {
+                //        Console.WriteLine($"Error processing BookingCancelled log: {decodeError.Message}");
+                //    }
+                //}
 
-                // BookingCheckedIn
-                var bookingCheckedInEvent = _contract.GetEvent("BookingCheckedIn");
-                var bookingCheckedInFilter = bookingCheckedInEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var bookingCheckedInLogs = await bookingCheckedInEvent.GetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInFilter);
-                var bookingCheckedInLogs = await RetryGetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInEvent, bookingCheckedInFilter);
-                await Task.Delay(200);
+                //// BookingCheckedIn
+                //var bookingCheckedInEvent = _contract.GetEvent("BookingCheckedIn");
+                //var bookingCheckedInFilter = bookingCheckedInEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
+                ////var bookingCheckedInLogs = await bookingCheckedInEvent.GetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInFilter);
+                //var bookingCheckedInLogs = await RetryGetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInEvent, bookingCheckedInFilter);
+                //await Task.Delay(200);
 
-                Console.WriteLine($"Found {bookingCheckedInLogs.Count} BookingCheckedIn logs.");
-                foreach (var log in bookingCheckedInLogs)
-                {
-                    try
-                    {
-                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-                        await SaveBookingEventAsync(
-                            log.Event.BookingId,
-                            (int)log.Log.BlockNumber.Value,
-                            log.Log.TransactionHash,
-                            null,
-                            0,
-                            null,
-                            (long)block.Timestamp.Value,
-                            "CheckedIn"
-                        );
-                    }
-                    catch (Exception decodeError)
-                    {
-                        Console.WriteLine($"Error processing BookingCheckedIn log: {decodeError.Message}");
-                    }
-                }
+                //Console.WriteLine($"Found {bookingCheckedInLogs.Count} BookingCheckedIn logs.");
+                //foreach (var log in bookingCheckedInLogs)
+                //{
+                //    try
+                //    {
+                //        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
+                //        await SaveBookingEventAsync(
+                //            log.Event.BookingId,
+                //            (int)log.Log.BlockNumber.Value,
+                //            log.Log.TransactionHash,
+                //            null,
+                //            0,
+                //            null,
+                //            (long)block.Timestamp.Value,
+                //            "CheckedIn"
+                //        );
+                //    }
+                //    catch (Exception decodeError)
+                //    {
+                //        Console.WriteLine($"Error processing BookingCheckedIn log: {decodeError.Message}");
+                //    }
+                //}
 
-                // UserBlocked
-                var userBlockedEvent = _contract.GetEvent("UserBlocked");
-                var userBlockedFilter = userBlockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var userBlockedLogs = await userBlockedEvent.GetAllChangesAsync<UserBlockedEventDTO>(userBlockedFilter);
-                var userBlockedLogs = await RetryGetAllChangesAsync<UserBlockedEventDTO>(userBlockedEvent, userBlockedFilter);
-                await Task.Delay(200);
+                //// UserBlocked
+                //var userBlockedEvent = _contract.GetEvent("UserBlocked");
+                //var userBlockedFilter = userBlockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
+                ////var userBlockedLogs = await userBlockedEvent.GetAllChangesAsync<UserBlockedEventDTO>(userBlockedFilter);
+                //var userBlockedLogs = await RetryGetAllChangesAsync<UserBlockedEventDTO>(userBlockedEvent, userBlockedFilter);
+                //await Task.Delay(200);
 
-                Console.WriteLine($"Found {userBlockedLogs.Count} UserBlocked logs.");
-                foreach (var log in userBlockedLogs)
-                {
-                    try
-                    {
-                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-                        await SaveBookingEventAsync(
-                            null,
-                            (int)log.Log.BlockNumber.Value,
-                            log.Log.TransactionHash,
-                            null,
-                            0,
-                            log.Event.User,
-                            (long)block.Timestamp.Value,
-                            "UserBlocked"
-                        );
-                    }
-                    catch (Exception decodeError)
-                    {
-                        Console.WriteLine($"Error processing UserBlocked log: {decodeError.Message}");
-                    }
-                }
+                //Console.WriteLine($"Found {userBlockedLogs.Count} UserBlocked logs.");
+                //foreach (var log in userBlockedLogs)
+                //{
+                //    try
+                //    {
+                //        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
+                //        await SaveBookingEventAsync(
+                //            null,
+                //            (int)log.Log.BlockNumber.Value,
+                //            log.Log.TransactionHash,
+                //            null,
+                //            0,
+                //            log.Event.User,
+                //            (long)block.Timestamp.Value,
+                //            "UserBlocked"
+                //        );
+                //    }
+                //    catch (Exception decodeError)
+                //    {
+                //        Console.WriteLine($"Error processing UserBlocked log: {decodeError.Message}");
+                //    }
+                //}
 
-                // UserRegistered
-                var userRegisteredEvent = _contract.GetEvent("UserRegistered");
-                var userRegisteredFilter = userRegisteredEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var userRegisteredLogs = await userRegisteredEvent.GetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredFilter);
-                var userRegisteredLogs = await RetryGetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredEvent, userRegisteredFilter);
-                await Task.Delay(200);
+                //// UserRegistered
+                //var userRegisteredEvent = _contract.GetEvent("UserRegistered");
+                //var userRegisteredFilter = userRegisteredEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
+                ////var userRegisteredLogs = await userRegisteredEvent.GetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredFilter);
+                //var userRegisteredLogs = await RetryGetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredEvent, userRegisteredFilter);
+                //await Task.Delay(200);
 
-                Console.WriteLine($"Found {userRegisteredLogs.Count} UserRegistered logs.");
-                foreach (var log in userRegisteredLogs)
-                {
-                    try
-                    {
-                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-                        await SaveBookingEventAsync(
-                            null,
-                            (int)log.Log.BlockNumber.Value,
-                            log.Log.TransactionHash,
-                            null,
-                            0,
-                            log.Event.User,
-                            (long)block.Timestamp.Value,
-                            "UserRegistered",
-                            null,
-                            log.Event.Email,
-                            log.Event.IsStaff
-                        );
-                    }
-                    catch (Exception decodeError)
-                    {
-                        Console.WriteLine($"Error processing UserRegistered log: {decodeError.Message}");
-                    }
-                }
+                //Console.WriteLine($"Found {userRegisteredLogs.Count} UserRegistered logs.");
+                //foreach (var log in userRegisteredLogs)
+                //{
+                //    try
+                //    {
+                //        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
+                //        await SaveBookingEventAsync(
+                //            null,
+                //            (int)log.Log.BlockNumber.Value,
+                //            log.Log.TransactionHash,
+                //            null,
+                //            0,
+                //            log.Event.User,
+                //            (long)block.Timestamp.Value,
+                //            "UserRegistered",
+                //            null,
+                //            log.Event.Email,
+                //            log.Event.IsStaff
+                //        );
+                //    }
+                //    catch (Exception decodeError)
+                //    {
+                //        Console.WriteLine($"Error processing UserRegistered log: {decodeError.Message}");
+                //    }
+                //}
 
-                // UserUnblocked
-                var userUnblockedEvent = _contract.GetEvent("UserUnblocked");
-                var userUnblockedFilter = userUnblockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var userUnblockedLogs = await userUnblockedEvent.GetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedFilter);
-                var userUnblockedLogs = await RetryGetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedEvent, userUnblockedFilter);
-                await Task.Delay(200);
+                //// UserUnblocked
+                //var userUnblockedEvent = _contract.GetEvent("UserUnblocked");
+                //var userUnblockedFilter = userUnblockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
+                ////var userUnblockedLogs = await userUnblockedEvent.GetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedFilter);
+                //var userUnblockedLogs = await RetryGetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedEvent, userUnblockedFilter);
+                //await Task.Delay(200);
 
-                Console.WriteLine($"Found {userUnblockedLogs.Count} UserUnblocked logs.");
-                foreach (var log in userUnblockedLogs)
-                {
-                    try
-                    {
-                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-                        await SaveBookingEventAsync(
-                            null,
-                            (int)log.Log.BlockNumber.Value,
-                            log.Log.TransactionHash,
-                            null,
-                            0,
-                            log.Event.User,
-                            (long)block.Timestamp.Value,
-                            "UserUnblocked"
-                        );
-                    }
-                    catch (Exception decodeError)
-                    {
-                        Console.WriteLine($"Error processing UserUnblocked log: {decodeError.Message}");
-                    }
-                }
+                //Console.WriteLine($"Found {userUnblockedLogs.Count} UserUnblocked logs.");
+                //foreach (var log in userUnblockedLogs)
+                //{
+                //    try
+                //    {
+                //        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
+                //        await SaveBookingEventAsync(
+                //            null,
+                //            (int)log.Log.BlockNumber.Value,
+                //            log.Log.TransactionHash,
+                //            null,
+                //            0,
+                //            log.Event.User,
+                //            (long)block.Timestamp.Value,
+                //            "UserUnblocked"
+                //        );
+                //    }
+                //    catch (Exception decodeError)
+                //    {
+                //        Console.WriteLine($"Error processing UserUnblocked log: {decodeError.Message}");
+                //    }
+                //}
             }
             catch (Exception error)
             {
