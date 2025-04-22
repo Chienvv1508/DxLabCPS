@@ -58,6 +58,12 @@ namespace DxLabCoworkingSpace
             return await _unitOfWork.BookingRepository.GetWithInclude(expression, includes);
         }
 
+        public async Task Remove(Booking entity)
+        {
+             _unitOfWork.BookingRepository.Delete(entity);
+            await _unitOfWork.CommitAsync();
+        }
+
         public async Task Update(Booking entity)
         {
             await _unitOfWork.BookingRepository.Update(entity);

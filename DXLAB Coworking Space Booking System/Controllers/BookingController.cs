@@ -22,9 +22,10 @@ namespace DXLAB_Coworking_Space_Booking_System
         private readonly IAreaTypeCategoryService _areaTypeCategoryService;
         private readonly IBlockchainBookingService _blockchainBookingService;
         private readonly IUserService _userService;
+        private readonly IUnitOfWork _unitOfWork;
         public BookingController(IRoomService roomService, ISlotService slotService, IBookingService bookingService, IBookingDetailService bookDetailService,
             IAreaService areaService, IAreaTypeService areaTypeService, IMapper mapper, IConfiguration configuration, IAreaTypeCategoryService areaTypeCategoryService,
-            IBlockchainBookingService blockchainBookingService, IUserService userService)
+            IBlockchainBookingService blockchainBookingService, IUserService userService, IUnitOfWork unitOfWork)
         {
             _roomService = roomService;
             _slotService = slotService;
@@ -37,6 +38,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             _areaTypeCategoryService = areaTypeCategoryService;
             _blockchainBookingService = blockchainBookingService;
             _userService = userService;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpPost]
@@ -204,10 +206,16 @@ namespace DXLAB_Coworking_Space_Booking_System
                 booking.Price = bookingDetails.Sum(br => br.Price);
                 booking.BookingDetails = bookingDetails;
 
-                //// Lấy slot đầu tiên để gọi smart contract (giả sử chỉ cần 1 slot cho đơn giản)
+                //// Lưu booking vào database trước để nhận BookingId hợp lệ
+                await _bookingService.Add(booking);
+                //await _unitOfWork.CommitAsync(); // Gọi CommitAsync ở đây là cần thiết
+
+                //// Lấy slot đầu tiên để gọi smart contract
                 //var firstSlot = bookingDetails.FirstOrDefault()?.SlotId;
                 //if (firstSlot == null)
                 //{
+                //    // Xóa booking nếu không tìm thấy slot
+                //    await _bookingService.Remove(booking); // Đã bao gồm CommitAsync bên trong
                 //    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy slot để đặt phòng!", null));
                 //}
 
@@ -215,10 +223,22 @@ namespace DXLAB_Coworking_Space_Booking_System
                 //var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(booking.BookingId, userWalletAddress, (byte)firstSlot, booking.Price);
                 //if (!success)
                 //{
-                //    return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Số dư không đủ hoặc giao dịch không thành công.", null));
-                //}
+                //    // Nếu giao dịch blockchain thất bại, xóa booking vừa tạo
+                //    await _bookingService.Remove(booking); // Đã bao gồm CommitAsync bên trong
 
-                await _bookingService.Add(booking);
+                //    // Kiểm tra nguyên nhân cụ thể
+                //    var userBalance = await _blockchainBookingService.GetUserBalance(userWalletAddress);
+                //    var requiredTokens = Nethereum.Util.UnitConversion.Convert.ToWei(booking.Price);
+                //    if (userBalance < requiredTokens)
+                //    {
+                //        return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Số dư token không đủ.", null));
+                //    }
+                //    if (booking.BookingId <= 0)
+                //    {
+                //        return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! BookingId không hợp lệ.", null));
+                //    }
+                //    return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Giao dịch không thành công.", null));
+                //}
 
                 // Chuẩn bị dữ liệu trả về giống GetStudentBookingHistoryDetail
                 var responseData = new

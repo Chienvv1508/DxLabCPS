@@ -48,7 +48,7 @@ namespace DxLabCoworkingSpace
             _contractAddress = _configuration.GetSection("ContractAddresses:Sepolia")["DXLABCoin"]
                 ?? throw new ArgumentNullException("ContractAddresses:Sepolia:DXLABCoin not configured");
             _sepoliaRpcUrl = _configuration.GetSection("Network")["ProviderCrawl"]
-                ?? "https://sepolia.infura.io/v3/9d13fab540c243ca9514d4ab4fe7e9e1";
+                ?? "https://sepolia.infura.io/v3/027867a8ebd44bc192e7f7b33baf4b4e";
 
             string labBookingPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "Booking.json");
             string fptPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "DXLABCoin.json");
@@ -76,12 +76,12 @@ namespace DxLabCoworkingSpace
 
         public void ScheduleJob()
         {
-            RecurringJob.AddOrUpdate(
-                "booking-log-job",
-                () => RunBookingLogJobAsync(),
-                "*/5 * * * *", // Chạy mỗi 5 phút
-                TimeZoneInfo.Local
-            );
+            //RecurringJob.AddOrUpdate(
+            //    "booking-log-job",
+            //    () => RunBookingLogJobAsync(),
+            //    "*/5 * * * *", // Chạy mỗi 5 phút
+            //    TimeZoneInfo.Local
+            //);
 
             RecurringJob.AddOrUpdate(
                 "minting-job",
