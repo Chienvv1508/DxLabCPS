@@ -47,11 +47,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         if (area.AreaType.AreaCategory == 1)
                         {
                             int m = area.AreaType.Size * numberOfSlot;
-                            rate = Math.Round((decimal)item.Count() / m, 2);
+                            rate = Math.Round((decimal)item.Count() / m, 4);
                         }
                         else
                         {
-                            rate = Math.Round((decimal)item.Count() / numberOfSlot, 2);
+                            rate = Math.Round((decimal)item.Count() / numberOfSlot, 4);
                         }
 
                         int roomid = area.RoomId;
@@ -212,9 +212,12 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     decimal rate = 0;
                     foreach (var item in group)
                     {
+                       
                         rate += item.Rate;
                     }
-                    rate /= group.Count();
+                    //var areaInRoom = await _ultilizationRateService.GetAll(x => x.RoomId == roomId && x.THDate.Date == group.Key.Date);
+                    
+                    rate /= (group.Count());
                     UltilizationRoomGet ul = new UltilizationRoomGet()
                     {
                         RoomId = roomId,
