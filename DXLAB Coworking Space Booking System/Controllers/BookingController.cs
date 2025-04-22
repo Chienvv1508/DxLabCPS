@@ -206,39 +206,39 @@ namespace DXLAB_Coworking_Space_Booking_System
                 booking.Price = bookingDetails.Sum(br => br.Price);
                 booking.BookingDetails = bookingDetails;
 
-                // Lưu booking vào database trước để nhận BookingId hợp lệ
+                //// Lưu booking vào database trước để nhận BookingId hợp lệ
                 await _bookingService.Add(booking);
-                await _unitOfWork.CommitAsync(); // Gọi CommitAsync ở đây là cần thiết
+                //await _unitOfWork.CommitAsync(); // Gọi CommitAsync ở đây là cần thiết
 
-                // Lấy slot đầu tiên để gọi smart contract
-                var firstSlot = bookingDetails.FirstOrDefault()?.SlotId;
-                if (firstSlot == null)
-                {
-                    // Xóa booking nếu không tìm thấy slot
-                    await _bookingService.Remove(booking); // Đã bao gồm CommitAsync bên trong
-                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy slot để đặt phòng!", null));
-                }
+                //// Lấy slot đầu tiên để gọi smart contract
+                //var firstSlot = bookingDetails.FirstOrDefault()?.SlotId;
+                //if (firstSlot == null)
+                //{
+                //    // Xóa booking nếu không tìm thấy slot
+                //    await _bookingService.Remove(booking); // Đã bao gồm CommitAsync bên trong
+                //    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy slot để đặt phòng!", null));
+                //}
 
-                // Gọi blockchain để trừ tiền và phát sự kiện BookingCreated
-                var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(booking.BookingId, userWalletAddress, (byte)firstSlot, booking.Price);
-                if (!success)
-                {
-                    // Nếu giao dịch blockchain thất bại, xóa booking vừa tạo
-                    await _bookingService.Remove(booking); // Đã bao gồm CommitAsync bên trong
+                //// Gọi blockchain để trừ tiền và phát sự kiện BookingCreated
+                //var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(booking.BookingId, userWalletAddress, (byte)firstSlot, booking.Price);
+                //if (!success)
+                //{
+                //    // Nếu giao dịch blockchain thất bại, xóa booking vừa tạo
+                //    await _bookingService.Remove(booking); // Đã bao gồm CommitAsync bên trong
 
-                    // Kiểm tra nguyên nhân cụ thể
-                    var userBalance = await _blockchainBookingService.GetUserBalance(userWalletAddress);
-                    var requiredTokens = Nethereum.Util.UnitConversion.Convert.ToWei(booking.Price);
-                    if (userBalance < requiredTokens)
-                    {
-                        return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Số dư token không đủ.", null));
-                    }
-                    if (booking.BookingId <= 0)
-                    {
-                        return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! BookingId không hợp lệ.", null));
-                    }
-                    return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Giao dịch không thành công.", null));
-                }
+                //    // Kiểm tra nguyên nhân cụ thể
+                //    var userBalance = await _blockchainBookingService.GetUserBalance(userWalletAddress);
+                //    var requiredTokens = Nethereum.Util.UnitConversion.Convert.ToWei(booking.Price);
+                //    if (userBalance < requiredTokens)
+                //    {
+                //        return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Số dư token không đủ.", null));
+                //    }
+                //    if (booking.BookingId <= 0)
+                //    {
+                //        return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! BookingId không hợp lệ.", null));
+                //    }
+                //    return BadRequest(new ResponseDTO<object>(400, "Thanh toán trên blockchain thất bại! Giao dịch không thành công.", null));
+                //}
 
                 // Chuẩn bị dữ liệu trả về giống GetStudentBookingHistoryDetail
                 var responseData = new
