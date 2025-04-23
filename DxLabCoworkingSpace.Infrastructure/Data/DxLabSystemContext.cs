@@ -294,6 +294,8 @@ namespace DxLabCoworkingSpace
 
                 entity.Property(e => e.FullName).HasMaxLength(100);
 
+                entity.Property(e => e.Avatar).HasMaxLength(255);
+
                 entity.Property(e => e.WalletAddress).HasMaxLength(255);
 
                 entity.HasOne(d => d.Role)
