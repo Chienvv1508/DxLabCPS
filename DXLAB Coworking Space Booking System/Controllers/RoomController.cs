@@ -335,6 +335,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // admin quản lý 
         // student xem chỗ đặt phòng
+        // matrix
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RoomDTO>>> GetAllRooms()
         {
@@ -345,7 +346,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 foreach (var area in r.Areas)
                 {
-                    area.AreaType = await _areaTypeService.Get(x => x.AreaTypeId == area.AreaTypeId);
+                    area.AreaType = await _areaTypeService.GetWithInclude(x => x.AreaTypeId == area.AreaTypeId, x => x.AreaTypeCategory);
                 }
             }
 
