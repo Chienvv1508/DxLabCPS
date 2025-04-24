@@ -271,8 +271,16 @@ namespace DxLabCoworkingSpace
                     throw new Exception("Không tìm thấy thông tin thiết bị cần xóa!");
 
                 }
-
-                _unitOfWork.UsingFacilityRepository.Delete(usingfaci);
+                if(usingfaci.Quantity == removedFaciDTO.Quantity)
+                {
+                    _unitOfWork.UsingFacilityRepository.Delete(usingfaci);
+                }
+                else
+                {
+                    usingfaci.Quantity -= removedFaciDTO.Quantity;
+                    _unitOfWork.UsingFacilityRepository.Update(usingfaci);
+                }
+               
 
                 var existedfaciStatus = await _unitOfWork.FacilitiesStatusRepository.Get(x => x.FacilityId == removedFaciDTO.FacilityId
                        && x.BatchNumber == removedFaciDTO.BatchNumber && x.ImportDate == removedFaciDTO.ImportDate && x.Status == removedFaciDTO.Status);
