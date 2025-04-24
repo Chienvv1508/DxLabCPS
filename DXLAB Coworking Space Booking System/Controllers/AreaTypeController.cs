@@ -66,8 +66,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
 
             ResponseDTO<List<AreaType>> result = await _areaTypeService.GetAllByFilPara(fil);
-            var response = _mapper.Map<List<AreaTypeDTO>>(result.Data);
-            return StatusCode(result.StatusCode, response);
+           if(result.StatusCode == 200)
+            {
+                var listAreaTypeDTO = _mapper.Map<List<AreaTypeDTO>>(result.Data);
+                var response = new ResponseDTO<object>(200, "Lấy thành công", listAreaTypeDTO);
+                return Ok(response);
+            }
+            
+            return StatusCode(result.StatusCode, result);
 
             //try
             //{
