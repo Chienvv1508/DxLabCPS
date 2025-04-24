@@ -33,7 +33,7 @@ namespace DxLabCoworkingSpace.Service
                 ?? throw new ArgumentNullException("ContractAddresses:Sepolia:DXLABCoin not configured");
 
             var sepoliaRpcUrl = configuration.GetSection("Network")["ProviderCrawl"]
-                ?? "https://sepolia.infura.io/v3/9d13fab540c243ca9514d4ab4fe7e9e1";
+                ?? "https://sepolia.infura.io/v3/ce5f177778e547a19055596b216fd743";
 
             string labBookingPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "Booking.json");
             string tokenPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "DXLABCoin.json");
