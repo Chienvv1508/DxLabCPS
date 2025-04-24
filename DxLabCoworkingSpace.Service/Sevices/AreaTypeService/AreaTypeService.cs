@@ -163,7 +163,7 @@ namespace DxLabCoworkingSpace
             {
                 if (string.IsNullOrEmpty(fil))
                     return new ResponseDTO<List<AreaType>>(400, "Tham số lọc không được để trống", null);
-                var areaTypes = await _unitOfWork.AreaTypeRepository.GetAll();
+                var areaTypes = await _unitOfWork.AreaTypeRepository.GetAllWithInclude(x => x.Images);
                 if (fil.Equals("1"))
                 {
                     areaTypes = areaTypes.Where(x => x.Status == 1);
