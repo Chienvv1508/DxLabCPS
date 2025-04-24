@@ -1,6 +1,7 @@
 ﻿using DxLabCoworkingSpace;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -46,11 +47,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         if (area.AreaType.AreaCategory == 1)
                         {
                             int m = area.AreaType.Size * numberOfSlot;
-                            rate = Math.Round((decimal)item.Count() / m, 2);
+                            rate = Math.Round((decimal)item.Count() / m, 4);
                         }
                         else
                         {
-                            rate = Math.Round((decimal)item.Count() / numberOfSlot, 2);
+                            rate = Math.Round((decimal)item.Count() / numberOfSlot, 4);
                         }
 
                         int roomid = area.RoomId;
@@ -139,14 +140,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     List<UltilizationRoomGet> ultilizationRoomGets = new List<UltilizationRoomGet>();
                     if(groupBy.Count() != 0)
                     {
-                        decimal rate = 0;
+                        
                         foreach(var group in groupBy)
                         {
-                            foreach(var item in group)
+                            decimal rate = 0;
+                            foreach (var item in group)
                             {
                                 rate += item.Rate;
                             }
-                            rate /= groupBy.Count();
+                            rate /= group.Count();
                             UltilizationRoomGet ul = new UltilizationRoomGet()
                             {
                                 RoomId = group.Key,
@@ -191,7 +193,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         //}
 
         [HttpGet("month")]
-        public async Task<IActionResult> GetRateInMonth(int year, int month)
+        public async Task<IActionResult> GetRateInMonth(int year, int month,int roomId)
         {
             try
             {
@@ -202,11 +204,33 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
                 DateTime firstDate = new DateTime(year, month, 1);
                 DateTime lastDate = new DateTime(year, month, DateTime.DaysInMonth(year, month));
-                var result = await _ultilizationRateService.GetAll(x => x.THDate.Date >= firstDate.Date && x.THDate.Date <= lastDate.Date);
-                var response = new ResponseDTO<object>(200, "Danh sách rate: ", result);
+                var result = await _ultilizationRateService.GetAll(x => x.THDate.Date >= firstDate.Date && x.THDate.Date <= lastDate.Date && x.RoomId == roomId);
+                var groupDate = result.GroupBy(x => x.THDate.Date);
+                List<UltilizationRoomGet> ultilizationRoomGets = new List<UltilizationRoomGet>();
+                foreach (var group in groupDate)
+                {
+                    decimal rate = 0;
+                    foreach (var item in group)
+                    {
+                       
+                        rate += item.Rate;
+                    }
+                    //var areaInRoom = await _ultilizationRateService.GetAll(x => x.RoomId == roomId && x.THDate.Date == group.Key.Date);
+                    
+                    rate /= (group.Count());
+                    UltilizationRoomGet ul = new UltilizationRoomGet()
+                    {
+                        RoomId = roomId,
+                        RoomName = result.FirstOrDefault(x => x.RoomId == roomId).RoomName,
+                        Rate = rate,
+                        DateTH = group.Key
+                    };
+                    ultilizationRoomGets.Add(ul);
+                }
+                var response = new ResponseDTO<object>(200, "Danh sách rate: ", ultilizationRoomGets);
                 return Ok(response);
             }
-            catch
+            catch(Exception ex)
             {
                 return StatusCode(500);
             }
@@ -214,7 +238,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpGet("year")]
-        public async Task<IActionResult> GetRateInYear(int year)
+        public async Task<IActionResult> GetRateInYear(int year, int roomId)
         {
             try
             {
@@ -225,11 +249,32 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
                 DateTime firstDate = new DateTime(year, 1, 1);
                 DateTime lastDate = new DateTime(year, 12, DateTime.DaysInMonth(year, 12));
-                var result = await _ultilizationRateService.GetAll(x => x.THDate.Date >= firstDate.Date && x.THDate.Date <= lastDate.Date);
-                var response = new ResponseDTO<object>(200, "Danh sách rate: ", result);
+                var result = await _ultilizationRateService.GetAll(x => x.THDate.Date >= firstDate.Date && x.THDate.Date <= lastDate.Date && x.RoomId == roomId);
+                var groupDate = result.GroupBy(x => x.THDate.Year);
+                List<UltilizationRoomGet> ultilizationRoomGets = new List<UltilizationRoomGet>();
+                foreach (var group in groupDate)
+                {
+                    decimal rate = 0;
+                    foreach (var item in group)
+                    {
+                        rate += item.Rate;
+                    }
+                    rate /= group.Count();
+                    UltilizationRoomGet ul = new UltilizationRoomGet()
+                    {
+                        RoomId = roomId,
+                        RoomName = result.FirstOrDefault(x => x.RoomId == roomId).RoomName,
+                        Rate = rate,
+                        DateTH = new DateTime(year, 12, 31)
+                    };
+                    ultilizationRoomGets.Add(ul);
+                }
+
+
+                var response = new ResponseDTO<object>(200, "Danh sách rate: ", ultilizationRoomGets);
                 return Ok(response);
             }
-            catch
+            catch(Exception ex)
             {
                 return StatusCode(500);
             }

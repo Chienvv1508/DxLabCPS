@@ -8,6 +8,6 @@ namespace DxLabCoworkingSpace
 {
     public interface IBookingService : IGenericeService<Booking>
     {
-
+        Task Remove(Booking entity); // Thêm phương thức Remove
     }
 }
