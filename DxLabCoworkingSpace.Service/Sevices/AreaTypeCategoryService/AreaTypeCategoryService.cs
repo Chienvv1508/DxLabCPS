@@ -294,13 +294,25 @@ namespace DxLabCoworkingSpace
                 var listImage = await _unitOfWork.ImageRepository.GetAll(x => x.AreaTypeCategoryId == areaTypeCateFromDb.CategoryId);
                 if (images == null)
                     throw new ArgumentNullException();
+
+                //var imageList = areaTypeCateFromDb.Images;
+                //foreach (var image in images)
+                //{
+                //    var item = imageList.FirstOrDefault(x => x.ImageUrl == $"{image}");
+                //    //if (item == null)
+                //    //    return new ResponseDTO<AreaTypeCategory>(400, "Ảnh không tồn tại trong loại khu vực!", null);
+                //    areaTypeCateFromDb.Images.Remove(item);
+
+                //}
                 foreach (var item in images)
                 {
                     var x = listImage.FirstOrDefault(x => x.ImageUrl == item);
                     if (x == null) throw new Exception("Ảnh nhập vào không phù hợp");
                     await _unitOfWork.ImageRepository.Delete(x.ImageId);
 
+
                 }
+
                 await _unitOfWork.AreaTypeCategoryRepository.Update(areaTypeCateFromDb);
                 await _unitOfWork.CommitAsync();
             }
@@ -361,11 +373,12 @@ namespace DxLabCoworkingSpace
                     areaTypeCateFromDb.Images.Remove(item);
 
                 }
+                await UpdateImage(areaTypeCateFromDb, images);
                 foreach (var image in images)
                 {
                     ImageSerive.RemoveImage(image);
                 }
-                UpdateImage(areaTypeCateFromDb, images);
+                
                 return new ResponseDTO<AreaTypeCategory>(200, "Cập nhập thành công!", null);
 
             }
