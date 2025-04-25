@@ -14,5 +14,7 @@ namespace DxLabCoworkingSpace
         Task UpdateImage(AreaTypeCategory areaTypeCateFromDb, List<string> images);
         Task<ResponseDTO<AreaTypeCategoryForAddDTO>> CreateNewAreaTypeCategoory(AreaTypeCategoryForAddDTO areaTypeCategoryDTO);
         Task<ResponseDTO<AreaTypeCategory>> PatchAreaTypeCategory(int id, JsonPatchDocument<AreaTypeCategory> patchDoc);
+        Task<ResponseDTO<AreaTypeCategory>> AddNewImage(int id, List<IFormFile> images);
+        Task<ResponseDTO<AreaTypeCategory>> RemoveImages(int id, List<string> images);
     }
 }

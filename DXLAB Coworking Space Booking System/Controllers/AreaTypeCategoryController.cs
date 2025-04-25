@@ -51,15 +51,13 @@ namespace DXLAB_Coworking_Space_Booking_System
             }
             catch (Exception ex)
             {
-                return BadRequest(new ResponseDTO<object>(400, "Lỗi database!", null));
+                return BadRequest(new ResponseDTO<object>(400, "Lỗi cơ sở dữ liệu!", null));
             }
 
         }
         [HttpPatch()]
         public async Task<IActionResult> PatchAreaTypeCategory(int id, [FromBody] JsonPatchDocument<AreaTypeCategory> patchDoc)
         {
-
-
             ResponseDTO<AreaTypeCategory> result = await _areaTypeCategoryService.PatchAreaTypeCategory(id, patchDoc);
             if (result.StatusCode == 200)
             {
@@ -70,163 +68,78 @@ namespace DXLAB_Coworking_Space_Booking_System
                 return StatusCode(result.StatusCode, result.Message);
             }
 
+        }
 
+        [HttpPost("newImage")]
+        public async Task<IActionResult> AddNewImageInAreaTypeCategory(int id, [FromForm] List<IFormFile> images)
+        {
             //try
             //{
-            //    if (patchDoc == null)
-            //    {
-            //        var response = new ResponseDTO<object>(400, "Bạn chưa truyền dữ liệu vào", null);
-            //        return BadRequest(response);
-            //    }
+            ResponseDTO<AreaTypeCategory> resultAdd = await _areaTypeCategoryService.AddNewImage(id, images);
+            return StatusCode(resultAdd.StatusCode, resultAdd);
+
             //    var areaTypeCateFromDb = await _areaTypeCategoryService.Get(x => x.CategoryId == id && x.Status == 1);
             //    if (areaTypeCateFromDb == null)
+            //        return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
+            //    if (images == null)
+            //        return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
+            //    var result = await ImageSerive.AddImage(images);
+            //    if (result.Item1 == true)
             //    {
-            //        var response2 = new ResponseDTO<object>(404, "Không tìm loại!", null);
-            //        return NotFound(response2);
-            //    }
-
-            //    var allowedPaths = new HashSet<string>
-            //    {
-            //           "title",
-            //            "categoryDescription"
-            //            //,"status"
-
-            //    };
-            //    var areaTypeCategoryTitleOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("title", StringComparison.OrdinalIgnoreCase));
-            //    if (areaTypeCategoryTitleOp != null)
-            //    {
-            //        var existedAreaTypeCategory = await _areaTypeCategoryService.Get(x => x.Title == areaTypeCategoryTitleOp.value.ToString() && x.Status == 1);
-            //        if (existedAreaTypeCategory != null)
+            //        foreach (var i in result.Item2)
             //        {
-            //            var response = new ResponseDTO<object>(400, $"Tên loại {areaTypeCategoryTitleOp.value.ToString()} đã tồn tại. Vui lòng nhập tên loại phòng khác!", null);
-            //            return BadRequest(response);
+            //            areaTypeCateFromDb.Images.Add(new Image() { ImageUrl = i });
+
             //        }
             //    }
-            //    //var areaTypeCategoryStatusOp = patchDoc.Operations.FirstOrDefault(op => op.path.Equals("status", StringComparison.OrdinalIgnoreCase));
-            //    //if (areaTypeCategoryStatusOp != null)
-            //    //{
-            //    //    var areaTypes = await _areaTypeService.GetAll(x => x.AreaCategory == id && x.Status == 1);
-            //    //    if (areaTypes != null)
-            //    //    {
-            //    //        var response = new ResponseDTO<object>(400, $"Bạn phải xóa hết loại khu vực trong dịch vụ:{areaTypeCateFromDb.Title} thì mới xóa được dịch vụ này!", null);
-            //    //        return BadRequest(response);
-            //    //    }
-            //    //}
+            //    else
+            //        return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
 
-            //    foreach (var operation in patchDoc.Operations)
-            //    {
-            //        if (!allowedPaths.Contains(operation.path))
-            //        {
-            //            var response1 = new ResponseDTO<object>(400, $"Không thể cập nhật trường: {operation.path}", null);
-            //            return BadRequest(response1);
-            //        }
-            //    }
-
-
-            //    patchDoc.ApplyTo(areaTypeCateFromDb, ModelState);
-
-            //    if (!ModelState.IsValid)
-            //    {
-            //        var allErrors = ModelState
-            //        .SelectMany(ms => ms.Value.Errors
-            //        .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
-            //        .ToList();
-            //        string errorString = string.Join(" | ", allErrors);
-            //        var response = new ResponseDTO<object>(400, errorString, null);
-            //        return BadRequest(response);
-            //    }
-
-            //    var areTypeCates = _mapper.Map<AreaTypeCategoryDTO>(areaTypeCateFromDb);
-
-            //    bool isValid = TryValidateModel(areTypeCates);
-            //    if (!isValid)
-            //    {
-            //        var allErrors = ModelState
-            //        .SelectMany(ms => ms.Value.Errors
-            //        .Select(err => $"{ms.Key}: {err.ErrorMessage}"))
-            //        .ToList();
-
-            //        string errorString = string.Join(" | ", allErrors);
-            //        var response = new ResponseDTO<object>(404, errorString, null);
-            //        return BadRequest(response);
-            //    }
             //    await _areaTypeCategoryService.Update(areaTypeCateFromDb);
-            //    var response3 = new ResponseDTO<object>(200, "Cập nhập thành công!", null);
-            //    return Ok(response3);
+            //    return Ok(new ResponseDTO<object>(200, "Cập nhập thành công", null));
             //}
             //catch (Exception ex)
             //{
-            //    var response = new ResponseDTO<object>(01, "Lỗi khi cập nhập dữ liệu!", null);
-            //    return StatusCode(500, response);
+            //    return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
             //}
-        }
-
-
-
-        [HttpPost("newImage")]
-        public async Task<IActionResult> AddNewImageInAreaTypeCategory(int id, [FromForm] List<IFormFile> Images)
-        {
-
-            try
-            {
-                var areaTypeCateFromDb = await _areaTypeCategoryService.Get(x => x.CategoryId == id && x.Status == 1);
-                if (areaTypeCateFromDb == null)
-                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
-                if (Images == null)
-                    return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
-                var result = await ImageSerive.AddImage(Images);
-                if (result.Item1 == true)
-                {
-                    foreach (var i in result.Item2)
-                    {
-                        areaTypeCateFromDb.Images.Add(new Image() { ImageUrl = i });
-
-                    }
-                }
-                else
-                    return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
-
-                await _areaTypeCategoryService.Update(areaTypeCateFromDb);
-                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công", null));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
-            }
         }
 
 
         [HttpDelete("Images")]
         public async Task<IActionResult> RemoveImage(int id, [FromBody] List<string> images)
         {
-            try
-            {
-                var areaTypeCateFromDb = await _areaTypeCategoryService.GetWithInclude(x => x.CategoryId == id && x.Status == 1, x => x.Images);
-                if (areaTypeCateFromDb == null)
-                    return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
-                if (images == null)
-                    return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
-                var imageList = areaTypeCateFromDb.Images;
-                foreach (var image in images)
-                {
-                    var item = imageList.FirstOrDefault(x => x.ImageUrl == $"{image}");
-                    if (item == null)
-                        return BadRequest(new ResponseDTO<object>(400, "Ảnh không tồn tại trong loại khu vực!", null));
-                    areaTypeCateFromDb.Images.Remove(item);
+            ResponseDTO<AreaTypeCategory> resultRemove = await _areaTypeCategoryService.RemoveImages(id, images);
+            return StatusCode(resultRemove.StatusCode, resultRemove);
 
-                }
-                foreach (var image in images)
-                {
-                    ImageSerive.RemoveImage(image);
-                }
-                await _areaTypeCategoryService.UpdateImage(areaTypeCateFromDb, images);
-                return Ok(new ResponseDTO<object>(200, "Cập nhập thành công!", null));
 
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
-            }
+            //try
+            //{
+            //    var areaTypeCateFromDb = await _areaTypeCategoryService.GetWithInclude(x => x.CategoryId == id && x.Status == 1, x => x.Images);
+            //    if (areaTypeCateFromDb == null)
+            //        return BadRequest(new ResponseDTO<object>(400, "Không tìm thấy loại này!", null));
+            //    if (images == null)
+            //        return BadRequest(new ResponseDTO<object>(400, "Bắt buộc nhập ảnh", null));
+            //    var imageList = areaTypeCateFromDb.Images;
+            //    foreach (var image in images)
+            //    {
+            //        var item = imageList.FirstOrDefault(x => x.ImageUrl == $"{image}");
+            //        if (item == null)
+            //            return BadRequest(new ResponseDTO<object>(400, "Ảnh không tồn tại trong loại khu vực!", null));
+            //        areaTypeCateFromDb.Images.Remove(item);
+
+            //    }
+            //    foreach (var image in images)
+            //    {
+            //        ImageSerive.RemoveImage(image);
+            //    }
+            //    await _areaTypeCategoryService.UpdateImage(areaTypeCateFromDb, images);
+            //    return Ok(new ResponseDTO<object>(200, "Cập nhập thành công!", null));
+
+            //}
+            //catch (Exception ex)
+            //{
+            //    return BadRequest(new ResponseDTO<object>(400, "Cập nhập lỗi!", null));
+            //}
         }
 
     }

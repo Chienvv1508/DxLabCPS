@@ -84,7 +84,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                     AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
                     Images = a.Images != null ? a.Images.Select(i => i.ImageUrl).ToList() : null, // Thêm ánh xạ Images
                     AreaTypeCategoryId = a.AreaType != null ? a.AreaType.AreaTypeCategory != null ? a.AreaType.AreaTypeCategory.CategoryId : 0 : 0,
-                    AreaTypeCategoryTitle = a.AreaType != null ? a.AreaType.AreaTypeCategory != null ? a.AreaType.AreaTypeCategory.Title : "" : ""
+                    AreaTypeCategoryTitle = a.AreaType != null ? a.AreaType.AreaTypeCategory != null ? a.AreaType.AreaTypeCategory.Title : "" : "",
+                    Size = a.AreaType != null ? a.AreaType.Size : 0
 
 
 
@@ -107,7 +108,8 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<Area, AreaDTO>()
                 .ForMember(dest => dest.AreaTypeName, opt => opt.MapFrom(x => x.AreaType != null ? x.AreaType.AreaTypeName : null))
                 .ForMember(dest => dest.AreaDescription, opt => opt.MapFrom(src => src.AreaDescription)) // Thêm ánh xạ AreaDescription
-                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null))
+            .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.AreaType != null ? src.AreaType.Size : 0));
 
             CreateMap<AreaAdd, Area>();
 
