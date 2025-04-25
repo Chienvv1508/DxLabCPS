@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Numerics;
 using System.Text;
 using System.Collections.Concurrent;
+using Nethereum.JsonRpc.Client;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -67,7 +68,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Verify User
         [HttpPost("verifyuser")]
-        public async Task<IActionResult> VerifyAccount([FromBody] UserDTO userinfo)
+        public async Task<IActionResult> VerifyUser([FromBody] UserDTO userinfo)
         {
             if (!ModelState.IsValid)
             {
@@ -76,13 +77,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
             try
             {
-                // Tính giờ Việt Nam (UTC+7)
                 DateTime currentTime = DateTime.UtcNow.AddHours(7);
-
-                // Sử dụng GetWithInclude để lấy thông tin Role
                 var user = await _userService.GetWithInclude(x => x.Email == userinfo.Email, u => u.Role);
 
-                // Trường hợp user đã tồn tại
                 if (user != null)
                 {
                     if (user.Role == null)
@@ -92,15 +89,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     Console.WriteLine($"Nguoi dung da ton tai: {user.Email}, RoleId: {user.RoleId}");
                     var token = GenerateJwtToken(user);
 
-                    // Kiểm tra và cập nhật WalletAddress
                     if ((string.IsNullOrEmpty(user.WalletAddress) || user.WalletAddress == "NULL") && !string.IsNullOrEmpty(userinfo.WalletAddress))
                     {
                         Console.WriteLine($"Cap nhat dia chi vi cho nguoi dung {user.UserId} tu {user.WalletAddress} den {userinfo.WalletAddress}");
                         user.WalletAddress = userinfo.WalletAddress;
-                        await _userService.Update(user);
+                        try
+                        {
+                            await _userService.Update(user);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error updating wallet address for user {user.UserId}: {ex.Message}");
+                            return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi cập nhật WalletAddress: {ex.Message}", null));
+                        }
                     }
 
-                    // Mint token nếu WalletAddress hợp lệ và user có role 3
                     string mintStatus = "Không có token nào được tạo (ví không hợp lệ hoặc user không phải Student)";
                     if (!string.IsNullOrEmpty(user.WalletAddress) && user.WalletAddress != "NULL" && user.RoleId == 3)
                     {
@@ -126,23 +129,40 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                         if (shouldMint)
                         {
-                            bool mintSuccess = await _labBookingJobService.MintTokenForUser(user.WalletAddress);
-                            if (mintSuccess)
+                            try
                             {
-                                _mintedUsers[user.WalletAddress] = currentTime;
-                                mintStatus = "Tạo 100 tokens thành công!";
-                                Console.WriteLine($"Cap nhat thoi gian tao cho {user.WalletAddress} toi {currentTime}");
+                                bool mintSuccess = await _labBookingJobService.MintTokenForUser(user.WalletAddress);
+                                if (mintSuccess)
+                                {
+                                    _mintedUsers[user.WalletAddress] = currentTime;
+                                    mintStatus = "Tạo 100 tokens thành công!";
+                                    Console.WriteLine($"Cap nhat thoi gian tao cho {user.WalletAddress} toi {currentTime}");
+                                }
+                                else
+                                {
+                                    mintStatus = "Tạo token thất bại!";
+                                    Console.WriteLine($"Tao that bai cho {user.WalletAddress}");
+                                }
                             }
-                            else
+                            catch (RpcResponseException rpcEx)
                             {
-                                mintStatus = "Tạo token thất bại!";
-                                Console.WriteLine($"Tao that bai cho {user.WalletAddress}");
+                                Console.WriteLine($"RPC error while minting for {user.WalletAddress}: {rpcEx.Message}");
+                                mintStatus = "Tạo token thất bại do lỗi blockchain!";
+                                // Không throw ngoại lệ, chỉ ghi log và tiếp tục
                             }
                         }
                     }
 
                     user.AccessToken = token;
-                    await _userService.Update(user);
+                    try
+                    {
+                        await _userService.Update(user);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error updating user {user.UserId}: {ex.Message}");
+                        return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi cập nhật AccessToken: {ex.Message}", null));
+                    }
 
                     var userDto = new UserDTO
                     {
@@ -163,7 +183,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return Ok(new ResponseDTO<object>(200, "Người dùng đã được xác thực thành công!", responseData));
                 }
 
-                // Trường hợp user chưa tồn tại
                 if (userinfo.Email.EndsWith("@fpt.edu.vn", StringComparison.OrdinalIgnoreCase))
                 {
                     var newUser = new User
@@ -171,11 +190,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         Email = userinfo.Email,
                         WalletAddress = userinfo.WalletAddress,
                         FullName = userinfo.FullName,
-                        RoleId = 3, // RoleId = 3 cho Student
+                        RoleId = 3,
                         Status = true
                     };
 
-                    await _userService.Add(newUser);
+                    try
+                    {
+                        await _userService.Add(newUser);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error adding new user: {ex.Message}");
+                        return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi thêm người dùng mới: {ex.Message}", null));
+                    }
 
                     var savedUser = await _userService.GetWithInclude(x => x.UserId == newUser.UserId, u => u.Role);
                     if (savedUser == null || savedUser.Role == null)
@@ -185,26 +212,42 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                     var token = GenerateJwtToken(savedUser);
 
-                    // Mint token cho user mới nếu WalletAddress hợp lệ
                     string mintStatus = "Không có token nào được tạo (ví không hợp lệ)";
                     if (!string.IsNullOrEmpty(savedUser.WalletAddress) && savedUser.WalletAddress != "NULL" && savedUser.RoleId == 3)
                     {
-                        bool mintSuccess = await _labBookingJobService.MintTokenForUser(savedUser.WalletAddress);
-                        if (mintSuccess)
+                        try
                         {
-                            _mintedUsers[savedUser.WalletAddress] = currentTime;
-                            mintStatus = "Tạo 100 tokens thành công!";
-                            Console.WriteLine($"Dat thoi gian tao cho {savedUser.WalletAddress} toi {currentTime}");
+                            bool mintSuccess = await _labBookingJobService.MintTokenForUser(savedUser.WalletAddress);
+                            if (mintSuccess)
+                            {
+                                _mintedUsers[savedUser.WalletAddress] = currentTime;
+                                mintStatus = "Tạo 100 tokens thành công!";
+                                Console.WriteLine($"Dat thoi gian tao cho {savedUser.WalletAddress} toi {currentTime}");
+                            }
+                            else
+                            {
+                                mintStatus = "Tạo token thất bại!";
+                                Console.WriteLine($"Tao that bai cho {savedUser.WalletAddress}");
+                            }
                         }
-                        else
+                        catch (RpcResponseException rpcEx)
                         {
-                            mintStatus = "Tạo token thất bại!";
-                            Console.WriteLine($"Tao that bai cho {savedUser.WalletAddress}");
+                            Console.WriteLine($"RPC error while minting for {savedUser.WalletAddress}: {rpcEx.Message}");
+                            mintStatus = "Tạo token thất bại do lỗi blockchain!";
+                            // Không throw ngoại lệ, chỉ ghi log và tiếp tục
                         }
                     }
 
                     savedUser.AccessToken = token;
-                    await _userService.Update(savedUser);
+                    try
+                    {
+                        await _userService.Update(savedUser);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error updating new user {savedUser.UserId}: {ex.Message}");
+                        return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi cập nhật AccessToken cho user mới: {ex.Message}", null));
+                    }
 
                     var userDto = new UserDTO
                     {
@@ -232,7 +275,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"Error processing user {userinfo.Email}: {ex.Message}\nStackTrace: {ex.StackTrace}");
                 return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi xử lý người dùng: {ex.Message}", null));
             }
         }

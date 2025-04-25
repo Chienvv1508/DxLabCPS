@@ -66,7 +66,7 @@ namespace DxLabCoworkingSpace
             _fptContractAbi = fptDoc.RootElement.GetProperty("abi").GetRawText();
 
             var account = new Nethereum.Web3.Accounts.Account(_privateKey, 11155111);
-            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
+            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(300) }; // Tăng timeout lên 300s
             var client = new RpcClient(new Uri(_sepoliaRpcUrl), httpClient);
             _web3 = new Web3(account, client);
             _contract = _web3.Eth.GetContract(_fptContractAbi, _contractAddress);
@@ -120,12 +120,12 @@ namespace DxLabCoworkingSpace
                         }
                         catch (RpcResponseException rpcEx)
                         {
-                            Console.WriteLine($"RPC error (retry {retry}/{maxRetry}) for blocks {batchFrom}-{batchTo}: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                            Console.WriteLine($"RPC error (retry {retry}/{maxRetry}) for blocks {batchFrom}-{batchTo}: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
                             if (retry == maxRetry)
                             {
                                 Console.WriteLine($"Skip batch {batchFrom}-{batchTo} after {maxRetry} tries.");
                             }
-                            await Task.Delay(3000 * retry);
+                            await Task.Delay(5000 * retry); // Tăng thời gian chờ lên 5000ms
                         }
                         catch (Exception ex)
                         {
@@ -157,7 +157,7 @@ namespace DxLabCoworkingSpace
             }
             catch (Exception error)
             {
-                Console.WriteLine($"Error occurred while crawling booking logs: {error.Message}");
+                Console.WriteLine($"Error occurred while crawling booking logs: {error.Message}\nStackTrace: {error.StackTrace}");
             }
         }
 
@@ -219,7 +219,7 @@ namespace DxLabCoworkingSpace
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error checking/cancelling pending transactions: {ex.Message}");
+                Console.WriteLine($"Error checking/cancelling pending transactions: {ex.Message}\nStackTrace: {ex.StackTrace}");
             }
         }
 
@@ -234,7 +234,7 @@ namespace DxLabCoworkingSpace
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving contract owner: {ex.Message}");
+                Console.WriteLine($"Error retrieving contract owner: {ex.Message}\nStackTrace: {ex.StackTrace}");
                 return null;
             }
         }
@@ -250,7 +250,7 @@ namespace DxLabCoworkingSpace
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving total supply: {ex.Message}");
+                Console.WriteLine($"Error retrieving total supply: {ex.Message}\nStackTrace: {ex.StackTrace}");
                 return BigInteger.MinusOne;
             }
         }
@@ -266,7 +266,7 @@ namespace DxLabCoworkingSpace
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving balance of {walletAddress}: {ex.Message}");
+                Console.WriteLine($"Error retrieving balance of {walletAddress}: {ex.Message}\nStackTrace: {ex.StackTrace}");
                 return BigInteger.MinusOne;
             }
         }
@@ -279,7 +279,7 @@ namespace DxLabCoworkingSpace
                 return false;
             }
 
-            const int maxRetries = 5;
+            const int maxRetries = 10; // Tăng số lần thử lại lên 10
             var amountToMint = Nethereum.Util.UnitConversion.Convert.ToWei(100m); // 100 token
             var mintFunction = _contract.GetFunction("mintForUser");
 
@@ -295,13 +295,23 @@ namespace DxLabCoworkingSpace
                 }
                 catch (RpcResponseException rpcEx)
                 {
-                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_chainId: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_chainId: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
                     if (retry == maxRetries)
                     {
                         Console.WriteLine("Max retries reached for eth_chainId. Aborting minting.");
                         return false;
                     }
-                    await Task.Delay(3000 * retry);
+                    await Task.Delay(5000 * retry);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error (retry {retry}/{maxRetries}) for eth_chainId: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_chainId. Aborting minting.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
                 }
             }
 
@@ -324,13 +334,23 @@ namespace DxLabCoworkingSpace
                 }
                 catch (RpcResponseException rpcEx)
                 {
-                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getBalance: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getBalance: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
                     if (retry == maxRetries)
                     {
                         Console.WriteLine("Max retries reached for eth_getBalance. Aborting minting.");
                         return false;
                     }
-                    await Task.Delay(3000 * retry);
+                    await Task.Delay(5000 * retry);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error (retry {retry}/{maxRetries}) for eth_getBalance: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_getBalance. Aborting minting.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
                 }
             }
 
@@ -395,13 +415,23 @@ namespace DxLabCoworkingSpace
                 }
                 catch (RpcResponseException rpcEx)
                 {
-                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getTransactionCount: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getTransactionCount: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
                     if (retry == maxRetries)
                     {
                         Console.WriteLine("Max retries reached for eth_getTransactionCount. Aborting minting.");
                         return false;
                     }
-                    await Task.Delay(3000 * retry);
+                    await Task.Delay(5000 * retry);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error (retry {retry}/{maxRetries}) for eth_getTransactionCount: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_getTransactionCount. Aborting minting.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
                 }
             }
 
@@ -470,7 +500,6 @@ namespace DxLabCoworkingSpace
                         Console.WriteLine($"Mint failed for user {walletAddress}: {(receipt == null ? "No receipt" : $"Status = {receipt.Status.Value}")}");
                         try
                         {
-                            // Dùng eth_call để lấy thông điệp revert
                             var callInput = new TransactionInput(
                                 mintFunction.GetData(walletAddress, amountToMint),
                                 _contractAddress,
@@ -497,7 +526,7 @@ namespace DxLabCoworkingSpace
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Failed to retrieve revert reason: {ex.Message}");
+                            Console.WriteLine($"Failed to retrieve revert reason: {ex.Message}\nStackTrace: {ex.StackTrace}");
                         }
                         return false;
                     }
@@ -509,7 +538,7 @@ namespace DxLabCoworkingSpace
                 }
                 catch (RpcResponseException rpcEx)
                 {
-                    Console.WriteLine($"RPC Error for user {walletAddress} (retry {retry}/{maxRetries}): {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                    Console.WriteLine($"RPC Error for user {walletAddress} (retry {retry}/{maxRetries}): {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
                     if (rpcEx.Message.Contains("replacement transaction underpriced"))
                     {
                         nonce = new HexBigInteger(nonce.Value + 1);
@@ -520,17 +549,17 @@ namespace DxLabCoworkingSpace
                         Console.WriteLine($"Max retries reached for user {walletAddress}. Skipping.");
                         return false;
                     }
-                    await Task.Delay(3000 * retry);
+                    await Task.Delay(5000 * retry);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error for user {walletAddress} (retry {retry}/{maxRetries}): {ex.Message}");
+                    Console.WriteLine($"Error for user {walletAddress} (retry {retry}/{maxRetries}): {ex.Message}\nStackTrace: {ex.StackTrace}");
                     if (retry == maxRetries)
                     {
                         Console.WriteLine($"Max retries reached for user {walletAddress}. Skipping.");
                         return false;
                     }
-                    await Task.Delay(3000 * retry);
+                    await Task.Delay(5000 * retry);
                 }
             }
 
