@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.JsonPatch;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,8 @@ namespace DxLabCoworkingSpace
         Task<Room> GetRoomWithAllInClude(Expression<Func<Room, bool>> expression);
         Task GetAreaDisctinctFaci(Func<Room, bool> value);
         Task UpdateImage(Room roomFromDb, List<string> images);
+        Task<ResponseDTO<Room>> PatchRoom(int id, JsonPatchDocument<Room> patchDoc);
+        Task<ResponseDTO<Room>> AddImages(int id, List<IFormFile> images);
+        Task<ResponseDTO<Room>> RemoveImages(int id, List<string> images);
     }
 }
