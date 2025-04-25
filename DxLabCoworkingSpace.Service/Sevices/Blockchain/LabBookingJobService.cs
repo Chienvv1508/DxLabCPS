@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Hangfire;
@@ -30,7 +31,6 @@ namespace DxLabCoworkingSpace
         private readonly string _fptContractAbi;
         private Web3 _web3;
         private Contract _contract;
-        private static readonly ConcurrentDictionary<string, DateTime> _mintedUsers = new ConcurrentDictionary<string, DateTime>();
 
         public LabBookingJobService(
             ILabBookingCrawlerService crawler,
@@ -66,7 +66,7 @@ namespace DxLabCoworkingSpace
             _fptContractAbi = fptDoc.RootElement.GetProperty("abi").GetRawText();
 
             var account = new Nethereum.Web3.Accounts.Account(_privateKey, 11155111);
-            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
+            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
             var client = new RpcClient(new Uri(_sepoliaRpcUrl), httpClient);
             _web3 = new Web3(account, client);
             _contract = _web3.Eth.GetContract(_fptContractAbi, _contractAddress);
@@ -81,14 +81,7 @@ namespace DxLabCoworkingSpace
                 TimeZoneInfo.Local
             );
 
-            RecurringJob.AddOrUpdate(
-                "minting-job",
-                () => ExecuteMintingJob(),
-                "0 0 * * *",
-                TimeZoneInfo.Local
-            );
-
-            Console.WriteLine("Jobs were scheduled!");
+            Console.WriteLine("Booking log job was scheduled!");
         }
 
         public async Task RunBookingLogJobAsync()
@@ -127,12 +120,12 @@ namespace DxLabCoworkingSpace
                         }
                         catch (RpcResponseException rpcEx)
                         {
-                            Console.WriteLine($"RPC error (retry {retry}/{maxRetry}) for blocks {batchFrom}-{batchTo}: {rpcEx.Message}");
+                            Console.WriteLine($"RPC error (retry {retry}/{maxRetry}) for blocks {batchFrom}-{batchTo}: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
                             if (retry == maxRetry)
                             {
                                 Console.WriteLine($"Skip batch {batchFrom}-{batchTo} after {maxRetry} tries.");
                             }
-                            await Task.Delay(3000);
+                            await Task.Delay(3000 * retry);
                         }
                         catch (Exception ex)
                         {
@@ -170,131 +163,125 @@ namespace DxLabCoworkingSpace
 
         public async Task ExecuteMintingJob()
         {
-            Console.WriteLine($"Starting minting job at {DateTime.UtcNow}");
-
-            DateTime currentTime = DateTime.UtcNow.AddHours(7);
-
-            using var scope = _serviceProvider.CreateScope();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-            var usersQuery = await unitOfWork.UserRepository.GetAll(u =>
-                u.Status == true &&
-                !string.IsNullOrEmpty(u.WalletAddress) &&
-                u.RoleId == 3);
-
-            var users = usersQuery
-                .AsEnumerable()
-                .Where(u => AddressUtil.Current.IsValidEthereumAddressHexFormat(u.WalletAddress))
-                .ToList();
-
-            Console.WriteLine($"Found {users.Count} users with valid wallets for minting.");
-
-            if (!users.Any())
-            {
-                Console.WriteLine("No users with valid wallets to mint.");
-                return;
-            }
-
-            int eligibleUsers = 0;
-            foreach (var user in users)
-            {
-                bool shouldMint = false;
-                if (_mintedUsers.TryGetValue(user.WalletAddress, out var lastMintedTime))
-                {
-                    if ((currentTime - lastMintedTime).TotalHours >= 24)
-                    {
-                        shouldMint = true;
-                        Console.WriteLine($"Minting tokens for {user.WalletAddress}: Last minted at {lastMintedTime}, now eligible.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Mint skipped for {user.WalletAddress}: Last minted at {lastMintedTime}, too soon.");
-                    }
-                }
-                else
-                {
-                    shouldMint = true;
-                    Console.WriteLine($"First time minting for {user.WalletAddress}");
-                }
-
-                if (shouldMint)
-                {
-                    eligibleUsers++;
-                    var (mintSuccess, txHash) = await MintTokenForUser(user.WalletAddress);
-                    if (mintSuccess)
-                    {
-                        _mintedUsers[user.WalletAddress] = currentTime;
-                        Console.WriteLine($"Updated mint time for {user.WalletAddress} to {currentTime}");
-                    }
-                    else if (txHash != null)
-                    {
-                        Console.WriteLine($"Transaction sent but not confirmed yet for {user.WalletAddress}: {txHash}. Please check the transaction status on Sepolia testnet.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Mint failed for {user.WalletAddress} after all retries.");
-                    }
-                }
-                await Task.Delay(30000);
-            }
-
-            Console.WriteLine($"[MintingJob] End at {DateTime.UtcNow}, {eligibleUsers} users were eligible for minting.");
+            Console.WriteLine("ExecuteMintingJob is no longer used for minting tokens.");
         }
 
-        public async Task<(bool success, string txHash)> MintTokenForUser(string walletAddress)
+        private async Task CancelPendingTransactionsIfAny()
+        {
+            try
+            {
+                var pendingTxCount = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
+                    _web3.TransactionManager.Account.Address,
+                    BlockParameter.CreatePending()
+                );
+                var confirmedTxCount = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
+                    _web3.TransactionManager.Account.Address,
+                    BlockParameter.CreateLatest()
+                );
+
+                if (pendingTxCount.Value <= confirmedTxCount.Value)
+                {
+                    Console.WriteLine($"No pending transactions found for {_web3.TransactionManager.Account.Address}.");
+                    return;
+                }
+
+                Console.WriteLine($"Found {pendingTxCount.Value - confirmedTxCount.Value} pending transactions for {_web3.TransactionManager.Account.Address}. Attempting to cancel...");
+
+                for (BigInteger nonce = confirmedTxCount.Value; nonce < pendingTxCount.Value; nonce++)
+                {
+                    var txInput = new TransactionInput
+                    {
+                        From = _web3.TransactionManager.Account.Address,
+                        To = _web3.TransactionManager.Account.Address,
+                        Value = new HexBigInteger(0),
+                        GasPrice = new HexBigInteger(40000000000),
+                        Gas = new HexBigInteger(21000),
+                        Nonce = new HexBigInteger(nonce)
+                    };
+
+                    var signedTx = await _web3.TransactionManager.SignTransactionAsync(txInput);
+                    var cancelTxHash = await _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + signedTx);
+
+                    Console.WriteLine($"Cancel transaction sent for nonce {nonce}: {cancelTxHash}");
+
+                    var receipt = await WaitForReceipt(_web3, cancelTxHash);
+                    if (receipt?.Status.Value == 1)
+                    {
+                        Console.WriteLine($"Cancel transaction {cancelTxHash} confirmed.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Cancel transaction {cancelTxHash} failed: {(receipt == null ? "No receipt" : "Status = 0")}");
+                    }
+
+                    await Task.Delay(5000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking/cancelling pending transactions: {ex.Message}");
+            }
+        }
+
+        private async Task<string> GetContractOwnerAsync()
+        {
+            try
+            {
+                var ownerFunction = _contract.GetFunction("owner");
+                var ownerAddress = await ownerFunction.CallAsync<string>();
+                Console.WriteLine($"Contract owner retrieved: {ownerAddress}");
+                return ownerAddress?.ToLower();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving contract owner: {ex.Message}");
+                return null;
+            }
+        }
+
+        private async Task<BigInteger> GetTotalSupplyAsync()
+        {
+            try
+            {
+                var totalSupplyFunction = _contract.GetFunction("totalSupply");
+                var totalSupply = await totalSupplyFunction.CallAsync<BigInteger>();
+                Console.WriteLine($"Total supply: {totalSupply}");
+                return totalSupply;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving total supply: {ex.Message}");
+                return BigInteger.MinusOne;
+            }
+        }
+
+        private async Task<BigInteger> GetBalanceOfAsync(string walletAddress)
+        {
+            try
+            {
+                var balanceOfFunction = _contract.GetFunction("balanceOf");
+                var balance = await balanceOfFunction.CallAsync<BigInteger>(walletAddress);
+                Console.WriteLine($"Balance of {walletAddress}: {balance}");
+                return balance;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving balance of {walletAddress}: {ex.Message}");
+                return BigInteger.MinusOne;
+            }
+        }
+
+        public async Task<bool> MintTokenForUser(string walletAddress)
         {
             if (!AddressUtil.Current.IsValidEthereumAddressHexFormat(walletAddress))
             {
                 Console.WriteLine($"Invalid wallet address: {walletAddress}");
-                return (false, null);
+                return false;
             }
 
             const int maxRetries = 5;
-            var amountToMint = Nethereum.Util.UnitConversion.Convert.ToWei(100m);
+            var amountToMint = Nethereum.Util.UnitConversion.Convert.ToWei(100m); // 100 token
             var mintFunction = _contract.GetFunction("mintForUser");
-
-            // Lấy nonce hiện tại từ mạng
-            HexBigInteger nonce = null;
-            for (int retry = 1; retry <= maxRetries; retry++)
-            {
-                try
-                {
-                    nonce = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
-                        _web3.TransactionManager.Account.Address,
-                        BlockParameter.CreatePending()
-                    );
-                    Console.WriteLine($"Current nonce for {_web3.TransactionManager.Account.Address}: {nonce.Value}");
-                    break;
-                }
-                catch (RpcResponseException rpcEx)
-                {
-                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getTransactionCount: {rpcEx.Message}");
-                    if (rpcEx.Message.Contains("429"))
-                    {
-                        await Task.Delay(10000 * retry);
-                        if (retry == maxRetries)
-                        {
-                            Console.WriteLine("Max retries reached for eth_getTransactionCount due to rate limit. Aborting minting.");
-                            return (false, null);
-                        }
-                    }
-                    else
-                    {
-                        if (retry == maxRetries)
-                        {
-                            Console.WriteLine("Max retries reached for eth_getTransactionCount. Aborting minting.");
-                            return (false, null);
-                        }
-                        await Task.Delay(5000);
-                    }
-                }
-            }
-
-            if (nonce == null)
-            {
-                Console.WriteLine("Failed to retrieve nonce. Aborting minting.");
-                return (false, null);
-            }
 
             // Kiểm tra chain ID
             var chainId = new HexBigInteger(0);
@@ -308,35 +295,23 @@ namespace DxLabCoworkingSpace
                 }
                 catch (RpcResponseException rpcEx)
                 {
-                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_chainId: {rpcEx.Message}");
-                    if (rpcEx.Message.Contains("429"))
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_chainId: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                    if (retry == maxRetries)
                     {
-                        await Task.Delay(10000 * retry);
-                        if (retry == maxRetries)
-                        {
-                            Console.WriteLine("Max retries reached for eth_chainId due to rate limit. Aborting minting.");
-                            return (false, null);
-                        }
+                        Console.WriteLine("Max retries reached for eth_chainId. Aborting minting.");
+                        return false;
                     }
-                    else
-                    {
-                        if (retry == maxRetries)
-                        {
-                            Console.WriteLine("Max retries reached for eth_chainId. Aborting minting.");
-                            return (false, null);
-                        }
-                        await Task.Delay(5000);
-                    }
+                    await Task.Delay(3000 * retry);
                 }
             }
 
             if (chainId.Value != 11155111)
             {
                 Console.WriteLine($"Chain ID mismatch! Expected 11155111 (Sepolia), but got {chainId.Value}. Aborting minting.");
-                return (false, null);
+                return false;
             }
 
-            // Kiểm tra số dư ETH
+            // Kiểm tra số dư ETH của ví owner
             decimal ethBalance = 0;
             for (int retry = 1; retry <= maxRetries; retry++)
             {
@@ -344,199 +319,251 @@ namespace DxLabCoworkingSpace
                 {
                     var balance = await _web3.Eth.GetBalance.SendRequestAsync(_web3.TransactionManager.Account.Address);
                     ethBalance = Nethereum.Util.UnitConversion.Convert.FromWei(balance.Value);
-                    Console.WriteLine($"ETH Balance: {ethBalance} ETH");
+                    Console.WriteLine($"ETH Balance of sender (owner) {_web3.TransactionManager.Account.Address}: {ethBalance} ETH");
                     break;
                 }
                 catch (RpcResponseException rpcEx)
                 {
-                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getBalance: {rpcEx.Message}");
-                    if (rpcEx.Message.Contains("429"))
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getBalance: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                    if (retry == maxRetries)
                     {
-                        await Task.Delay(10000 * retry);
-                        if (retry == maxRetries)
-                        {
-                            Console.WriteLine("Max retries reached for eth_getBalance due to rate limit. Aborting minting.");
-                            return (false, null);
-                        }
+                        Console.WriteLine("Max retries reached for eth_getBalance. Aborting minting.");
+                        return false;
                     }
-                    else
-                    {
-                        if (retry == maxRetries)
-                        {
-                            Console.WriteLine("Max retries reached for eth_getBalance. Aborting minting.");
-                            return (false, null);
-                        }
-                        await Task.Delay(5000);
-                    }
+                    await Task.Delay(3000 * retry);
                 }
             }
 
             if (ethBalance < 0.01m)
             {
-                Console.WriteLine("Insufficient ETH balance for transactions!");
-                return (false, null);
+                Console.WriteLine("Insufficient ETH balance for transactions! At least 0.01 ETH is required.");
+                return false;
             }
 
+            // Kiểm tra owner của hợp đồng
+            var contractOwner = await GetContractOwnerAsync();
+            if (string.IsNullOrEmpty(contractOwner))
+            {
+                Console.WriteLine("Unable to retrieve contract owner. Aborting minting.");
+                return false;
+            }
+
+            var callerAddress = _web3.TransactionManager.Account.Address.ToLower();
+            if (contractOwner != callerAddress)
+            {
+                Console.WriteLine($"Caller {callerAddress} is not the contract owner ({contractOwner}). Aborting minting.");
+                return false;
+            }
+            else
+            {
+                Console.WriteLine($"Caller {callerAddress} is the contract owner. Proceeding to mint tokens for user {walletAddress}.");
+            }
+
+            // Kiểm tra tổng cung và số dư của ví
+            var totalSupply = await GetTotalSupplyAsync();
+            if (totalSupply == BigInteger.MinusOne)
+            {
+                Console.WriteLine("Unable to retrieve total supply. Proceeding with caution.");
+            }
+            else
+            {
+                Console.WriteLine($"Current total supply: {Nethereum.Util.UnitConversion.Convert.FromWei(totalSupply)} tokens");
+            }
+
+            var userBalance = await GetBalanceOfAsync(walletAddress);
+            if (userBalance == BigInteger.MinusOne)
+            {
+                Console.WriteLine($"Unable to retrieve balance of {walletAddress}. Proceeding with caution.");
+            }
+            else
+            {
+                Console.WriteLine($"Current balance of {walletAddress}: {Nethereum.Util.UnitConversion.Convert.FromWei(userBalance)} tokens");
+            }
+
+            // Lấy nonce
+            HexBigInteger nonce = null;
+            for (int retry = 1; retry <= maxRetries; retry++)
+            {
+                try
+                {
+                    nonce = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
+                        _web3.TransactionManager.Account.Address,
+                        BlockParameter.CreatePending()
+                    );
+                    Console.WriteLine($"Current nonce for sender (owner) {_web3.TransactionManager.Account.Address}: {nonce.Value}");
+                    break;
+                }
+                catch (RpcResponseException rpcEx)
+                {
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getTransactionCount: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_getTransactionCount. Aborting minting.");
+                        return false;
+                    }
+                    await Task.Delay(3000 * retry);
+                }
+            }
+
+            if (nonce == null)
+            {
+                Console.WriteLine("Failed to retrieve nonce. Aborting minting.");
+                return false;
+            }
+
+            // Hủy các giao dịch đang chờ nếu có
+            await CancelPendingTransactionsIfAny();
+
+            // Thực hiện mint
             bool minted = false;
             string txHash = null;
             for (int retry = 1; retry <= maxRetries && !minted; retry++)
             {
                 try
                 {
-                    Console.WriteLine($"Processing mint for {walletAddress} (attempt {retry}/{maxRetries})...");
+                    Console.WriteLine($"Processing mint for user {walletAddress} (attempt {retry}/{maxRetries}) using sender (owner) {_web3.TransactionManager.Account.Address}...");
 
-                    var gasEstimate = await mintFunction.EstimateGasAsync(walletAddress, amountToMint);
-                    var gasLimit = new HexBigInteger(gasEstimate.Value * 120 / 100);
-                    var gasPrice = new HexBigInteger(15000000000); // 15 Gwei
+                    // Ước lượng gas
+                    var gasEstimate = await mintFunction.EstimateGasAsync(
+                        _web3.TransactionManager.Account.Address,
+                        null,
+                        new HexBigInteger(0), // Không gửi ETH
+                        walletAddress,
+                        amountToMint);
 
-                    txHash = await mintFunction.SendTransactionAsync(
+                    var gasLimit = new HexBigInteger(gasEstimate.Value * 120 / 100); // Tăng 20% để tránh lỗi out-of-gas
+                    var gasPrice = await _web3.Eth.GasPrice.SendRequestAsync();
+                    var adjustedGasPrice = new HexBigInteger(gasPrice.Value * 120 / 100); // Tăng 20% để ưu tiên giao dịch
+                    Console.WriteLine($"Using gas price: {adjustedGasPrice.Value} Wei, Gas limit: {gasLimit.Value}");
+
+                    // Tạo TransactionInput
+                    var txInput = new TransactionInput(
+                        mintFunction.GetData(walletAddress, amountToMint),
+                        _contractAddress,
                         _web3.TransactionManager.Account.Address,
                         gasLimit,
-                        gasPrice,
-                        walletAddress,
-                        amountToMint,
-                        nonce);
+                        adjustedGasPrice,
+                        new HexBigInteger(0) // Đặt value = 0 để không gửi ETH
+                    )
+                    {
+                        Nonce = nonce
+                    };
 
-                    Console.WriteLine($"Transaction sent for {walletAddress}: {txHash}");
+                    // Ký giao dịch cục bộ
+                    var signedTx = await _web3.TransactionManager.SignTransactionAsync(txInput);
+                    Console.WriteLine($"Transaction signed locally: {signedTx}");
 
+                    // Gửi giao dịch đã ký bằng eth_sendRawTransaction
+                    txHash = await _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + signedTx);
+
+                    Console.WriteLine($"Transaction sent: Sender (owner) {_web3.TransactionManager.Account.Address} minting for user {walletAddress}. TxHash: {txHash}");
+
+                    // Chờ receipt
                     var receipt = await WaitForReceipt(_web3, txHash);
                     if (receipt?.Status.Value == 1)
                     {
-                        Console.WriteLine($"Minted successfully for {walletAddress}");
+                        Console.WriteLine($"Minted successfully: Sender (owner) {_web3.TransactionManager.Account.Address} minted for user {walletAddress}");
                         minted = true;
-                    }
-                    else if (receipt == null)
-                    {
-                        Console.WriteLine($"Could not get receipt for {walletAddress}. Transaction may still be pending.");
-                        return (false, txHash);
                     }
                     else
                     {
-                        Console.WriteLine($"Mint failed for {walletAddress}: Status = 0");
-                        return (false, null);
+                        Console.WriteLine($"Mint failed for user {walletAddress}: {(receipt == null ? "No receipt" : $"Status = {receipt.Status.Value}")}");
+                        try
+                        {
+                            // Dùng eth_call để lấy thông điệp revert
+                            var callInput = new TransactionInput(
+                                mintFunction.GetData(walletAddress, amountToMint),
+                                _contractAddress,
+                                _web3.TransactionManager.Account.Address,
+                                gasLimit,
+                                adjustedGasPrice,
+                                new HexBigInteger(0)
+                            );
+
+                            var error = await _web3.Eth.Transactions.Call.SendRequestAsync(callInput, BlockParameter.CreateLatest());
+                            if (string.IsNullOrEmpty(error) || error == "0x")
+                            {
+                                Console.WriteLine("Revert reason not available or empty. Check the contract logic on Remix for more details.");
+                            }
+                            else
+                            {
+                                var revertMessage = new FunctionCallDecoder().DecodeFunctionErrorMessage(error);
+                                Console.WriteLine($"Revert reason: {revertMessage}");
+                            }
+                        }
+                        catch (RpcResponseException rpcEx)
+                        {
+                            Console.WriteLine($"Failed to retrieve revert reason: execution reverted - {rpcEx.Message}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to retrieve revert reason: {ex.Message}");
+                        }
+                        return false;
                     }
                 }
                 catch (SmartContractRevertException revertEx)
                 {
-                    Console.WriteLine($"REVERT for {walletAddress}: {revertEx.RevertMessage}");
-                    return (false, null);
+                    Console.WriteLine($"SmartContractRevertException for user {walletAddress}: {revertEx.RevertMessage}");
+                    return false;
                 }
                 catch (RpcResponseException rpcEx)
                 {
-                    Console.WriteLine($"RPC Error for {walletAddress} (retry {retry}/{maxRetries}): {rpcEx.Message}");
-                    if (rpcEx.Message.Contains("429"))
+                    Console.WriteLine($"RPC Error for user {walletAddress} (retry {retry}/{maxRetries}): {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data})");
+                    if (rpcEx.Message.Contains("replacement transaction underpriced"))
                     {
-                        await Task.Delay(10000 * retry);
-                        if (retry == maxRetries)
-                        {
-                            Console.WriteLine($"Max retries reached for {walletAddress} due to rate limit. Transaction may still be pending.");
-                            return (false, txHash);
-                        }
+                        nonce = new HexBigInteger(nonce.Value + 1);
+                        Console.WriteLine($"Incrementing nonce to {nonce.Value} due to underpriced replacement transaction.");
                     }
-                    else
+                    else if (retry == maxRetries)
                     {
-                        if (retry == maxRetries)
-                        {
-                            Console.WriteLine($"Max retries reached for {walletAddress}. Skipping.");
-                            return (false, null);
-                        }
-                        await Task.Delay(5000);
+                        Console.WriteLine($"Max retries reached for user {walletAddress}. Skipping.");
+                        return false;
                     }
+                    await Task.Delay(3000 * retry);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error for {walletAddress} (retry {retry}/{maxRetries}): {ex.Message}");
+                    Console.WriteLine($"Error for user {walletAddress} (retry {retry}/{maxRetries}): {ex.Message}");
                     if (retry == maxRetries)
                     {
-                        Console.WriteLine($"Max retries reached for {walletAddress}. Skipping.");
-                        return (false, null);
+                        Console.WriteLine($"Max retries reached for user {walletAddress}. Skipping.");
+                        return false;
                     }
-                    await Task.Delay(5000);
+                    await Task.Delay(3000 * retry);
                 }
             }
 
-            return (minted, txHash);
+            return minted;
         }
 
         private async Task<TransactionReceipt> WaitForReceipt(Web3 web3, string transactionHash)
         {
             if (string.IsNullOrEmpty(transactionHash))
+            {
+                Console.WriteLine("Transaction hash is empty. Cannot wait for receipt.");
                 return null;
+            }
 
             var receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
             int attempts = 0;
-            const int maxAttempts = 24;
-            int rateLimitCount = 0;
-            const int maxRateLimitRetries = 3;
+            const int maxAttempts = 60;
 
             while (receipt == null && attempts < maxAttempts)
             {
-                await Task.Delay(5000);
-                try
-                {
-                    receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
-                    rateLimitCount = 0;
-                }
-                catch (RpcResponseException rpcEx)
-                {
-                    if (rpcEx.Message.Contains("429"))
-                    {
-                        rateLimitCount++;
-                        if (rateLimitCount >= maxRateLimitRetries)
-                        {
-                            Console.WriteLine($"Too many rate limit errors (429) for transaction {transactionHash}. Stopping attempts.");
-                            return null;
-                        }
-                        await Task.Delay(10000 * rateLimitCount);
-                    }
-                }
+                await Task.Delay(2000);
+                receipt = await web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transactionHash);
                 attempts++;
+                Console.WriteLine($"Waiting for receipt of transaction {transactionHash} (attempt {attempts}/{maxAttempts})...");
             }
 
             if (receipt == null)
             {
                 Console.WriteLine($"Failed to get receipt for transaction {transactionHash} after {maxAttempts} attempts.");
+                return null;
             }
 
             return receipt;
-        }
-
-        public async Task<string> CancelPendingTransaction(string txHashToCancel)
-        {
-            try
-            {
-                var pendingTx = await _web3.Eth.Transactions.GetTransactionByHash.SendRequestAsync(txHashToCancel);
-                if (pendingTx == null)
-                {
-                    Console.WriteLine($"Transaction {txHashToCancel} not found or already processed.");
-                    return null;
-                }
-
-                var nonce = pendingTx.Nonce;
-                var gasPrice = new HexBigInteger(15000000000); // 15 Gwei
-                var gasLimit = new HexBigInteger(21000);
-
-                var txInput = new TransactionInput
-                {
-                    From = _web3.TransactionManager.Account.Address,
-                    To = _web3.TransactionManager.Account.Address,
-                    Value = new HexBigInteger(0),
-                    GasPrice = gasPrice,
-                    Gas = gasLimit,
-                    Nonce = nonce
-                };
-
-                var signedTx = await _web3.TransactionManager.SignTransactionAsync(txInput);
-                var cancelTxHash = await _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + signedTx);
-
-                Console.WriteLine($"Cancel transaction sent for {txHashToCancel}: {cancelTxHash}");
-                return cancelTxHash;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error cancelling transaction {txHashToCancel}: {ex.Message}");
-                return null;
-            }
         }
     }
 
