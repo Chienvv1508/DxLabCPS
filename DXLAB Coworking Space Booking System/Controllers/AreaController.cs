@@ -438,7 +438,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if (individualArea != null)
                 {
-                    var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == individualArea.AreaTypeId);
+                    var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == individualArea.AreaTypeId && x.Status != 2);
                     if (xr != null)
                     {
                         int[] position = Enumerable.Range(1, individualArea.AreaType.Size).ToArray();
