@@ -351,16 +351,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         public async Task<IActionResult> AddNewAreaToRoom(int roomId, [FromBody] List<AreaAdd> areaAdds)
         {
 
-            ResponseDTO<Area> result = await _areaService.AddNewArea(roomId, areaAdds);
-            return StatusCode(result.StatusCode,result);
-
-            
-
-
-
-
-
-
+           //// ResponseDTO<Area> result = await _areaService.AddNewArea(roomId, areaAdds);
+           // return StatusCode(result.StatusCode,result);
 
             try
             {
@@ -594,9 +586,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(new ResponseDTO<object>(400, "Khu vực không tồn tại", null));
                 }
 
-                
-
-
 
                 //if(expiredDate <= DateTime.Now.Date.AddDays(14))
                 //    return BadRequest(new ResponseDTO<object>(400, "Phải để ngày hết hạn lớn hơn 14 ngày từ ngày hiện tại!", null));
@@ -609,7 +598,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 DateTime lastDateBookingInArea = await GetLastDateBookingInArea(area);
                 area.ExpiredDate = lastDateBookingInArea;
                 await _areaService.Update(area);
-                return Ok("Xóa thành công!");
+                return Ok($"Đặt ngày hết hạn của {area.AreaName} vào ngày: {area.ExpiredDate}");
             }
             catch (Exception ex)
             {
@@ -628,10 +617,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 expiredDate = DateTime.Now.Date.AddDays(1);
             }
+            else if(lastBooking.CheckinTime.Date < DateTime.Now.Date)
+            {
+                expiredDate = DateTime.Now.Date;
+            }
             else
             {
                 expiredDate = lastBooking.CheckinTime.Date.AddDays(1);
             }
+
             return expiredDate;
 
         }

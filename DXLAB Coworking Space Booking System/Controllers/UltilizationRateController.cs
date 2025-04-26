@@ -35,7 +35,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 DateTime secondPara = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 18, 0, 0);
                 var bookingdetailList = await _bookingDetailService.GetAll(x => x.CheckinTime >= firtPara && x.CheckinTime <= secondPara);
                 var bookingdetailgroup = bookingdetailList.GroupBy(x => x.AreaId);
-                var slots = await _slotService.GetAll(x => x.Status == 1);
+                var slots = await _slotService.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);
                 int numberOfSlot = slots.Count();
                 List<UltilizationRate> ultilizationRates = new List<UltilizationRate>();
                 var areaInCludeAreaTypeAndRoom = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Room);

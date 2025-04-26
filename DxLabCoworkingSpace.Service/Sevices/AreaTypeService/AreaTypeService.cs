@@ -299,7 +299,7 @@ namespace DxLabCoworkingSpace
                 {
                     return new Tuple<bool, string>(false, isValid.Item2);
                 }
-                await _unitOfWork.AreaTypeRepository.Update(araeTypeFromDb);
+             //   await _unitOfWork.AreaTypeRepository.Update(araeTypeFromDb);
                 await _unitOfWork.CommitAsync();
                 return new Tuple<bool, string>(true, "Cập nhập thành công!");
 

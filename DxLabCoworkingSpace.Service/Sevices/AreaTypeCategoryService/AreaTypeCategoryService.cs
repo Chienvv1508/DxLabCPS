@@ -129,7 +129,7 @@ namespace DxLabCoworkingSpace
                     return new ResponseDTO<AreaTypeCategory>(400, patch.Item2, null);
                 }
 
-                _unitOfWork.CommitAsync();
+               
 
                 return new ResponseDTO<AreaTypeCategory>(200, "Cập nhập thành công!", null);
 
@@ -137,7 +137,7 @@ namespace DxLabCoworkingSpace
             }
             catch (Exception ex)
             {
-                _unitOfWork.RollbackAsync();
+                
                 return new ResponseDTO<AreaTypeCategory>(500, "Lỗi khi cập nhập dữ liệu!", null);
 
             }
@@ -313,7 +313,7 @@ namespace DxLabCoworkingSpace
 
                 }
 
-                await _unitOfWork.AreaTypeCategoryRepository.Update(areaTypeCateFromDb);
+                //await _unitOfWork.AreaTypeCategoryRepository.Update(areaTypeCateFromDb);
                 await _unitOfWork.CommitAsync();
             }
             catch (Exception ex)
