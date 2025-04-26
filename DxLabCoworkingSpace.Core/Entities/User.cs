@@ -18,6 +18,7 @@ namespace DxLabCoworkingSpace
         public string Email { get; set; } = null!;
         public string? AccessToken { get; set; }
         public string FullName { get; set; } = null!;
+        public string? Avatar { get; set; }
         public string? WalletAddress { get; set; }
         public bool Status { get; set; }
 
