@@ -53,6 +53,11 @@ namespace DxLabCoworkingSpace
             return await _unitOfWork.BookingDetailRepository.GetById(id);
         }
 
+        public async Task<BookingDetail> GetLastBookingDetail(Expression<Func<BookingDetail, bool>> expression)
+        {
+            return await _unitOfWork.BookingDetailRepository.GetLast(expression);
+        }
+
         public async Task<BookingDetail> GetWithInclude(Expression<Func<BookingDetail, bool>> expression, params Expression<Func<BookingDetail, object>>[] includes)
         {
             return await _unitOfWork.BookingDetailRepository.GetWithInclude(expression, includes);

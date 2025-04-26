@@ -24,11 +24,6 @@ namespace DxLabCoworkingSpace
         [Range(1, 40, ErrorMessage = "Số lượng chỗ phải từ 1 đến 40.")]
         public int Capacity { get; set; }
         public int Status { get; set; }
-
-        public DateTime ExpiredDate { get; set; }
-
-       
-
         public List<String>? Images { get; set; }
 
         public List<AreaDTO> Area_DTO { get; set; }

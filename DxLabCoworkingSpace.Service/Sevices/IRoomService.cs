@@ -18,5 +18,8 @@ namespace DxLabCoworkingSpace
         Task<ResponseDTO<Room>> PatchRoom(int id, JsonPatchDocument<Room> patchDoc);
         Task<ResponseDTO<Room>> AddImages(int id, List<IFormFile> images);
         Task<ResponseDTO<Room>> RemoveImages(int id, List<string> images);
+        Task<ResponseDTO<Room>> AddRoom(RoomForAddDTO roomDto);
+        Task<ResponseDTO<Room>> InactiveRoom(int roomId);
+        Task<ResponseDTO<IEnumerable<Room>>> GetAllRoomIncludeAreaAndAreaType();
     }
 }

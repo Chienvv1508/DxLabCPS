@@ -23,7 +23,7 @@ namespace DxLabCoworkingSpace
             double breakTimeInMinutes = breakTime ?? throw new ArgumentException(nameof(breakTime), "Break Time là bắt buộc");
             
 
-            var existingSlots = (await _unitOfWork.SlotRepository.GetAll()).OrderBy(s => s.StartTime).ToList();
+            var existingSlots = (await _unitOfWork.SlotRepository.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date)).OrderBy(s => s.StartTime).ToList();
             int maxSlotNumber = existingSlots.Any() ? existingSlots.Max(s => s.SlotNumber) : 0;
             int slotNumber = maxSlotNumber + 1;
 
@@ -41,9 +41,9 @@ namespace DxLabCoworkingSpace
                     {
                         StartTime = currentStart,
                         EndTime = currentEnd,
-                        Status = 1,
-                        SlotNumber = slotNumber++
-                    });
+                        SlotNumber = slotNumber++,
+                        ExpiredTime = new DateTime(3000, 1, 1)
+                    }); ;
                     currentStart = currentEnd.Add(TimeSpan.FromMinutes(breakTimeInMinutes));
                 }
                 else
@@ -99,7 +99,7 @@ namespace DxLabCoworkingSpace
         }
         public async Task<Slot> Get(Expression<Func<Slot, bool>> expression)
         {
-            throw new NotImplementedException();
+            return await _unitOfWork.SlotRepository.Get(expression);
         }
         public async Task<IEnumerable<Slot>> GetAll(Expression<Func<Slot, bool>> expression)
         {
@@ -127,17 +127,17 @@ namespace DxLabCoworkingSpace
             }
 
             // Kiểm tra xem slot có BookingDetail nào không (nếu thay đổi trạng thái sang inactive)
-            if (entity.Status == 0) // Nếu đánh dấu slot là inactive
-            {
-                var bookingDetails = await _unitOfWork.BookingDetailRepository.GetAll(bd => bd.SlotId == entity.SlotId);
-                if (bookingDetails.Any())
-                {
-                    throw new InvalidOperationException($"Slot với ID {entity.SlotId} có {bookingDetails.Count()} đặt chỗ, không thể thay đổi trạng thái thành inactive!");
-                }
-            }
+            //if (entity.Status == 0) // Nếu đánh dấu slot là inactive
+            //{
+            //    var bookingDetails = await _unitOfWork.BookingDetailRepository.GetAll(bd => bd.SlotId == entity.SlotId);
+            //    if (bookingDetails.Any())
+            //    {
+            //        throw new InvalidOperationException($"Slot với ID {entity.SlotId} có {bookingDetails.Count()} đặt chỗ, không thể thay đổi trạng thái thành inactive!");
+            //    }
+            //}
 
             // Chỉ cập nhật trạng thái (Status)
-            existingSlot.Status = entity.Status;
+            existingSlot.ExpiredTime = entity.ExpiredTime;
 
             // Lưu thay đổi vào database
             await _unitOfWork.SlotRepository.Update(existingSlot);
@@ -150,6 +150,43 @@ namespace DxLabCoworkingSpace
         Task IGenericeService<Slot>.Add(Slot entity)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<DateTime> GetNewExpiredDate(int id)
+        {
+            try
+            {
+                var slot = await _unitOfWork.SlotRepository.Get(x => x.SlotId == id && x.ExpiredTime.Date > DateTime.Now.Date);
+                if(slot == null)
+                    return new DateTime(3000, 1, 1);
+                var bookingDetails = await _unitOfWork.BookingDetailRepository.GetAll(x => x.SlotId == id);
+
+
+                var lastBooking = bookingDetails.OrderByDescending(x => x.CheckinTime).FirstOrDefault();
+                DateTime expiredDate;
+                if (lastBooking == null)
+                {
+                    expiredDate = DateTime.Now.Date.AddDays(1);
+                }
+                else if (lastBooking.CheckinTime.Date < DateTime.Now.Date)
+                {
+                    expiredDate = DateTime.Now.Date;
+                }
+                else
+                {
+                    expiredDate = lastBooking.CheckinTime.Date.AddDays(1);
+                }
+
+                return expiredDate;
+
+
+            }
+            catch (Exception ex)
+            {
+                return new DateTime(3000, 1, 1);
+            }
+            
+           
         }
     }
 }

@@ -109,7 +109,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 List<BookingDetail> bookingDetails = new List<BookingDetail>();
 
                 // Load dữ liệu cần thiết một lần trước vòng lặp
-                var allSlots = await _slotService.GetAll();
+                var allSlots = await _slotService.GetAll( x => x.ExpiredTime.Date > DateTime.Now.Date);
                 var allAreasWithDetails = await _areaService.GetAllWithInclude(a => a.Room, a => a.AreaType, a => a.Positions);
                 var filteredAreas = allAreasWithDetails.Where(a => areasInRoom.Select(ar => ar.AreaId).Contains(a.AreaId)).ToList();
                 var areaTypeIds = filteredAreas.Select(a => a.AreaTypeId).Distinct().ToList();
@@ -133,7 +133,9 @@ namespace DXLAB_Coworking_Space_Booking_System
                     int[] slotArray = new int[dte.SlotId.Count];
                     for (int i = 0; i < slotArray.Length; i++)
                     {
-                        var x = await _slotService.GetById(dte.SlotId[i]);
+                        var x = await _slotService.Get(x => x.SlotId == dte.SlotId[i] && x.ExpiredTime.Date > DateTime.Now.Date);
+                        if(x == null)
+                            return BadRequest(new ResponseDTO<object>(400, "Slot không có hoặc đã bị xóa", null));
                         slotArray[i] = x.SlotNumber;
                     }
                     int[][] slotJaggedMatrix = CreateSlotJaggedMatrix(slotArray);
@@ -403,7 +405,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         private async Task<Dictionary<int, int[]>> CreateSearchMatrix(IEnumerable<Area> areasInRoom, DateTime date)
         {
             if (areasInRoom == null) return null;
-            var listOfSlot = await _slotService.GetAll();
+            var listOfSlot = await _slotService.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);
             if (areasInRoom.FirstOrDefault() != null)
             {
                 Dictionary<int, int[]> dict = new Dictionary<int, int[]>();
@@ -511,7 +513,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 return NotFound(responseDTO);
 
             }
-            var areas = room.Areas.Where(x => x.Status == 1);
+            var areas = room.Areas.Where(x => x.ExpiredDate.Date > DateTime.Now.Date);
             room.Areas = areas.ToList();
             if (availableSlotRequestDTO.BookingDate.Date < DateTime.Now.Date)
             {
@@ -531,7 +533,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 return NotFound(responseDTO);
             }
             var bookingDetails = await _bookDetailService.GetAll(x => x.CheckinTime.Date == availableSlotRequestDTO.BookingDate.Date);
-            var slots = await _slotService.GetAll( x => x.Status == 1);
+            var slots = await _slotService.GetAll( x => x.ExpiredTime.Date > DateTime.Now.Date);
             if (!slots.Any())
             {
                 var responseDTO = new ResponseDTO<object>(404, $"Chưa có slot cho thuê", null);
@@ -598,7 +600,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     return NotFound(response);
 
                 }
-                var areas = await _areaService.GetAll(x => x.RoomId == room.RoomId && x.Status == 1);
+                var areas = await _areaService.GetAll(x => x.RoomId == room.RoomId && x.ExpiredDate.Date > DateTime.Now.Date);
                 if (areas == null)
                 {
                     var response = new ResponseDTO<object>(400, "Không tìm thấy khu vực sẵn sàng", null);
