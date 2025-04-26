@@ -439,9 +439,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         public async Task<ActionResult<RoomDTO>> GetRoomById(int id)
         {
 
-
-
-
             // Tải Room với Areas và Images của Room
             var room = await _roomService.Get(x => x.RoomId == id && x.Status != 2);
             if (room.Areas != null)

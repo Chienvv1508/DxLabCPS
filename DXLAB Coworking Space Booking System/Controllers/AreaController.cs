@@ -543,7 +543,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     //int countIndividualAre = 0;
 
 
-                    foreach (var area in room.Areas.Where(x => x.ExpiredDate < DateTime.Now.Date))
+                    foreach (var area in room.Areas.Where(x => x.ExpiredDate > DateTime.Now.Date))
                     {
                         var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId && x.Status == 1);
                         if (areatype != null)
