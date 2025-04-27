@@ -175,32 +175,32 @@ namespace DXLAB_Coworking_Space_Booking_System
                                     bookingDetail.AreaId = areaBook.AreaId;
                                     bookingDetails.Add(bookingDetail);
 
-                                    // Chuẩn bị dữ liệu cho blockchain
-                                    var slotNumber = (byte)slot.SlotNumber;
-                                    var timestamp = new DateTimeOffset(bookingDetail.CheckinTime).ToUnixTimeSeconds();
-                                    var roomIdStr = room.RoomId.ToString();
-                                    var roomName = room.RoomName;
-                                    var areaIdStr = areaBook.AreaId.ToString();
-                                    var areaName = areaBook.AreaName;
-                                    var positionStr = areaBook.Positions.FirstOrDefault(p => p.PositionId == id)?.PositionNumber.ToString() ?? "N/A";
+                                    //// Chuẩn bị dữ liệu cho blockchain
+                                    //var slotNumber = (byte)slot.SlotNumber;
+                                    //var timestamp = new DateTimeOffset(bookingDetail.CheckinTime).ToUnixTimeSeconds();
+                                    //var roomIdStr = room.RoomId.ToString();
+                                    //var roomName = room.RoomName;
+                                    //var areaIdStr = areaBook.AreaId.ToString();
+                                    //var areaName = areaBook.AreaName;
+                                    //var positionStr = areaBook.Positions.FirstOrDefault(p => p.PositionId == id)?.PositionNumber.ToString() ?? "N/A";
 
-                                    // Đặt chỗ trên blockchain
-                                    var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(
-                                        booking.BookingId, // Sử dụng BookingId làm bytes32 trên blockchain
-                                        userWalletAddress,
-                                        slotNumber,
-                                        roomIdStr,
-                                        roomName,
-                                        areaIdStr,
-                                        areaName,
-                                        positionStr,
-                                        timestamp
-                                    );
+                                    //// Đặt chỗ trên blockchain
+                                    //var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(
+                                    //    booking.BookingId, // Sử dụng BookingId làm bytes32 trên blockchain
+                                    //    userWalletAddress,
+                                    //    slotNumber,
+                                    //    roomIdStr,
+                                    //    roomName,
+                                    //    areaIdStr,
+                                    //    areaName,
+                                    //    positionStr,
+                                    //    timestamp
+                                    //);
 
-                                    if (!success)
-                                    {
-                                        return BadRequest(new ResponseDTO<object>(400, "Đặt chỗ trên blockchain thất bại!", txHash));
-                                    }
+                                    //if (!success)
+                                    //{
+                                    //    return BadRequest(new ResponseDTO<object>(400, "Đặt chỗ trên blockchain thất bại!", txHash));
+                                    //}
                                 }
                             }
                         }
@@ -231,32 +231,32 @@ namespace DXLAB_Coworking_Space_Booking_System
                                     bookingDetail.Price = areaBook.AreaType.Price;
                                     bookingDetails.Add(bookingDetail);
 
-                                    // Chuẩn bị dữ liệu cho blockchain
-                                    var slotNumber = (byte)slot.SlotNumber;
-                                    var timestamp = new DateTimeOffset(bookingDetail.CheckinTime).ToUnixTimeSeconds();
-                                    var roomIdStr = room.RoomId.ToString();
-                                    var roomName = room.RoomName;
-                                    var areaIdStr = areaBook.AreaId.ToString();
-                                    var areaName = areaBook.AreaName;
-                                    var positionStr = "N/A"; // Không có position
+                                    //// Chuẩn bị dữ liệu cho blockchain
+                                    //var slotNumber = (byte)slot.SlotNumber;
+                                    //var timestamp = new DateTimeOffset(bookingDetail.CheckinTime).ToUnixTimeSeconds();
+                                    //var roomIdStr = room.RoomId.ToString();
+                                    //var roomName = room.RoomName;
+                                    //var areaIdStr = areaBook.AreaId.ToString();
+                                    //var areaName = areaBook.AreaName;
+                                    //var positionStr = "N/A"; // Không có position
 
-                                    // Đặt chỗ trên blockchain
-                                    var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(
-                                        booking.BookingId,
-                                        userWalletAddress,
-                                        slotNumber,
-                                        roomIdStr,
-                                        roomName,
-                                        areaIdStr,
-                                        areaName,
-                                        positionStr,
-                                        timestamp
-                                    );
+                                    //// Đặt chỗ trên blockchain
+                                    //var (success, txHash) = await _blockchainBookingService.BookOnBlockchain(
+                                    //    booking.BookingId,
+                                    //    userWalletAddress,
+                                    //    slotNumber,
+                                    //    roomIdStr,
+                                    //    roomName,
+                                    //    areaIdStr,
+                                    //    areaName,
+                                    //    positionStr,
+                                    //    timestamp
+                                    //);
 
-                                    if (!success)
-                                    {
-                                        return BadRequest(new ResponseDTO<object>(400, "Đặt chỗ trên blockchain thất bại!", txHash));
-                                    }
+                                    //if (!success)
+                                    //{
+                                    //    return BadRequest(new ResponseDTO<object>(400, "Đặt chỗ trên blockchain thất bại!", txHash));
+                                    //}
                                 }
                             }
                         }
