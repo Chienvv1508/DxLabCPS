@@ -649,11 +649,13 @@ namespace DxLabCoworkingSpace
 
                 }
                 await _unitOfWork.RoomRepository.Update(room);
+                await _unitOfWork.CommitAsync();
                 return new ResponseDTO<Area>(200, "Thêm thành công khu vực!", null);
             }               
             
             catch (Exception ex)
             {
+                await _unitOfWork.RollbackAsync();
                 return  new ResponseDTO<Area>(500, "Lỗi thêm khu vực!", null);
             }
         }
@@ -856,7 +858,7 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-                var room = await _unitOfWork.RoomRepository.Get(x => x.RoomId == roomId && x.Status != 2);
+                var room = await _unitOfWork.RoomRepository.GetWithInclude(x => x.RoomId == roomId && x.Status != 2, x => x.Areas, x => x.Images);
                 if (room == null)
                 {
                     return new ResponseDTO<object>(400, "Bạn nhập phòng không tồn tại", null);
