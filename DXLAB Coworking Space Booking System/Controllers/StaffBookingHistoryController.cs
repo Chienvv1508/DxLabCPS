@@ -255,8 +255,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 };
 
                 // Gửi thông báo real-time tới Student và Staff
-                await _hubContext.Clients.User(bookingDetail.Booking.UserId.ToString())
-                    .SendAsync("ReceiveBookingStatus", bookingDetailData);
+                await _hubContext.Clients.Group("Student").SendAsync("ReceiveBookingStatus", bookingDetailData);
                 await _hubContext.Clients.Group("Staff").SendAsync("ReceiveBookingStatus", bookingDetailData);
 
                 return Ok(new ResponseDTO<object>(200, $"Check-in thành công cho BookingDetail {bookingDetailId}!", null));
@@ -329,8 +328,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 };
 
                 // Gửi thông báo real-time tới Student và Staff
-                await _hubContext.Clients.User(bookingDetail.Booking.UserId.ToString())
-                    .SendAsync("ReceiveBookingStatus", bookingDetailData);
+                await _hubContext.Clients.Group("Student").SendAsync("ReceiveBookingStatus", bookingDetailData);
                 await _hubContext.Clients.Group("Staff").SendAsync("ReceiveBookingStatus", bookingDetailData);
 
                 return Ok(new ResponseDTO<object>(200, $"Check-out thành công cho BookingDetail {bookingDetailId}!", null));

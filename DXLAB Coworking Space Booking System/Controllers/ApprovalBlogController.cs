@@ -118,7 +118,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 };
 
                 // Gửi thông báo real-time
-                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogStatus", blogData); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Staff").SendAsync("ReceiveBlogStatus", blogData); // Blog owner (Staff)
                 await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blogData); // Admin
                 await _hubContext.Clients.Group("Students").SendAsync("ReceiveBlogStatus", blogData); // Student
 
@@ -170,7 +170,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 };
 
                 // Gửi thông báo real-time
-                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogStatus", blogData); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Staff").SendAsync("ReceiveBlogStatus", blogData); // Blog owner (Staff)
                 await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogStatus", blogData); // Admin
 
                 // Chỉ trả về các trường cần thiết trong response
@@ -241,7 +241,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 await _blogService.Delete(id);
 
                 // Gửi thông báo real-time
-                await _hubContext.Clients.User(blog.UserId.ToString()).SendAsync("ReceiveBlogDeleted", id); // Blog owner (Staff)
+                await _hubContext.Clients.Group("Staff").SendAsync("ReceiveBlogDeleted", id); // Blog owner (Staff)
                 await _hubContext.Clients.Group("Admins").SendAsync("ReceiveBlogDeleted", id); // Admin
                 await _hubContext.Clients.Group("Students").SendAsync("ReceiveBlogDeleted", id); // Student
 
