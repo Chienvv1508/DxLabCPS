@@ -153,7 +153,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         }
                     }
 
-                    user.AccessToken = token;
+                    //user.AccessToken = token;
                     try
                     {
                         await _userService.Update(user);
@@ -238,7 +238,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         }
                     }
 
-                    savedUser.AccessToken = token;
+                    //savedUser.AccessToken = token;
                     try
                     {
                         await _userService.Update(savedUser);
