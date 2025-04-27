@@ -68,7 +68,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     return BadRequest(reponse);
                 }
                 //Check AraeTypeId
-                var areasInRoom = room.Areas.Where(x => x.AreaTypeId == areaTypeId && x.Status == 1);
+                var areasInRoom = room.Areas.Where(x => x.AreaTypeId == areaTypeId && x.Status == 1 && x.ExpiredDate.Date > DateTime.Now.Date);
                 if (!areasInRoom.Any())
                 {
                     var reponse = new ResponseDTO<object>(400, "Trong phòng không có khu vực nào có loại khu vực như đã nhập!", null);
@@ -85,7 +85,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 //Get All Information
                 foreach (var ar in areasInRoom)
                 {
-                    var x = await _areaService.GetWithInclude(x => x.AreaId == ar.AreaId && x.Status == 1, x => x.AreaType, x => x.Positions);
+                    var x = await _areaService.GetWithInclude(x => x.AreaId == ar.AreaId, x => x.AreaType, x => x.Positions);
                     newAreaInRoom.Add(x);
                 }
                 areasInRoom = newAreaInRoom;
@@ -123,8 +123,13 @@ namespace DXLAB_Coworking_Space_Booking_System
                 {
                     booking.UserId = userId;
                     booking.BookingCreatedDate = DateTime.Now;
+
                     // Tạo ma trận
                     Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areasInRoom, dte.BookingDate.Date);
+                    if(searchMatrix.ContainsKey(-1))
+                    {
+                        return BadRequest(new ResponseDTO<object>(400, "Đã có phòng bị hết hạn bạn không thể đặt được", null));
+                    }
                     int[] slotArray = new int[dte.SlotId.Count];
                     for (int i = 0; i < slotArray.Length; i++)
                     {
@@ -405,6 +410,13 @@ namespace DXLAB_Coworking_Space_Booking_System
                 if (areasInRoom.FirstOrDefault().AreaType.AreaCategory == 1)
                 {
                     var individualArea = areasInRoom.FirstOrDefault();
+                    if(individualArea.ExpiredDate <= date) 
+                    {
+                        KeyValuePair<int, int[]> keyValuePair = new KeyValuePair<int, int[]>(-1, new int[1] {1});
+                        var dictError = new Dictionary<int, int[]>();
+                        dictError.Add(keyValuePair.Key,keyValuePair.Value);
+                        return dictError;
+                    }
                     foreach (var pos in individualArea.Positions)
                     {
                         int[] slotNumber = listOfSlot.Select(x => x.SlotNumber).ToArray();
@@ -419,6 +431,13 @@ namespace DXLAB_Coworking_Space_Booking_System
                 {
                     foreach (var are in areasInRoom)
                     {
+                        if (are.ExpiredDate <= date)
+                        {
+                            KeyValuePair<int, int[]> keyValuePair2 = new KeyValuePair<int, int[]>(-1, new int[1] { 1 });
+                            var dictError = new Dictionary<int, int[]>();
+                            dictError.Add(keyValuePair2.Key, keyValuePair2.Value);
+                            return dictError;
+                        }
                         int[] slotNumber = listOfSlot.Select(x => x.SlotNumber).ToArray();
                         Array.Sort(slotNumber);
                         KeyValuePair<int, int[]> keyValuePair = new KeyValuePair<int, int[]>(are.AreaId, slotNumber);

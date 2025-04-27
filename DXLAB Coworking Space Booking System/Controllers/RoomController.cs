@@ -64,7 +64,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             //}
 
             //Check các thông số cơ bản: Room Name, Capacity, Check các area
-            var existedRoom = await _roomService.Get(x => x.RoomName == roomDto.RoomName && x.Status != 2);
+            var existedRoom = await _roomService.Get(x => x.RoomName == roomDto.RoomName && DateTime.Now.Date < x.ExpiredDate);
             if (existedRoom != null)
             {
                 var response = new ResponseDTO<object>(400, "Tên phòng đã tồn tại!", null);
@@ -97,6 +97,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 // Ánh xạ từ RoomDTO sang Room
                 var room = _mapper.Map<Room>(roomDto);
+                AssignExpiredDateToRoom(room);
 
                 // Thêm position cho khu vực cá nhân
                 if (resultAreDTO.Item2 != null)
@@ -159,6 +160,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
         }
 
+        private void AssignExpiredDateToRoom(Room room)
+        {
+            if (room == null) throw new ArgumentNullException("phòng nhập null");
+            foreach(var area in room.Areas)
+            {
+                area.ExpiredDate = new DateTime(3000, 1, 1);
+            }
+            room.ExpiredDate = new DateTime(3000, 1, 1);
+        }
+
         private async Task AddPositionIntoIndividualArea(Area area, Room room)
         {
             if (area != null && room != null)
@@ -183,7 +194,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         private bool checkDuplicateAreaName(RoomForAddDTO roomDto)
-        {
+        {  if (roomDto == null) return false;
             var areaNameList = new List<string>();
             foreach (var area in roomDto.Area_DTO)
             {
@@ -198,34 +209,47 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         private async Task<Tuple<int, Area, bool, string>> CheckCapacityAndExactAreaData(RoomForAddDTO roomDto)
         {
-            int areas_totalSize = 0;
-            var areaTypeList = await _areaTypeService.GetAll();
-            Area individualArea = null;
-            int inputIndividual = 0;
-
-            foreach (var area in roomDto.Area_DTO)
+            if(roomDto == null)
             {
-                var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
-                if (areatype != null)
+                return new Tuple<int, Area, bool, string>(0, null, false, "Lỗi nhập tham số đầu vào!");
+            }
+            try
+            {
+                int areas_totalSize = 0;
+                var areaTypeList = await _areaTypeService.GetAll();
+                Area individualArea = null;
+                int inputIndividual = 0;
+
+                foreach (var area in roomDto.Area_DTO)
                 {
-                    areas_totalSize += areatype.Size;
-                    if (areatype.AreaCategory == 1)
+                    var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
+                    if (areatype != null)
                     {
-                        inputIndividual++;
-                        if (inputIndividual > 1)
+                        areas_totalSize += areatype.Size;
+                        if (areatype.AreaCategory == 1)
                         {
-                            return new Tuple<int, Area, bool, string>(0, null, false, "Trong phòng chỉ được có 1 phòng cá nhân");
+                            inputIndividual++;
+                            if (inputIndividual > 1)
+                            {
+                                return new Tuple<int, Area, bool, string>(0, null, false, "Trong phòng chỉ được có 1 phòng cá nhân");
+                            }
+                            individualArea = _mapper.Map<Area>(area);
+                            individualArea.AreaType = areatype;
                         }
-                        individualArea = _mapper.Map<Area>(area);
-                        individualArea.AreaType = areatype;
+                    }
+                    else
+                    {
+                        return new Tuple<int, Area, bool, string>(0, null, false, $"Mã khu vực {area.AreaTypeId} không tồn tại!");
                     }
                 }
-                else
-                {
-                    return new Tuple<int, Area, bool, string>(0, null, false, $"Mã khu vực {area.AreaTypeId} không tồn tại!");
-                }
+                return new Tuple<int, Area, bool, string>(areas_totalSize, individualArea, true, "");
+
             }
-            return new Tuple<int, Area, bool, string>(areas_totalSize, individualArea, true, "");
+            catch (Exception ex)
+            {
+                return new Tuple<int, Area, bool, string>(0, null, false, "Lỗi lấy dữ liệu khi kiểm tra các khu vực phù hợp");
+            }
+           
         }
 
         [HttpPatch("{id}")]
@@ -318,7 +342,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Room không tồn tại", null));
                 }
-                var areaInRoom = await _areaService.GetAll(x => x.RoomId == roomId && x.Status != 2);
+                var areaInRoom = await _areaService.GetAll(x => x.RoomId == roomId && x.ExpiredDate > DateTime.Now.Date);
                 if (areaInRoom.Any())
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Trong phòng đang các khu vực đang hoạt động. Nếu muốn xóa bạn phải xóa hết khu vực trong phòng", null));

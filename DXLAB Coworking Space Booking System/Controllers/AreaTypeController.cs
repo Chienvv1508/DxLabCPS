@@ -23,7 +23,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> CreateAreaType([FromForm] AreaTypeForAddDTO areTypeDto)
         {

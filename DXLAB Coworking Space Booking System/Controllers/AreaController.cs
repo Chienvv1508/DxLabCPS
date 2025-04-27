@@ -350,7 +350,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 try
                 {
-                    var room = await _roomService.Get(x => x.RoomId == roomId && x.Status != 2);
+                    var room = await _roomService.Get(x => x.RoomId == roomId && DateTime.Now.Date < x.ExpiredDate);
                     if (room == null)
                     {
                         return BadRequest(new ResponseDTO<object>(400, "Lỗi phòng không tồn tại!", null));
@@ -433,12 +433,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var areas = _mapper.Map<List<Area>>(areaAdds);
                 foreach (var area in areas)
                 {
+                    area.ExpiredDate = new DateTime(3000, 1, 1);
                     room.Areas.Add(area);
                 }
 
                 if (individualArea != null)
                 {
-                    var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == individualArea.AreaTypeId);
+                    var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == individualArea.AreaTypeId && x.ExpiredDate.Date > DateTime.Now.Date);
                     if (xr != null)
                     {
                         int[] position = Enumerable.Range(1, individualArea.AreaType.Size).ToArray();
@@ -470,7 +471,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 if (room == null && areaAdds == null)
                     return new Tuple<bool, string>(false, "Lỗi nhập dữ liệu đầu vào!");
-                var areaNameList = room.Areas.Where(x => x.Status != 2).Where(x => x.Status != 2).Select(x => x.AreaName).ToList();
+                var areaNameList = room.Areas.Where(x => x.ExpiredDate.Date > DateTime.Now.Date).Select(x => x.AreaName).ToList();
                 foreach (var area in areaAdds)
                 {
                     if (areaNameList.Contains(area.AreaName))
@@ -534,7 +535,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     //int countIndividualAre = 0;
 
 
-                    foreach (var area in room.Areas.Where(x => x.Status != 2))
+                    foreach (var area in room.Areas.Where(x => x.ExpiredDate < DateTime.Now.Date))
                     {
                         var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId && x.Status == 1);
                         if (areatype != null)
@@ -546,6 +547,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 individualArea = area;
                                 individualArea.AreaType = areatype;
                             }
+                            area.AreaType = areatype;
                         }
 
                     }
@@ -565,11 +567,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPatch("area")]
-        public async Task<IActionResult> RemoveArea(int areaid)
+        public async Task<IActionResult> RemoveArea(int areaid, DateTime expiredDate)
         {
             try
             {
-                var area = await _areaService.Get(x => x.AreaId == areaid);
+                if(expiredDate <= DateTime.Now.Date.AddDays(14))
+                    return BadRequest(new ResponseDTO<object>(400, "Phải để ngày hết hạn lớn hơn 14 ngày từ ngày hiện tại!", null));
+                var area = await _areaService.Get(x => x.AreaId == areaid && x.ExpiredDate.Date > DateTime.Now.Date);
                 if (area == null)
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Khu vực không tồn tại", null));
@@ -579,7 +583,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Trong phòng đang có thiết bị. Nếu muốn xóa bạn phải xóa hết thiết vị trong phòng", null));
                 }
-                area.Status = 2;
+                area.ExpiredDate = expiredDate;
                 await _areaService.Update(area);
                 return Ok("Xóa thành công!");
             }
@@ -627,7 +631,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 List<AreaGetForManagement> areaDTOs = new List<AreaGetForManagement>();
                 IEnumerable<UsingFacility> usingFacilities = await _usingFaclytyService.GetAllWithInclude(x => x.Facility);
 
-                foreach (var are in room.Areas.Where(x => x.Status != 2))
+                foreach (var are in room.Areas.Where(x => x.ExpiredDate.Date > DateTime.Now.Date))
                 {
                     IEnumerable<UsingFacility> usingFacilities1 = new List<UsingFacility>();
                     if (usingFacilities != null)
@@ -637,29 +641,29 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     var areaType = listAreaType.FirstOrDefault(x => x.AreaTypeId == are.AreaTypeId);
                     are.AreaType = areaType;
                     var areaTypeCategory = listAreaTypeCategory.FirstOrDefault(x => x.CategoryId == are.AreaType.AreaCategory);
-                    if (!usingFacilities1.Any())
-                    {
-                        int faci = 0;
-                        int faciCh = 0;
-                        AreaGetForManagement areaGetForManagement = new AreaGetForManagement()
-                        {
-                            AreaId = are.AreaId,
-                            AreaName = are.AreaName,
-                            AreaTypeId = are.AreaTypeId,
-                            AreaTypeName = are.AreaType.AreaTypeName,
-                            CategoryId = are.AreaType.AreaCategory,
-                            Title = are.AreaType.AreaTypeCategory.Title,
-                            FaciAmount = faci,
-                            FaciAmountCh = faciCh,
-                            Status = are.Status,
-                            Size = are.AreaType.Size
+                    //if (!usingFacilities1.Any())
+                    //{
+                    //    int faci = 0;
+                    //    int faciCh = 0;
+                    //    AreaGetForManagement areaGetForManagement = new AreaGetForManagement()
+                    //    {
+                    //        AreaId = are.AreaId,
+                    //        AreaName = are.AreaName,
+                    //        AreaTypeId = are.AreaTypeId,
+                    //        AreaTypeName = are.AreaType.AreaTypeName,
+                    //        CategoryId = are.AreaType.AreaCategory,
+                    //        Title = are.AreaType.AreaTypeCategory.Title,
+                    //        FaciAmount = faci,
+                    //        FaciAmountCh = faciCh,
+                    //        Status = are.Status,
+                    //        Size = are.AreaType.Size
 
 
-                        };
-                        areaDTOs.Add(areaGetForManagement);
-                    }
-                    else
-                    {
+                    //    };
+                    //    areaDTOs.Add(areaGetForManagement);
+                    //}
+                    //else
+                    //{
                         int faci = 0;
                         int faciCh = 0;
                         foreach (var facility in usingFacilities1)
@@ -680,12 +684,14 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             FaciAmount = faci,
                             FaciAmountCh = faciCh,
                             Status = are.Status,
-                            Size = are.AreaType.Size
+                            Size = are.AreaType.Size,
+                            ExpiredDate = are.ExpiredDate
+                            
 
 
                         };
                         areaDTOs.Add(areaGetForManagement);
-                    }
+                    //}
                 }
 
 
