@@ -11,7 +11,8 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<Role, RoleDTO>().ReverseMap();
 
             // Mapping cho Slot
-            CreateMap<Slot, SlotDTO>().ReverseMap();
+            CreateMap<Slot, SlotDTO>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(x => x.ExpiredTime.Date > DateTime.Now.Date && x.ExpiredTime.Date < new DateTime(3000, 1, 1)? 0 : 1));
 
             // Mapping cho User
             CreateMap<User, UserDTO>().ReverseMap();
