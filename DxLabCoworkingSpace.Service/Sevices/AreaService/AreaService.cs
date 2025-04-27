@@ -281,7 +281,8 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-                var usingFacilities = await _unitOfWork.UsingFacilityRepository.GetAllWithInclude(x => x.AreaId == areaInRoom.AreaId, x => x.Facility);
+                var usingFacilities = await _unitOfWork.UsingFacilityRepository.GetAllWithInclude(x => x.Facility);
+                usingFacilities = usingFacilities.Where(x => x.AreaId == areaInRoom.AreaId);
                 int numberOfPositionT = 0;
                 int numberOfPositionCh = 0;  // thay doi
                 foreach (var faci in usingFacilities)
@@ -590,7 +591,7 @@ namespace DxLabCoworkingSpace
             try
             {
 
-                var room = await _unitOfWork.RoomRepository.Get(x => x.RoomId == roomId && x.Status != 2);
+                var room = await _unitOfWork.RoomRepository.GetWithInclude(x => x.RoomId == roomId && x.Status != 2, x => x.Areas, x => x.Images);
                 if (room == null)
                 {
                     return new ResponseDTO<Area>(400, "Lỗi phòng không tồn tại!", null);
@@ -771,7 +772,7 @@ namespace DxLabCoworkingSpace
                     //int countIndividualAre = 0;
 
 
-                    foreach (var area in room.Areas.Where(x => x.ExpiredDate > DateTime.Now.Date))
+                    foreach (var area in room.Areas.Where(x => x.ExpiredDate.Date > DateTime.Now.Date))
                     {
                         var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId && x.Status == 1);
                         if (areatype != null)
