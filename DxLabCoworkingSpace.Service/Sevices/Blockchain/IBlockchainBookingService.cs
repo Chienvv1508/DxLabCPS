@@ -11,7 +11,17 @@ namespace DxLabCoworkingSpace.Service
 {
     public interface IBlockchainBookingService
     {
-        Task<(bool Success, string TransactionHash)> BookOnBlockchain(int bookingId, string userWalletAddress, byte slot, decimal totalPrice);
+        Task<(bool Success, string TransactionHash)> BookOnBlockchain(
+        int bookingId,
+        string userWalletAddress,
+        byte slot,
+        string roomId,
+        string roomName,
+        string areaId,
+        string areaName,
+        string position,
+        long timestamp
+    );
         Task<BigInteger> GetUserBalance(string walletAddress);
     }
 }
