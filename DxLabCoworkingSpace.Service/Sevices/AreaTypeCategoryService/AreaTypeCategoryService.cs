@@ -162,11 +162,13 @@ namespace DxLabCoworkingSpace
                     return new Tuple<bool, string>(false, checkModel.Item2);
                 }
                 await _unitOfWork.AreaTypeCategoryRepository.Update(areaTypeCateFromDb);
+                await _unitOfWork.CommitAsync();
                 return new Tuple<bool, string>(true, "");
 
             }
             catch (Exception ex)
             {
+                await _unitOfWork.RollbackAsync();
                 return new Tuple<bool, string>(false, "Lỗi cập nhập!");
             }
         }
