@@ -16,10 +16,13 @@ namespace DxLabCoworkingSpace
     public class RoomService : IRoomService
     {
         private IUnitOfWork _unitOfWork;
+        private IMapper _mapper;
 
-        public RoomService(IUnitOfWork unitOfWork)
+        public RoomService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
+
         }
 
         public async Task Add(Room entity)
@@ -352,6 +355,271 @@ namespace DxLabCoworkingSpace
             catch (Exception ex)
             {
                 return new ResponseDTO<Room>(400, "Cập nhập lỗi!", null);
+            }
+        }
+
+        public async Task<ResponseDTO<Room>> AddRoom(RoomForAddDTO roomDto)
+        {
+            try
+            {
+
+                Tuple<bool, string> checkValidDTO = await CheckValidRoomForAddDTO(roomDto);
+                if (checkValidDTO.Item1 == false)
+                {
+                    var response1 = new ResponseDTO<Room>(400, checkValidDTO.Item2, null);
+                    return response1;
+                }
+
+
+                // Bản chất hàm này đang đếm tổng areasize, lấy individual area
+                // item1: tổng size trong các area sau khi add, item2: individual area, item3: check xem có đủ dk qua bước này ko
+                Tuple<int, Area, bool, string> resultAreDTO = await CheckCapacityAndExactAreaData(roomDto);
+                if (resultAreDTO.Item3 == false)
+                {
+                    var response1 = new ResponseDTO<Room>(400, resultAreDTO.Item4, null);
+                    return response1;
+                }
+                // Check area name duplicates
+                if (checkDuplicateAreaName(roomDto))
+                {
+                    var response1 = new ResponseDTO<Room>(400, "Tên khu vực đang nhập trùng nhau", null);
+                    return response1;
+                }
+                // Ánh xạ từ RoomDTO sang Room
+                var room = _mapper.Map<Room>(roomDto);
+                AssignExpiredDateToRoom(room);
+
+                // Thêm position cho khu vực cá nhân
+                if (resultAreDTO.Item2 != null)
+                {
+                    await AddPositionIntoIndividualArea(resultAreDTO.Item2, room);
+                }
+
+                var rs = await ImageSerive.AddImage(roomDto.Images);
+                if (rs.Item1 == true)
+                {
+                    foreach (var i in rs.Item2)
+                    {
+                        room.Images.Add(new Image() { ImageUrl = i });
+                    }
+                }
+                else
+                {
+                    var response1 = new ResponseDTO<Room>(500, "Lỗi nhập ảnh!", null);
+                    return response1;
+                }
+
+                room.Status = 0;
+                // Lưu room vào database
+                await _unitOfWork.RoomRepository.Add(room);
+                await _unitOfWork.CommitAsync();
+                return new ResponseDTO<Room>(200, "", room);
+
+                //// Tải lại room từ database với Areas, Images và AreaType
+                //var savedRoom = await _roomService.GetWithInclude(
+                //    r => r.RoomId == room.RoomId,
+                //    r => r.Areas // Include Areas
+                //);
+
+                //if (savedRoom != null)
+                //{
+                //    foreach (var area in savedRoom.Areas)
+                //    {
+                //        var areaWithImages = await _areaService.GetWithInclude(
+                //            a => a.AreaId == area.AreaId,
+                //            a => a.Images
+                //        );
+                //        area.Images = areaWithImages.Images.ToList();
+                //        area.AreaType = await _areaTypeService.Get(at => at.AreaTypeId == area.AreaTypeId);
+                //    }
+                //}
+
+                //// Ánh xạ sang RoomDTO để trả về
+                //var roomDtoRs = _mapper.Map<RoomDTO>(savedRoom);
+
+                //var response = new ResponseDTO<RoomDTO>(201, "Tạo phòng thành công", roomDtoRs);
+                //return CreatedAtAction(nameof(GetRoomById), new { id = room.RoomId }, response);
+            }
+            catch (DbUpdateException ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                var response = new ResponseDTO<Room>(500, "Lỗi cập nhật cơ sở dữ liệu.", null);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                var response = new ResponseDTO<Room>(500, "Đã xảy ra lỗi khi tạo phòng.", null);
+                return response;
+            }
+        }
+
+        private async Task<Tuple<bool, string>> CheckValidRoomForAddDTO(RoomForAddDTO roomDto)
+        {
+            var isValid = ValidationModel<RoomForAddDTO>.ValidateModel(roomDto);
+            if (isValid.Item1 == false)
+            {
+                return new Tuple<bool, string>(false, isValid.Item2);
+            }
+            var existedRoom = await _unitOfWork.RoomRepository.Get(x => x.RoomName == roomDto.RoomName && x.Status != 2);
+            if (existedRoom != null)
+            {
+
+                return new Tuple<bool, string>(false, "Tên phòng đã tồn tại!");
+
+            }
+
+            return new Tuple<bool, string>(true, "");
+
+
+        }
+
+        private void AssignExpiredDateToRoom(Room room)
+        {
+            if (room == null) throw new ArgumentNullException("phòng nhập null");
+            foreach (var area in room.Areas)
+            {
+                area.ExpiredDate = new DateTime(3000, 1, 1);
+            }
+
+        }
+
+        private async Task AddPositionIntoIndividualArea(Area area, Room room)
+        {
+            if (area != null && room != null)
+            {
+                var xr = room.Areas.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
+                if (xr != null)
+                {
+                    int[] position = Enumerable.Range(1, area.AreaType.Size).ToArray();
+                    List<Position> positions = new List<Position>();
+                    for (int i = 1; i <= position.Length; i++)
+                    {
+                        var pos = new Position
+                        {
+                            PositionNumber = i,
+                            Status = true
+                        };
+                        positions.Add(pos);
+                    }
+                    xr.Positions = positions;
+                }
+            }
+        }
+
+        private bool checkDuplicateAreaName(RoomForAddDTO roomDto)
+        {
+            if (roomDto == null) return false;
+            var areaNameList = new List<string>();
+            foreach (var area in roomDto.Area_DTO)
+            {
+                if (areaNameList.Contains(area.AreaName))
+                {
+                    return true;
+                }
+                areaNameList.Add(area.AreaName);
+            }
+            return false;
+        }
+
+        private async Task<Tuple<int, Area, bool, string>> CheckCapacityAndExactAreaData(RoomForAddDTO roomDto)
+        {
+            if (roomDto == null)
+            {
+                return new Tuple<int, Area, bool, string>(0, null, false, "Lỗi nhập tham số đầu vào!");
+            }
+            try
+            {
+                int areas_totalSize = 0;
+                var areaTypeList = await _unitOfWork.AreaTypeRepository.GetAll(x => x.Status == 1);
+                Area individualArea = null;
+                int inputIndividual = 0;
+
+                foreach (var area in roomDto.Area_DTO)
+                {
+                    var areatype = areaTypeList.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
+                    if (areatype != null)
+                    {
+                        areas_totalSize += areatype.Size;
+                        if (areatype.AreaCategory == 1)
+                        {
+                            inputIndividual++;
+                            if (inputIndividual > 1)
+                            {
+                                return new Tuple<int, Area, bool, string>(0, null, false, "Trong phòng chỉ được có 1 phòng cá nhân");
+                            }
+                            individualArea = _mapper.Map<Area>(area);
+                            individualArea.AreaType = areatype;
+                        }
+                    }
+                    else
+                    {
+                        return new Tuple<int, Area, bool, string>(0, null, false, $"Mã khu vực {area.AreaTypeId} không tồn tại!");
+                    }
+                }
+                if (roomDto.Capacity < areas_totalSize)
+                {
+                    return new Tuple<int, Area, bool, string>(0, null, false, "Bạn đã nhập khu vực quá sức chứa của phòng");
+                }
+                return new Tuple<int, Area, bool, string>(areas_totalSize, individualArea, true, "");
+
+            }
+            catch (Exception ex)
+            {
+                return new Tuple<int, Area, bool, string>(0, null, false, "Lỗi lấy dữ liệu khi kiểm tra các khu vực phù hợp");
+            }
+
+        }
+
+        public async Task<ResponseDTO<Room>> InactiveRoom(int roomId)
+        {
+            try
+            {
+                var room = await _unitOfWork.RoomRepository.Get(x => x.RoomId == roomId && x.Status != 2);
+                if (room == null)
+                {
+                    return new ResponseDTO<Room>(400, "Room không tồn tại", null);
+                }
+                var areaInRoom = await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == roomId && x.ExpiredDate > DateTime.Now.Date);
+                if (areaInRoom.Any())
+                {
+                    return new ResponseDTO<Room>(400, "Trong phòng đang các khu vực đang hoạt động. Nếu muốn xóa bạn phải xóa hết khu vực trong phòng", null);
+                }
+                room.Status = 2;
+                await _unitOfWork.RoomRepository.Update(room);
+                await _unitOfWork.CommitAsync();
+                return new ResponseDTO<Room>(200, "Xóa thành công!", null);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                return new ResponseDTO<Room>(500, "Lỗi xóa phòng!", null);
+            }
+        }
+
+        public async Task<ResponseDTO<IEnumerable<Room>>> GetAllRoomIncludeAreaAndAreaType()
+        {
+            try
+            {
+                // Tải tất cả Room với Areas, Images của Areas và AreaType
+                var rooms = await _unitOfWork.RoomRepository.GetAll(x => x.Status != 2);
+
+                foreach (var r in rooms)
+                {
+                    r.Areas = r.Areas.Where(x => x.ExpiredDate > DateTime.Now.Date).ToList();
+                    foreach (var area in r.Areas)
+                    {
+                        area.AreaType = await _unitOfWork.AreaTypeRepository.GetWithInclude(x => x.AreaTypeId == area.AreaTypeId, x => x.AreaTypeCategory);
+                    }
+                }
+                return new ResponseDTO<IEnumerable<Room>>(200, "Danh sách phòng", rooms);
+
+
+
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO<IEnumerable<Room>>(500, "Lỗi khi lấy dữ liệu phòng!", null);
             }
         }
     }

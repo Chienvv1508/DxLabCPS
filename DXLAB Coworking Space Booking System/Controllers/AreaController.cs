@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using OfficeOpenXml.FormulaParsing.ExpressionGraph;
+using System.Linq.Expressions;
 
 namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
@@ -19,10 +21,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         private readonly IRoomService _roomService;
         private readonly IAreaTypeService _areaTypeService;
         private readonly IAreaTypeCategoryService _areaTypeCategoryService;
+        private readonly IBookingDetailService _bookingDetailService;
 
         public AreaController(IAreaService areaService, IUsingFacilytyService usingFacilytyService,
             IFaciStatusService faciStatusService, IMapper mapper, IFacilityService facilityService,
-            IRoomService roomService, IAreaTypeService areaTypeService, IAreaTypeCategoryService areaTypeCategoryService)
+            IRoomService roomService, IAreaTypeService areaTypeService, IAreaTypeCategoryService areaTypeCategoryService, IBookingDetailService bookingDetailService)
         {
             _usingFaclytyService = usingFacilytyService;
             _facilityStatusService = faciStatusService;
@@ -32,6 +35,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             _roomService = roomService;
             _areaTypeService = areaTypeService;
             _areaTypeCategoryService = areaTypeCategoryService;
+            _bookingDetailService = bookingDetailService;
         }
 
         [HttpPost("faci")]
@@ -346,11 +350,23 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         [HttpPost("newarea")]
         public async Task<IActionResult> AddNewAreaToRoom(int roomId, [FromBody] List<AreaAdd> areaAdds)
         {
+
+            ResponseDTO<Area> result = await _areaService.AddNewArea(roomId, areaAdds);
+            return StatusCode(result.StatusCode,result);
+
+            
+
+
+
+
+
+
+
             try
             {
                 try
                 {
-                    var room = await _roomService.Get(x => x.RoomId == roomId && DateTime.Now.Date < x.ExpiredDate);
+                    var room = await _roomService.Get(x => x.RoomId == roomId && x.Status != 2);
                     if (room == null)
                     {
                         return BadRequest(new ResponseDTO<object>(400, "Lỗi phòng không tồn tại!", null));
@@ -567,23 +583,31 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPatch("area")]
-        public async Task<IActionResult> RemoveArea(int areaid, DateTime expiredDate)
+        public async Task<IActionResult> RemoveArea(int areaid)
         {
             try
             {
-                if(expiredDate <= DateTime.Now.Date.AddDays(14))
-                    return BadRequest(new ResponseDTO<object>(400, "Phải để ngày hết hạn lớn hơn 14 ngày từ ngày hiện tại!", null));
+
                 var area = await _areaService.Get(x => x.AreaId == areaid && x.ExpiredDate.Date > DateTime.Now.Date);
                 if (area == null)
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Khu vực không tồn tại", null));
                 }
+
+                
+
+
+
+                //if(expiredDate <= DateTime.Now.Date.AddDays(14))
+                //    return BadRequest(new ResponseDTO<object>(400, "Phải để ngày hết hạn lớn hơn 14 ngày từ ngày hiện tại!", null));
+              
                 var faciInArea = await _usingFaclytyService.GetAll(x => x.AreaId == areaid);
                 if (faciInArea.Any())
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Trong phòng đang có thiết bị. Nếu muốn xóa bạn phải xóa hết thiết vị trong phòng", null));
                 }
-                area.ExpiredDate = expiredDate;
+                DateTime lastDateBookingInArea = await GetLastDateBookingInArea(area);
+                area.ExpiredDate = lastDateBookingInArea;
                 await _areaService.Update(area);
                 return Ok("Xóa thành công!");
             }
@@ -592,6 +616,26 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return StatusCode(500, new ResponseDTO<object>(500, "Lỗi xóa khu vực!", null));
             }
         }
+
+        private async Task<DateTime> GetLastDateBookingInArea(Area area)
+        {
+            if (area == null) return new DateTime(3000, 1, 1);
+            var bookingDetails = await _bookingDetailService.GetAll(x => x.AreaId == area.AreaId && x.CheckinTime > DateTime.Now.Date);
+
+            var lastBooking = bookingDetails.OrderByDescending(x => x.CheckinTime).FirstOrDefault();
+            DateTime expiredDate; 
+            if(lastBooking == null)
+            {
+                expiredDate = DateTime.Now.Date.AddDays(1);
+            }
+            else
+            {
+                expiredDate = lastBooking.CheckinTime.Date.AddDays(1);
+            }
+            return expiredDate;
+
+        }
+
         [HttpDelete("faciremoveall")]
         public async Task<IActionResult> RemoveFaciFromArea(int areaid)
         {

@@ -17,7 +17,7 @@ namespace DxLabCoworkingSpace
         public int Capacity { get; set; }
         // 0: Chưa ss, 1: SS, 2: Xóa
         public int Status { get; set; }
-        public DateTime ExpiredDate { get; set; }
+     
         public virtual ICollection<Area> Areas { get; set; }
         public virtual ICollection<Image> Images { get; set; }
     }
