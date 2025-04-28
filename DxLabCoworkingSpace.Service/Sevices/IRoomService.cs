@@ -21,5 +21,6 @@ namespace DxLabCoworkingSpace
         Task<ResponseDTO<Room>> AddRoom(RoomForAddDTO roomDto);
         Task<ResponseDTO<Room>> InactiveRoom(int roomId);
         Task<ResponseDTO<IEnumerable<Room>>> GetAllRoomIncludeAreaAndAreaType();
+        Task<ResponseDTO<object>> GetAllAreaCategoryInRoom(int id);
     }
 }

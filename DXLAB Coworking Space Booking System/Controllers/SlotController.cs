@@ -109,7 +109,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateSlot(int id)
         {
             try

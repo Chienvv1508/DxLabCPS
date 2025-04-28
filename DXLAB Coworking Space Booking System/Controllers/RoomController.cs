@@ -445,7 +445,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 if (room.Areas.Any())
                 {
-                    var areas = room.Areas.Where(x => x.ExpiredDate.Date > DateTime.Now.Date);
+                    var areas = room.Areas.Where(x => x.Status != 2);
                     room.Areas = areas.ToList();
                 }
             }

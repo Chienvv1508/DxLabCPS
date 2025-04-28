@@ -606,7 +606,7 @@ namespace DxLabCoworkingSpace
 
                 foreach (var r in rooms)
                 {
-                    r.Areas = r.Areas.Where(x => x.ExpiredDate > DateTime.Now.Date).ToList();
+                    r.Areas = r.Areas.Where(x => x.Status != 2).ToList();
                     foreach (var area in r.Areas)
                     {
                         area.AreaType = await _unitOfWork.AreaTypeRepository.GetWithInclude(x => x.AreaTypeId == area.AreaTypeId, x => x.AreaTypeCategory);
@@ -620,6 +620,68 @@ namespace DxLabCoworkingSpace
             catch (Exception ex)
             {
                 return new ResponseDTO<IEnumerable<Room>>(500, "Lỗi khi lấy dữ liệu phòng!", null);
+            }
+        }
+
+        public async Task<ResponseDTO<object>> GetAllAreaCategoryInRoom(int id)
+        {
+            try
+            {
+
+                var room = await _unitOfWork.RoomRepository.GetWithInclude(x => x.RoomId == id && x.Status == 1, x => x.Areas, x => x.Images);
+                if (room == null)
+                {
+                    return new ResponseDTO<object>(400, "Không tìm thấy phòng", null);
+                }
+                var areas = await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == room.RoomId && x.ExpiredDate.Date > DateTime.Now.Date && x.Status == 1);
+                if (areas == null)
+                {
+                    var response = new ResponseDTO<object>(400, "Không tìm thấy khu vực sẵn sàng", null);
+                    return new ResponseDTO<object>(400, "Không tìm thấy khu vực sẵn sàng", null);
+                }
+                List<AreaType> areaTypes = new List<AreaType>();
+                var areaTypesDb = await _unitOfWork.AreaTypeRepository.GetAll(x => x.Status == 1);
+                foreach (var area in areas)
+                {
+                    var areaType = areaTypesDb.FirstOrDefault(x => x.AreaTypeId == area.AreaTypeId);
+                    if (areaType != null)
+                        areaTypes.Add(areaType);
+                }
+
+                var areaTypeGroup = areaTypes.GroupBy(x => x.AreaCategory);
+                var areaTypeCates = await _unitOfWork.AreaTypeCategoryRepository.GetAllWithInclude(x => x.Images);
+                if (areaTypeCates == null) return new ResponseDTO<object>(200, "Không tìm thấy thông tin phù hợp!", null);
+                List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>> result = new List<KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>>();
+                foreach (var group in areaTypeGroup)
+                {
+                    List<AreaTypeDTO> areaTypeDTOs = new List<AreaTypeDTO>();
+                    foreach (var item in group)
+                    {
+                        var areaType = _mapper.Map<AreaTypeDTO>(item);
+                        areaTypeDTOs.Add(areaType);
+                    }
+                    var aretypeCategory = areaTypeCates.FirstOrDefault(x => x.CategoryId == group.Key);
+                    if (aretypeCategory == null)
+                        return new ResponseDTO<object>(200, "Không tìm thấy thông tin phù hợp!", null);
+                    var aretypeCategoryDTO = new AreaTypeCategoryDTO()
+                    {
+                        CategoryId = aretypeCategory.CategoryId,
+                        Title = aretypeCategory.Title,
+                        CategoryDescription = aretypeCategory.CategoryDescription,
+                        Images = aretypeCategory.Images.Select(x => x.ImageUrl).ToList()
+
+                    };
+                    KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>> keyValuePair = new KeyValuePair<AreaTypeCategoryDTO, List<AreaTypeDTO>>(aretypeCategoryDTO, areaTypeDTOs);
+                    result.Add(keyValuePair);
+                }
+                var response1 = new ResponseDTO<object>(200, "Trả thành công", result);
+                return response1;
+
+            }
+            catch (Exception ex)
+            {
+              
+                return new ResponseDTO<object>(500, "Lỗi khi đặt phòng", ex.Message);
             }
         }
     }

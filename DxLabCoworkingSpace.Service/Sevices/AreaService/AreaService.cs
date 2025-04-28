@@ -807,6 +807,7 @@ namespace DxLabCoworkingSpace
         {
             try
             {
+                
 
                 var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == areaid && x.ExpiredDate.Date > DateTime.Now.Date);
                 if (area == null)
@@ -814,18 +815,33 @@ namespace DxLabCoworkingSpace
                     return new ResponseDTO<Area>(400, "Khu vực không tồn tại", null);
                 }
 
+                if(area.ExpiredDate.Date != new DateTime(3000, 1, 1).Date)
+                {
+                    if(DateTime.Now.Date < area.ExpiredDate.Date)
+                    {
+                        return new ResponseDTO<Area>(400, "Khu vực chưa hết hạn không xóa được!", null);
+                    }
+                    var faciInArea = await _unitOfWork.UsingFacilityRepository.GetAll(x => x.AreaId == areaid);
+                    if (faciInArea.Any())
+                    {
+                        return new ResponseDTO<Area>(400, "Trong phòng đang có thiết bị. Nếu muốn xóa bạn phải xóa hết thiết vị trong phòng", null);
+                    }
+                    area.Status = 2;
+                    await _unitOfWork.AreaRepository.Update(area);
+                    await _unitOfWork.CommitAsync();
+                    return new ResponseDTO<Area>(200, $"Xóa thành công!", null);
+
+                }
+
 
                 //if(expiredDate <= DateTime.Now.Date.AddDays(14))
                 //    return BadRequest(new ResponseDTO<object>(400, "Phải để ngày hết hạn lớn hơn 14 ngày từ ngày hiện tại!", null));
 
-                var faciInArea = await _unitOfWork.UsingFacilityRepository.GetAll(x => x.AreaId == areaid);
-                if (faciInArea.Any())
-                {
-                    return new ResponseDTO<Area>(400, "Trong phòng đang có thiết bị. Nếu muốn xóa bạn phải xóa hết thiết vị trong phòng", null);
-                }
+                
                 DateTime lastDateBookingInArea = await GetLastDateBookingInArea(area);
                 area.ExpiredDate = lastDateBookingInArea;
                 await _unitOfWork.AreaRepository.Update(area);
+                await _unitOfWork.CommitAsync();
                 
                 return new ResponseDTO<Area>(200, $"Đặt ngày hết hạn của {area.AreaName} vào ngày: {area.ExpiredDate}", null);
             }
