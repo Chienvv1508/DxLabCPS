@@ -617,36 +617,36 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             //}
         }
 
-        private async Task<DateTime> GetLastDateBookingInArea(Area area)
-        {
-            if (area == null) return new DateTime(3000, 1, 1);
-            var bookingDetails = await _bookingDetailService.GetAll(x => x.AreaId == area.AreaId && x.CheckinTime > DateTime.Now.Date);
+        //private async Task<DateTime> GetLastDateBookingInArea(Area area)
+        //{
+        //    if (area == null) return new DateTime(3000, 1, 1);
+        //    var bookingDetails = await _bookingDetailService.GetAll(x => x.AreaId == area.AreaId && x.CheckinTime > DateTime.Now.Date);
 
-            var lastBooking = bookingDetails.OrderByDescending(x => x.CheckinTime).FirstOrDefault();
-            DateTime expiredDate; 
-            if(lastBooking == null)
-            {
-                expiredDate = DateTime.Now.Date.AddDays(1);
-            }
-            else if(lastBooking.CheckinTime.Date < DateTime.Now.Date)
-            {
-                expiredDate = DateTime.Now.Date;
-            }
-            else
-            {
-                expiredDate = lastBooking.CheckinTime.Date.AddDays(1);
-            }
+        //    var lastBooking = bookingDetails.OrderByDescending(x => x.CheckinTime).FirstOrDefault();
+        //    DateTime expiredDate; 
+        //    if(lastBooking == null)
+        //    {
+        //        expiredDate = DateTime.Now.Date.AddDays(1);
+        //    }
+        //    else if(lastBooking.CheckinTime.Date < DateTime.Now.Date)
+        //    {
+        //        expiredDate = DateTime.Now.Date;
+        //    }
+        //    else
+        //    {
+        //        expiredDate = lastBooking.CheckinTime.Date.AddDays(1);
+        //    }
 
-            return expiredDate;
+        //    return expiredDate;
 
-        }
+        //}
 
         [HttpDelete("faciremoveall")]
         public async Task<IActionResult> RemoveFaciFromArea(int areaid)
         {
             try
             {
-                var area = await _areaService.Get(x => x.AreaId == areaid && x.ExpiredDate.Date > DateTime.Now.Date);
+                var area = await _areaService.Get(x => x.AreaId == areaid && x.Status != 2);
                 if (area == null)
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Khu vực không tồn tại", null));

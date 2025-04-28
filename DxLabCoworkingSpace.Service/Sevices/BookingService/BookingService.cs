@@ -630,7 +630,7 @@ namespace DxLabCoworkingSpace
             if (slots == null) return new Tuple<bool, string>(false, "Chưa có slots có sẵn");
 
             if(bookingDate.Date > DateTime.Now.Date.AddDays(14) || bookingDate.Date < DateTime.Now.Date)
-                new Tuple<bool, string>(false, "Ngày đặt không được quá 14 ngày hoặc ngày trong quá khứ!");
+                return new Tuple<bool, string>(false, "Ngày đặt không được quá 14 ngày hoặc ngày trong quá khứ!");
             if(bookingDate.Date == DateTime.Now.Date)
             {
                 var currentDateTime = DateTime.Now;
