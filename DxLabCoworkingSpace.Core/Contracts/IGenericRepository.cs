@@ -11,6 +11,7 @@ namespace DxLabCoworkingSpace
     public interface IGenericRepository<T> where T : class
     {
         Task<T> Get(Expression<Func<T, bool>> expression);
+        Task<T> GetLast(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> GetAll();
         Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> expression);
         Task<IEnumerable<T>> GetAllWithInclude(params Expression<Func<T, object>>[] includes);

@@ -11,7 +11,8 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<Role, RoleDTO>().ReverseMap();
 
             // Mapping cho Slot
-            CreateMap<Slot, SlotDTO>().ReverseMap();
+            CreateMap<Slot, SlotDTO>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(x => x.ExpiredTime.Date > DateTime.Now.Date && x.ExpiredTime.Date < new DateTime(3000, 1, 1)? 0 : 1));
 
             // Mapping cho User
             CreateMap<User, UserDTO>().ReverseMap();
@@ -84,8 +85,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                     AreaDescription = a.AreaDescription, // Thêm ánh xạ AreaDescription
                     Images = a.Images != null ? a.Images.Select(i => i.ImageUrl).ToList() : null, // Thêm ánh xạ Images
                     AreaTypeCategoryId = a.AreaType != null ? a.AreaType.AreaTypeCategory != null ? a.AreaType.AreaTypeCategory.CategoryId : 0 : 0,
-                    AreaTypeCategoryTitle = a.AreaType != null ? a.AreaType.AreaTypeCategory != null ? a.AreaType.AreaTypeCategory.Title : "" : "",
-                    Size = a.AreaType != null ? a.AreaType.Size : 0
+                    AreaTypeCategoryTitle = a.AreaType != null ? a.AreaType.AreaTypeCategory != null ? a.AreaType.AreaTypeCategory.Title : "" : ""
 
 
 
@@ -108,8 +108,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             CreateMap<Area, AreaDTO>()
                 .ForMember(dest => dest.AreaTypeName, opt => opt.MapFrom(x => x.AreaType != null ? x.AreaType.AreaTypeName : null))
                 .ForMember(dest => dest.AreaDescription, opt => opt.MapFrom(src => src.AreaDescription)) // Thêm ánh xạ AreaDescription
-                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null))
-            .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.AreaType != null ? src.AreaType.Size : 0));
+                .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.Images != null ? src.Images.Select(i => i.ImageUrl).ToList() : null));
 
             CreateMap<AreaAdd, Area>();
 

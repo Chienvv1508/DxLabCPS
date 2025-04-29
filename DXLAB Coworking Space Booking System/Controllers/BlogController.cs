@@ -11,7 +11,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/blog")]
     [ApiController]
-     
+
     public class BlogController : ControllerBase
     {
         private readonly IBlogService _blogService;
@@ -112,7 +112,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     BlogTitle = resultDto.BlogTitle,
                     BlogContent = resultDto.BlogContent,
                     BlogCreatedDate = resultDto.BlogCreatedDate,
-                    Status = resultDto.Status,  
+                    Status = resultDto.Status,
                     UserName = resultDto.UserName,
                     Images = resultDto.Images
                 };

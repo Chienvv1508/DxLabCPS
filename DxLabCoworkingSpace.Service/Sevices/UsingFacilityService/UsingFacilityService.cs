@@ -160,12 +160,15 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-                if (removedFaciDTO.Quantity <= 0)
+                var isValid = ValidationModel<BrokernFaciReportDTO>.ValidateModel(removedFaciDTO);
+                if(isValid.Item1 == false)
                 {
-                    throw new ArgumentException("Số lượng thiết bị cần thay đổi phải  > 0");
+                    return new ResponseDTO<List<UsingFacility>>(400, isValid.Item2, null);
                 }
+
+            
                 //Check area
-                var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == removedFaciDTO.AreaId && x.Status != 2);
+                var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == removedFaciDTO.AreaId && x.ExpiredDate.Date > DateTime.Now.Date);
                 if(area == null)
                 {
                     return new ResponseDTO<List<UsingFacility>>(400, "Không tìm  khu vực", null);
@@ -175,6 +178,10 @@ namespace DxLabCoworkingSpace
                    x => x.Facility);
                 listFaciInArea = listFaciInArea.Where(x => x.FacilityId == removedFaciDTO.FacilityId &&
                  x.AreaId == removedFaciDTO.AreaId);
+                if (!listFaciInArea.Any())
+                {
+                    return new ResponseDTO<List<UsingFacility>>(400, "Không tìm thấy thiết bị trong phòng!", null);
+                }
 
                 int quantity = 0;
                 foreach (var faci in listFaciInArea)

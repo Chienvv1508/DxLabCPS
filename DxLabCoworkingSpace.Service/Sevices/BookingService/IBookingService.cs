@@ -8,6 +8,8 @@ namespace DxLabCoworkingSpace
 {
     public interface IBookingService : IGenericeService<Booking>
     {
+        Task<ResponseDTO<object>> CreateBooking(BookingDTO bookingDTO);
+        Task<ResponseDTO<object>> GetAvailableSlot(AvailableSlotRequestDTO availableSlotRequestDTO);
         Task Remove(Booking entity); // Thêm phương thức Remove
     }
 }

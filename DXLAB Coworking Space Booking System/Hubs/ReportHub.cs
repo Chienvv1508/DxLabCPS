@@ -15,12 +15,21 @@ namespace DXLAB_Coworking_Space_Booking_System.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var roleClaim = Context.User.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
-            var userId = Context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleClaim = Context.User.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role")?.Value;
+            Console.WriteLine($"User connected: ID={userId}, Role={roleClaim}, ConnectionId={Context.ConnectionId}");
 
-            if (roleClaim != null && roleClaim.Value == "Admin")
+            if (roleClaim != null)
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, "Admins");
+                if (roleClaim == "Admin")
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, "Admins");
+                    Console.WriteLine($"Added user {userId} to Admins group");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"No role claim found for user {userId}");
             }
 
             await base.OnConnectedAsync();
