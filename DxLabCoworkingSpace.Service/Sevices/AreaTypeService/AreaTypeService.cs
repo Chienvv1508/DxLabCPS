@@ -157,7 +157,7 @@ namespace DxLabCoworkingSpace
             }
             if(areTypeDto.AreaCategory == 1)
             {
-                string pattern = @"^Khu vực \[1-9]d* người$";
+                string pattern = @"^Khu vực [1-9]\d* người$";
                 Regex regex = new Regex(pattern);
                 if (!regex.IsMatch(areTypeDto.AreaTypeName))
                 {
