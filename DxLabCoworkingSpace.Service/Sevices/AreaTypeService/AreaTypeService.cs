@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
@@ -103,9 +104,9 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-                bool checkValidAreaType = await CheckValidAreaTypeForAdd(areTypeDto);
-                if (checkValidAreaType == false)
-                    return new ResponseDTO<AreaType>(400, "Dữ liệu đầu vào không phù hợp!", null);
+                var checkValidAreaType = await CheckValidAreaTypeForAdd(areTypeDto);
+                if (checkValidAreaType.Item1 == false)
+                    return new ResponseDTO<AreaType>(400, checkValidAreaType.Item2, null);
                 IMapper mapper = GenerateMapper.GenerateMapperForService();
                 var areaType = mapper.Map<AreaType>(areTypeDto);
                 await AddImages(areTypeDto, areaType);
@@ -139,22 +140,31 @@ namespace DxLabCoworkingSpace
             }
         }
 
-        private async Task<bool> CheckValidAreaTypeForAdd(AreaTypeForAddDTO areTypeDto)
+        private async Task<(bool,string)> CheckValidAreaTypeForAdd(AreaTypeForAddDTO areTypeDto)
         {
             if (areTypeDto == null)
-                return false;
+                return (false,"Không để tham số đầu vào trống");
             var checkValid = ValidationModel<AreaTypeForAddDTO>.ValidateModel(areTypeDto);
             if (checkValid.Item1 == false)
             {
-                return false;
+                return (false, checkValid.Item2);
             }
             var existedAreaType = await _unitOfWork.AreaTypeRepository.Get(x => x.AreaTypeName == areTypeDto.AreaTypeName && x.Status == 1);
             if (existedAreaType != null)
             {
 
-                return false;
+                return (false, "Tên khu vực đã tồn tại!");
             }
-            return true;
+            if(areTypeDto.AreaCategory == 1)
+            {
+                string pattern = @"^Khu vực \d+ người$";
+                Regex regex = new Regex(pattern);
+                if (!regex.IsMatch(areTypeDto.AreaTypeName))
+                {
+                    return (false, "Bắt buộc nhập theo mẫu: Khu vực + số + người!");
+                }
+            }
+            return (true,"");
         }
 
         public async Task<ResponseDTO<List<AreaType>>> GetAllByFilPara(string fil)
