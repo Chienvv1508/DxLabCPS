@@ -605,6 +605,7 @@ namespace DxLabCoworkingSpace
             {
                 // Tải tất cả Room với Areas, Images của Areas và AreaType
                 var rooms = await _unitOfWork.RoomRepository.GetAllWithInclude(x => x.Images, x => x.Areas);
+                rooms = rooms.Where(x => x.Status != 2);
 
                 foreach (var r in rooms)
                 {
