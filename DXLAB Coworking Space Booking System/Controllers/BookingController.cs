@@ -45,25 +45,25 @@ namespace DXLAB_Coworking_Space_Booking_System
         public async Task<IActionResult> CreateBooking([FromBody] BookingDTO bookingDTO)
         {
            try {
-                //var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
-                //if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-                //{
-                //    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
-                //}
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+                }
 
-                //// Lấy WalletAddress của user
-                //var user = await _userService.Get(u => u.UserId == userId);
-                //if (user == null || string.IsNullOrEmpty(user.WalletAddress))
-                //{
-                //    return BadRequest(new ResponseDTO<object>(400, "Người dùng không có địa chỉ ví blockchain!", null));
-                //}
-                ResponseDTO<object> result =  await _bookingService.CreateBooking(bookingDTO,1);
+                // Lấy WalletAddress của user
+                var user = await _userService.Get(u => u.UserId == userId);
+                if (user == null || string.IsNullOrEmpty(user.WalletAddress))
+                {
+                    return BadRequest(new ResponseDTO<object>(400, "Người dùng không có địa chỉ ví blockchain!", null));
+                }
+                ResponseDTO<object> result =  await _bookingService.CreateBooking(bookingDTO,userId);
             if(result.StatusCode != 200)
             {
                 return StatusCode(result.StatusCode, result);
             }
             Booking booking = result.Data as Booking;
-            booking.UserId = 1;
+            booking.UserId = userId;
             await _bookingService.Add(booking);
 
             var allSlots = await _slotService.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);
