@@ -17,6 +17,7 @@ namespace DxLabCoworkingSpace
         //Create slot
         public async Task<List<Slot>> CreateSlots(TimeSpan startTime, TimeSpan endTime, int?timeSlot, int? breakTime)
         {
+           
             List<Slot> slots = new List<Slot>();
             TimeSpan currentStart = startTime;
             double slotDuration = timeSlot ?? throw new ArgumentException(nameof(breakTime), "Time Slot là bắt buộc");

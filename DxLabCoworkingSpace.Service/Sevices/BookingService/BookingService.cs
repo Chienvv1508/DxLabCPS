@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,7 +25,7 @@ namespace DxLabCoworkingSpace
             await _unitOfWork.CommitAsync();
         }
 
-        public async Task<ResponseDTO<object>> CreateBooking(BookingDTO bookingDTO)
+        public async Task<ResponseDTO<object>> CreateBooking(BookingDTO bookingDTO, int userId)
         {
 
 
@@ -49,7 +50,7 @@ namespace DxLabCoworkingSpace
                     return new ResponseDTO<object>(400, checkRoom.Item2, null);
                 }
 
-                Tuple<bool, string, Booking> bookingResult = await AddBooking(bookingDTO,checkRoom.Item3, checkRoom.Item4);
+                Tuple<bool, string, Booking> bookingResult = await AddBooking(bookingDTO,checkRoom.Item3, checkRoom.Item4, userId);
 
                 if(bookingResult.Item1 == false)
                 {
@@ -65,22 +66,43 @@ namespace DxLabCoworkingSpace
             }
         }
 
-        private async Task<Tuple<bool, string, Booking>> AddBooking(BookingDTO bookingDTO, Room room, List<Area> areaInRoom)
+        private async Task<Tuple<bool, string, Booking>> AddBooking(BookingDTO bookingDTO, Room room, List<Area> areaInRoom, int userId)
         {
             if (bookingDTO == null || room == null)
                 return new Tuple<bool, string, Booking>(false, "Bắt buộc nhập tham số đầu vào!", null);
             Booking booking = new Booking();
             List<BookingDetail> bookingDetails = new List<BookingDetail>();
             var slots = await _unitOfWork.SlotRepository.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);
-            var existedBookingDetails = await _unitOfWork.BookingDetailRepository.GetAll(x => x.CheckinTime.Date >= DateTime.Now.Date);
+            var existedBookingDetails = await _unitOfWork.BookingDetailRepository.GetAllWithInclude(x => x.Booking, x => x.Slot);
+            existedBookingDetails = existedBookingDetails.Where(x => x.CheckinTime.Date >= DateTime.Now.Date);
             
+            var existedBookingDetailsNoTrack = existedBookingDetails.Select(x => new BookingDetail()
+            {
+                BookingDetailId = x.BookingDetailId,
+                Status = x.Status,
+                CheckinTime = x.CheckinTime,
+                CheckoutTime = x.CheckoutTime,
+                BookingId = x.BookingId,
+                SlotId = x.SlotId,
+                AreaId = x.AreaId,
+                PositionId = x.PositionId,
+                Price = x.Price,
+                Slot = x.Slot
+                
+            }).ToList()
+            ;
+            bool isBooked = GetBookedHistroyInDateAndSlot(bookingDTO, slots, userId, existedBookingDetails);
+           
             foreach (var dte in bookingDTO.bookingTimes)
             {
                 booking.UserId = 1;
                 booking.BookingCreatedDate = DateTime.Now;
+                bool isDuplicateBookingSlotInDate = CheckDuplicateBookingSlotInDate(bookingDetails, dte);
+                if(isDuplicateBookingSlotInDate) new Tuple<bool, string, Booking>(false, $"Bạn đã nhập trùng slot đặt cho 1 ngày: {dte.BookingDate.Date}", null);
+
                 var slotBooks = slots.Where(x => x.ExpiredTime.Date > dte.BookingDate);
                 // Tạo ma trận
-                Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areaInRoom, dte.BookingDate.Date, slotBooks.ToList(), existedBookingDetails);
+                Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areaInRoom, dte.BookingDate.Date, slotBooks.ToList(), existedBookingDetailsNoTrack);
                 if (searchMatrix == null)
                 {
                     return new Tuple<bool, string, Booking>(false, "Lỗi đặt phòng", null);
@@ -125,6 +147,8 @@ namespace DxLabCoworkingSpace
                                 bookingDetail.Price = areaBook.AreaType.Price;
                                 bookingDetail.AreaId = areaBook.AreaId;
                                 bookingDetails.Add(bookingDetail);
+                                existedBookingDetailsNoTrack.Add(bookingDetail);
+                                
                             }
                         }
                     }
@@ -153,6 +177,7 @@ namespace DxLabCoworkingSpace
                                 var areaBook = areaInRoom.FirstOrDefault(x => x.AreaId == id);
                                 bookingDetail.Price = areaBook.AreaType.Price;
                                 bookingDetails.Add(bookingDetail);
+                                existedBookingDetailsNoTrack.Add(bookingDetail);
                             }
                         }
                     }
@@ -166,6 +191,33 @@ namespace DxLabCoworkingSpace
             //// Lưu booking vào database trước để nhận BookingId hợp lệ
             return new Tuple<bool, string, Booking>(true, "", booking);
         }
+
+        private bool CheckDuplicateBookingSlotInDate(List<BookingDetail> newBookingDetails, BookingTime dte)
+        {
+            if (newBookingDetails == null || dte.SlotId == null)
+                return true;
+            foreach(var slot in dte.SlotId)
+            {
+                if (newBookingDetails.FirstOrDefault(x => x.CheckinTime.Date == dte.BookingDate.Date && x.SlotId == slot) != null)
+                    return true;
+                continue;
+            }
+            return false;
+        }
+
+        private bool GetBookedHistroyInDateAndSlot(BookingDTO bookingDTO, IEnumerable<Slot> slots, int userId, IEnumerable<BookingDetail> existedBookingDetails)
+        {
+            if (bookingDTO == null || slots == null || existedBookingDetails == null) return false;
+            foreach(var slot in slots)
+            {
+                if (existedBookingDetails.FirstOrDefault(x => x.Booking.UserId == userId && x.SlotId == slot.SlotId) != null)
+                    return false;
+                continue;
+            }
+            return true;
+
+        }
+
         private Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, int[]> searchMatrix)
         {
             if (slotJaggedMatrix == null || searchMatrix == null)
