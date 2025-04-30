@@ -803,7 +803,7 @@ namespace DxLabCoworkingSpace
             }
         }
 
-        public async Task<ResponseDTO<Area>> SetExpiredTimeToArea(int areaId)
+        public async Task<ResponseDTO<Area>> SetExpiredTimeToArea(int areaid)
         {
             try
             {
