@@ -104,7 +104,7 @@ namespace DxLabCoworkingSpace
             {
                 booking.BookingCreatedDate = DateTime.Now;
                 bool isDuplicateBookingSlotInDate = CheckDuplicateBookingSlotInDate(bookingDetails, dte);
-                if(isDuplicateBookingSlotInDate) new Tuple<bool, string, Booking>(false, $"Bạn đã nhập trùng slot đặt cho 1 ngày: {dte.BookingDate.Date}", null);
+                if(isDuplicateBookingSlotInDate) return new Tuple<bool, string, Booking>(false, $"Bạn đã nhập trùng slot đặt cho 1 ngày: {dte.BookingDate.Date}", null);
 
                 var slotBooks = slots.Where(x => x.ExpiredTime.Date > dte.BookingDate);
                 // Tạo ma trận
@@ -141,6 +141,7 @@ namespace DxLabCoworkingSpace
                                 bookingDetail.PositionId = id;
                                 var slot = slots.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
                                 bookingDetail.SlotId = slot.SlotId;
+                                bookingDetail.Slot = slot;
                                 bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
                                 //if (i == item.Value.Length - 1)
                                 //{
@@ -171,6 +172,7 @@ namespace DxLabCoworkingSpace
 
                                 var slot = slots.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
                                 bookingDetail.SlotId = slot.SlotId;
+                                bookingDetail.Slot = slot;
                                 bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
                                 //if (i == item.Value.Length - 1)
                                 //{
