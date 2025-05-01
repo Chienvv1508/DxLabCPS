@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace DxLabCoworkingSpace
@@ -379,6 +380,7 @@ namespace DxLabCoworkingSpace
                     var response1 = new ResponseDTO<Room>(400, resultAreDTO.Item4, null);
                     return response1;
                 }
+                
                 // Check area name duplicates
                 if (checkDuplicateAreaName(roomDto))
                 {
@@ -603,6 +605,7 @@ namespace DxLabCoworkingSpace
             {
                 // Tải tất cả Room với Areas, Images của Areas và AreaType
                 var rooms = await _unitOfWork.RoomRepository.GetAllWithInclude(x => x.Images, x => x.Areas);
+                rooms = rooms.Where(x => x.Status != 2);
 
                 foreach (var r in rooms)
                 {

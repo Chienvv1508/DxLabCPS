@@ -803,6 +803,41 @@ namespace DxLabCoworkingSpace
             }
         }
 
+        public async Task<ResponseDTO<Area>> SetExpiredTimeToArea(int areaid)
+        {
+            try
+            {
+
+
+                var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == areaid && x.Status != 2);
+                if (area == null)
+                {
+                    return new ResponseDTO<Area>(400, "Khu vực không tồn tại", null);
+                }
+
+                //if(expiredDate <= DateTime.Now.Date.AddDays(14))
+                //    return BadRequest(new ResponseDTO<object>(400, "Phải để ngày hết hạn lớn hơn 14 ngày từ ngày hiện tại!", null));
+
+
+                DateTime lastDateBookingInArea = await GetLastDateBookingInArea(area);
+                area.ExpiredDate = lastDateBookingInArea;
+                await _unitOfWork.AreaRepository.Update(area);
+                await _unitOfWork.CommitAsync();
+
+                return new ResponseDTO<Area>(200, $"Đặt ngày hết hạn của {area.AreaName} vào ngày: {area.ExpiredDate}", null);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO<Area>(500, "Lỗi xóa khu vực!", null);
+            }
+        }
+
+
+
+
+
+
+
         public async Task<ResponseDTO<Area>> RemoveArea(int areaid)
         {
             try
@@ -815,8 +850,7 @@ namespace DxLabCoworkingSpace
                     return new ResponseDTO<Area>(400, "Khu vực không tồn tại", null);
                 }
 
-                if(area.ExpiredDate.Date != new DateTime(3000, 1, 1).Date)
-                {
+              
                     if(DateTime.Now.Date < area.ExpiredDate.Date)
                     {
                         return new ResponseDTO<Area>(400, "Khu vực chưa hết hạn không xóa được!", null);
@@ -831,19 +865,13 @@ namespace DxLabCoworkingSpace
                     await _unitOfWork.CommitAsync();
                     return new ResponseDTO<Area>(200, $"Xóa thành công!", null);
 
-                }
+                
 
 
                 //if(expiredDate <= DateTime.Now.Date.AddDays(14))
                 //    return BadRequest(new ResponseDTO<object>(400, "Phải để ngày hết hạn lớn hơn 14 ngày từ ngày hiện tại!", null));
 
-                
-                DateTime lastDateBookingInArea = await GetLastDateBookingInArea(area);
-                area.ExpiredDate = lastDateBookingInArea;
-                await _unitOfWork.AreaRepository.Update(area);
-                await _unitOfWork.CommitAsync();
-                
-                return new ResponseDTO<Area>(200, $"Đặt ngày hết hạn của {area.AreaName} vào ngày: {area.ExpiredDate}", null);
+               
             }
             catch (Exception ex)
             {
@@ -960,5 +988,7 @@ namespace DxLabCoworkingSpace
                 return new ResponseDTO<object>(500, "Lỗi lấy danh sách khu vực!", null);
             }
         }
+
+       
     }
 }

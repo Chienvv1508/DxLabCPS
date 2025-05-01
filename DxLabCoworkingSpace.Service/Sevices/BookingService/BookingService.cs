@@ -4,8 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace DxLabCoworkingSpace
 {
@@ -24,7 +26,7 @@ namespace DxLabCoworkingSpace
             await _unitOfWork.CommitAsync();
         }
 
-        public async Task<ResponseDTO<object>> CreateBooking(BookingDTO bookingDTO)
+        public async Task<ResponseDTO<object>> CreateBooking(BookingDTO bookingDTO, int userId)
         {
 
 
@@ -49,7 +51,7 @@ namespace DxLabCoworkingSpace
                     return new ResponseDTO<object>(400, checkRoom.Item2, null);
                 }
 
-                Tuple<bool, string, Booking> bookingResult = await AddBooking(bookingDTO,checkRoom.Item3, checkRoom.Item4);
+                Tuple<bool, string, Booking> bookingResult = await AddBooking(bookingDTO,checkRoom.Item3, checkRoom.Item4, userId);
 
                 if(bookingResult.Item1 == false)
                 {
@@ -65,22 +67,48 @@ namespace DxLabCoworkingSpace
             }
         }
 
-        private async Task<Tuple<bool, string, Booking>> AddBooking(BookingDTO bookingDTO, Room room, List<Area> areaInRoom)
+        private async Task<Tuple<bool, string, Booking>> AddBooking(BookingDTO bookingDTO, Room room, List<Area> areaInRoom, int userId)
         {
             if (bookingDTO == null || room == null)
                 return new Tuple<bool, string, Booking>(false, "Bắt buộc nhập tham số đầu vào!", null);
             Booking booking = new Booking();
             List<BookingDetail> bookingDetails = new List<BookingDetail>();
+           
             var slots = await _unitOfWork.SlotRepository.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);
-            var existedBookingDetails = await _unitOfWork.BookingDetailRepository.GetAll(x => x.CheckinTime.Date >= DateTime.Now.Date);
             
+            var existedBookingDetails = await _unitOfWork.BookingDetailRepository.GetAllWithInclude(x => x.Booking, x => x.Slot);
+            existedBookingDetails = existedBookingDetails.Where(x => x.CheckinTime.Date >= DateTime.Now.Date);
+            
+            var existedBookingDetailsNoTrack = existedBookingDetails.Select(x => new BookingDetail()
+            {
+                BookingDetailId = x.BookingDetailId,
+                Status = x.Status,
+                CheckinTime = x.CheckinTime,
+                CheckoutTime = x.CheckoutTime,
+                BookingId = x.BookingId,
+                SlotId = x.SlotId,
+                AreaId = x.AreaId,
+                PositionId = x.PositionId,
+                Price = x.Price,
+                Slot = x.Slot
+                
+            }).ToList()
+            ;
+            bool isBooked = GetBookedHistroyInDateAndSlot(bookingDTO, slots, userId, existedBookingDetails);
+            if(isBooked == true)
+            {
+                return new Tuple<bool, string, Booking>(false, "Đơn thuê của bạn không hợp lệ. Do bị trùng với thời gian đã đặt!", null);
+            }
+           
             foreach (var dte in bookingDTO.bookingTimes)
             {
-                booking.UserId = 1;
                 booking.BookingCreatedDate = DateTime.Now;
+                bool isDuplicateBookingSlotInDate = CheckDuplicateBookingSlotInDate(bookingDetails, dte);
+                if(isDuplicateBookingSlotInDate) return new Tuple<bool, string, Booking>(false, $"Bạn đã nhập trùng slot đặt cho 1 ngày: {dte.BookingDate.Date}", null);
+
                 var slotBooks = slots.Where(x => x.ExpiredTime.Date > dte.BookingDate);
                 // Tạo ma trận
-                Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areaInRoom, dte.BookingDate.Date, slotBooks.ToList(), existedBookingDetails);
+                Dictionary<int, Dictionary<int, int>> searchMatrix = await CreateSearchMatrix(areaInRoom, dte.BookingDate.Date, slotBooks.ToList(), existedBookingDetailsNoTrack);
                 if (searchMatrix == null)
                 {
                     return new Tuple<bool, string, Booking>(false, "Lỗi đặt phòng", null);
@@ -113,6 +141,7 @@ namespace DxLabCoworkingSpace
                                 bookingDetail.PositionId = id;
                                 var slot = slots.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
                                 bookingDetail.SlotId = slot.SlotId;
+                                bookingDetail.Slot = slot;
                                 bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
                                 //if (i == item.Value.Length - 1)
                                 //{
@@ -125,6 +154,8 @@ namespace DxLabCoworkingSpace
                                 bookingDetail.Price = areaBook.AreaType.Price;
                                 bookingDetail.AreaId = areaBook.AreaId;
                                 bookingDetails.Add(bookingDetail);
+                                existedBookingDetailsNoTrack.Add(bookingDetail);
+                                
                             }
                         }
                     }
@@ -141,6 +172,7 @@ namespace DxLabCoworkingSpace
 
                                 var slot = slots.FirstOrDefault(x => x.SlotNumber == item.Value[i]);
                                 bookingDetail.SlotId = slot.SlotId;
+                                bookingDetail.Slot = slot;
                                 bookingDetail.CheckinTime = dte.BookingDate.Date.Add(slot.StartTime.Value);
                                 //if (i == item.Value.Length - 1)
                                 //{
@@ -153,6 +185,7 @@ namespace DxLabCoworkingSpace
                                 var areaBook = areaInRoom.FirstOrDefault(x => x.AreaId == id);
                                 bookingDetail.Price = areaBook.AreaType.Price;
                                 bookingDetails.Add(bookingDetail);
+                                existedBookingDetailsNoTrack.Add(bookingDetail);
                             }
                         }
                     }
@@ -166,7 +199,39 @@ namespace DxLabCoworkingSpace
             //// Lưu booking vào database trước để nhận BookingId hợp lệ
             return new Tuple<bool, string, Booking>(true, "", booking);
         }
-        private Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, int[]> searchMatrix)
+
+        private bool CheckDuplicateBookingSlotInDate(List<BookingDetail> newBookingDetails, BookingTime dte)
+        {
+            if (newBookingDetails == null || dte.SlotId == null)
+                return true;
+            foreach(var slot in dte.SlotId)
+            {
+                if (newBookingDetails.FirstOrDefault(x => x.CheckinTime.Date == dte.BookingDate.Date && x.SlotId == slot) != null)
+                    return true;
+                continue;
+            }
+            return false;
+        }
+
+        private bool GetBookedHistroyInDateAndSlot(BookingDTO bookingDTO, IEnumerable<Slot> slots, int userId, IEnumerable<BookingDetail> existedBookingDetails)
+        {
+            if (bookingDTO == null || slots == null || existedBookingDetails == null) return true;
+            foreach(var date in bookingDTO.bookingTimes)
+            {
+                foreach(var slotId in date.SlotId)
+                {
+                    if (existedBookingDetails.FirstOrDefault(x => x.Booking.UserId == userId && x.CheckinTime.Date == date.BookingDate.Date && x.SlotId == slotId) != null)
+                        return true;
+                    continue;
+                }
+               
+            }
+          
+            return false;
+
+        }
+
+        private Tuple<bool, string, List<KeyValuePair<int, int[]>>> findPosition(int[][] slotJaggedMatrix, Dictionary<int, Dictionary<int, int>> searchMatrix)
         {
             if (slotJaggedMatrix == null || searchMatrix == null)
                 return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(false, "Lỗi khi đặt phòng", null);
@@ -184,57 +249,78 @@ namespace DxLabCoworkingSpace
                 List<FilterPos> filterPos = new List<FilterPos>();
                 foreach (var item in searchMatrix)
                 {
-                    bool check = true;
+                    bool check = false;
+
                     for (int j = 0; j < listOfJaggedMatrix[i].Length; j++)
                     {
-                        if (item.Value[listOfJaggedMatrix[i][j] - 1] == 0)
+                        if (item.Value.ContainsKey(listOfJaggedMatrix[i][j]))
                         {
-                            check = false; break;
-                        }
-                    }
-                    if (check)
-                    {
-                        //find sizeOffFrag
-                        int size = listOfJaggedMatrix[i].Length;
-                        // dời trái/ dời phải
-                        for (int k = listOfJaggedMatrix[i][0] - 1; k >= 0; k--)
-                        {
-                            if (item.Value[k] == 1)
-                                size++;
+                            if (item.Value[listOfJaggedMatrix[i][j]] == 1)
+                                check = true;
                             else
+                            {
+                                check = false;
                                 break;
+                            }
+
                         }
-                        for (int h = listOfJaggedMatrix[i][listOfJaggedMatrix[i].Length - 1] - 1; h < item.Value.Length; h++)
+                        else
                         {
-                            if (item.Value[h] == 1)
-                                size++;
-                            else
-                                break;
+                            check = false;
+                            break;
+                        }
+                    }      
+                        if (check)
+                        {
+                            //find sizeOffFrag
+                            int size = listOfJaggedMatrix[i].Length;
+                            // dời trái/ dời phải
+                            for (int k = listOfJaggedMatrix[i][0] - 1; k >= 0; k--)
+                            {
+
+                            if (item.Value.ContainsKey(k))
+                            {
+                                if (item.Value[k] == 1)
+                                    size++;
+                                else
+                                    break;
+                            }
+                               
+                            }
+                            for (int h = listOfJaggedMatrix[i][listOfJaggedMatrix[i].Length - 1] + 1; h <= item.Value.OrderByDescending(x => x.Key).First().Key; h++)
+                            {
+                            if (item.Value.ContainsKey(h))
+                            {
+                                if (item.Value[h] == 1)
+                                    size++;
+                                else
+                                    break;
+                            }
                         }
 
-                        var fil = new FilterPos() { Key = item.Key, slotNums = listOfJaggedMatrix[i], sizeOfFrag = size };
-                        filterPos.Add(fil);
-                        find = true;
-                    }
-                    else
-                        continue;
+                            var fil = new FilterPos() { Key = item.Key, slotNums = listOfJaggedMatrix[i], sizeOfFrag = size };
+                            filterPos.Add(fil);
+                            find = true;
+                        }
+                        else
+                            continue;
                 }
                 if (find)
                 {
-                    var bestFitPos = filterPos.OrderBy(x => x.sizeOfFrag).FirstOrDefault();
+                        var bestFitPos = filterPos.OrderBy(x => x.sizeOfFrag).FirstOrDefault();
                     foreach (var item in bestFitPos.slotNums)
                     {
-                        searchMatrix[bestFitPos.Key][item - 1] = 0;
-                    }
+                        searchMatrix[bestFitPos.Key][item] = 0;
+                        }
 
-                  
-                    dictResult.Add(new KeyValuePair<int, int[]>(bestFitPos.Key, bestFitPos.slotNums));
+
+                        dictResult.Add(new KeyValuePair<int, int[]>(bestFitPos.Key, bestFitPos.slotNums));
                 }
-                else return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(false, "Lỗi khi đặt phòng", null);
-            }
-            return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(true, "", dictResult);
+                 else return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(false, "Lỗi khi đặt phòng", null);
+                }
+                return new Tuple<bool, string, List<KeyValuePair<int, int[]>>>(true, "", dictResult);
+            
         }
-
         private int[][] CreateSlotJaggedMatrix(int[] arr)
         {
             List<int[]> result = new List<int[]>();
@@ -259,12 +345,13 @@ namespace DxLabCoworkingSpace
             return result.ToArray();
         }
         // area ở đây đã lấy được list pos
-        private async Task<Dictionary<int, int[]>> CreateSearchMatrix(IEnumerable<Area> areasInRoom, DateTime date, List<Slot> slots, IEnumerable<BookingDetail> existedBookingDetails)
+        private async Task<Dictionary<int, Dictionary<int,int>>> CreateSearchMatrix(IEnumerable<Area> areasInRoom, DateTime date, List<Slot> slots, IEnumerable<BookingDetail> existedBookingDetails)
         {
             if (areasInRoom == null || slots == null) return null;
             if (areasInRoom.FirstOrDefault() != null)
             {
-                Dictionary<int, int[]> dict = new Dictionary<int, int[]>();
+                Dictionary<int, Dictionary<int, int>> dict = new Dictionary<int, Dictionary<int, int>>();
+  
                 if (areasInRoom.FirstOrDefault().AreaType.AreaCategory == 1)
                 {
                     var individualArea = areasInRoom.FirstOrDefault();
@@ -273,8 +360,8 @@ namespace DxLabCoworkingSpace
                         int[] slotNumber = slots.Select(x => x.SlotNumber).ToArray();
                         Array.Sort(slotNumber);
                         KeyValuePair<int, int[]> keyValuePair = new KeyValuePair<int, int[]>(pos.PositionId, slotNumber);
-                        keyValuePair = await FillDataInToKeyValuePair(keyValuePair, 1, date.Date, existedBookingDetails);
-                        dict.Add(keyValuePair.Key, keyValuePair.Value);
+                        KeyValuePair<int, Dictionary<int, int>> result = await FillDataInToKeyValuePair(keyValuePair, 1, date.Date, existedBookingDetails);
+                        dict.Add(result.Key, new Dictionary<int, int>(result.Value));
                     }
                     return dict;
                 }
@@ -285,8 +372,8 @@ namespace DxLabCoworkingSpace
                         int[] slotNumber = slots.Select(x => x.SlotNumber).ToArray();
                         Array.Sort(slotNumber);
                         KeyValuePair<int, int[]> keyValuePair = new KeyValuePair<int, int[]>(are.AreaId, slotNumber);
-                        keyValuePair = await FillDataInToKeyValuePair(keyValuePair, 2, date, existedBookingDetails);
-                        dict.Add(keyValuePair.Key, keyValuePair.Value);
+                        KeyValuePair<int, Dictionary<int, int>> result = await FillDataInToKeyValuePair(keyValuePair, 2, date, existedBookingDetails);
+                        dict.Add(result.Key, new Dictionary<int, int>(result.Value));
                     }
                     return dict;
                 }
@@ -294,13 +381,14 @@ namespace DxLabCoworkingSpace
             return null;
         }
 
-        private async Task<KeyValuePair<int, int[]>> FillDataInToKeyValuePair(KeyValuePair<int, int[]> keyValuePair, int v, DateTime date, IEnumerable<BookingDetail> existedBookingDetails)
+        private async Task<KeyValuePair<int, Dictionary<int, int>>> FillDataInToKeyValuePair(KeyValuePair<int, int[]> keyValuePair, int v, DateTime date, IEnumerable<BookingDetail> existedBookingDetails)
         {
             if (v < 1 || v > 2)
-                return new KeyValuePair<int, int[]>(0, new int[0]);
+                throw new Exception();
             if ( existedBookingDetails == null)
                 throw new ArgumentNullException();
-
+            int slotNumber = 0;
+            Dictionary<int, int> result = new Dictionary<int, int>();
             var bookingDetailIn_Date = existedBookingDetails.Where(x => x.CheckinTime.Date == date.Date);
             if (v == 1)
             {
@@ -309,10 +397,17 @@ namespace DxLabCoworkingSpace
                 {
                     if (bookingDetailIn_Date.FirstOrDefault(x => x.PositionId == keyValuePair.Key && x.Slot.SlotNumber == keyValuePair.Value[i]) != null)
                     {
-                        keyValuePair.Value[i] = 0;
-                        continue;
+
+                        slotNumber = keyValuePair.Value[i];
+                        result.Add(slotNumber, 0);
+                       
                     }
-                    keyValuePair.Value[i] = 1;
+                    else
+                    {
+                        slotNumber = keyValuePair.Value[i];
+                        result.Add(slotNumber, 1);
+                    }
+                   
                 }
             }
             else
@@ -322,14 +417,19 @@ namespace DxLabCoworkingSpace
                 {
                     if (bookingDetailIn_Date.FirstOrDefault(x => x.AreaId == keyValuePair.Key && x.Slot.SlotNumber == keyValuePair.Value[i]) != null)
                     {
-                        keyValuePair.Value[i] = 0;
-                        continue;
+                        slotNumber = keyValuePair.Value[i];
+                        result.Add(slotNumber, 0);
 
                     }
-                    keyValuePair.Value[i] = 1;
+                    else
+                    {
+                        slotNumber = keyValuePair.Value[i];
+                        result.Add(slotNumber, 1);
+                    }
+                  
                 }
             }
-            return keyValuePair;
+            return new KeyValuePair<int, Dictionary<int, int>>(keyValuePair.Key,result);
         }
 
         private async Task<Tuple<bool, string, Room, List<Area>>> CheckRoom(int roomId, int areaTypeId)
@@ -462,11 +562,12 @@ namespace DxLabCoworkingSpace
             
             var slots = await _unitOfWork.SlotRepository.GetAll(x => x.ExpiredTime.Date > availableSlotRequestDTO.BookingDate.Date);
             if(!slots.Any()) return new ResponseDTO<object>(400, "Chưa có slots có sẵn", null);
-            Tuple<bool, string> isValidDate = CheckValidDate(availableSlotRequestDTO.BookingDate, slots);
+            Tuple<bool, string, IEnumerable<Slot>> isValidDate = CheckValidDate(availableSlotRequestDTO.BookingDate, slots);
             if(isValidDate.Item1 == false)
             {
                 return new ResponseDTO<object>(400, isValidDate.Item2, null);
             }
+            slots = isValidDate.Item3;
             Tuple<bool, string, Room, AreaType> isValidRoomAndAreaType = await CheckValidRoomAndAreaType(availableSlotRequestDTO);
             if(isValidRoomAndAreaType.Item1 == false)
             {
@@ -625,12 +726,12 @@ namespace DxLabCoworkingSpace
             return new Tuple<bool, string, Room, AreaType>(true, "", room, areaType);
         }
 
-        private Tuple<bool, string> CheckValidDate(DateTime bookingDate, IEnumerable<Slot> slots)
+        private Tuple<bool, string, IEnumerable<Slot>> CheckValidDate(DateTime bookingDate, IEnumerable<Slot> slots)
         {
-            if (slots == null) return new Tuple<bool, string>(false, "Chưa có slots có sẵn");
+            if (slots == null) return new Tuple<bool, string, IEnumerable<Slot>>(false, "Chưa có slots có sẵn", null);
 
             if(bookingDate.Date > DateTime.Now.Date.AddDays(14) || bookingDate.Date < DateTime.Now.Date)
-                return new Tuple<bool, string>(false, "Ngày đặt không được quá 14 ngày hoặc ngày trong quá khứ!");
+                return new Tuple<bool, string, IEnumerable<Slot>>(false, "Ngày đặt không được quá 14 ngày hoặc ngày trong quá khứ!",null);
             if(bookingDate.Date == DateTime.Now.Date)
             {
                 var currentDateTime = DateTime.Now;
@@ -645,7 +746,7 @@ namespace DxLabCoworkingSpace
                
             }
 
-            return new Tuple<bool, string>(true, "");
+            return new Tuple<bool, string, IEnumerable<Slot>>(true, "",slots);
         }
     }
 

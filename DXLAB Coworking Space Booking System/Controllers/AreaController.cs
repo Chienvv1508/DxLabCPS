@@ -581,6 +581,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         //    }
         //}
 
+        [HttpPut]
+        [Route("area")]
+        public async Task<IActionResult> SetExpiredTimeToArea(int areaId)
+        {
+            ResponseDTO<Area> result = await _areaService.SetExpiredTimeToArea(areaId);
+            return StatusCode(result.StatusCode, result);
+        }
+
+
         [HttpPatch("area")]
         public async Task<IActionResult> RemoveArea(int areaid)
         {
