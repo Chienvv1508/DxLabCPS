@@ -74,21 +74,14 @@ namespace DXLAB_Coworking_Space_Booking_System
                     return BadRequest(new ResponseDTO<object>(400, "Người dùng không có địa chỉ ví blockchain!", null));
                 }
                 ResponseDTO<object> result =  await _bookingService.CreateBooking(bookingDTO,userId);
-            if(result.StatusCode != 200)
-            {
-                return StatusCode(result.StatusCode, result);
-            }
-            Booking booking = result.Data as Booking;
-            booking.UserId = userId;
-            await _bookingService.Add(booking);
 
-                ResponseDTO<object> result = await _bookingService.CreateBooking(bookingDTO);
                 if (result.StatusCode != 200)
                 {
                     return StatusCode(result.StatusCode, result);
                 }
                 Booking booking = result.Data as Booking;
                 booking.UserId = userId;
+                await _bookingService.Add(booking);
 
                 // Tích hợp blockchain: Kiểm tra số dư token
                 decimal requiredTokens = booking.Price;
