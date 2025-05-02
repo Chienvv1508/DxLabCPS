@@ -773,21 +773,22 @@ namespace DxLabCoworkingSpace
                 var firstBookingDetail = booking.BookingDetails != null ? booking.BookingDetails.OrderBy(x => x.CheckinTime).First() : null;
                 if(firstBookingDetail == null)
                     return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 30)
+                {
+                    return new ResponseDTO<object>(400, "Bạn đã quá thời gian hủy đặt chỗ!", null);
+                }
                 if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 30 && (firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 60)
                 {
-                    DecreasingBookingPrice(0.3, booking);
+                   await DecreasingBookingPrice(0.3, booking);
                     return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
 
                 }
                 if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 60)
                 {
-                    Delete(booking);
+                  await  Delete(booking);
                     return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
                 }
-                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 30)
-                {
-                    return new ResponseDTO<object>(400, "Bạn đã quá thời gian hủy đặt chỗ!", null);
-                }
+                
 
                 return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
 
@@ -798,7 +799,7 @@ namespace DxLabCoworkingSpace
             }
         }
 
-        private void DecreasingBookingPrice(double v, Booking booking)
+        private async Task DecreasingBookingPrice(double v, Booking booking)
         {
             if (v >= 1 || v <= 0 || booking == null)
                 throw new ArgumentNullException();
@@ -809,14 +810,20 @@ namespace DxLabCoworkingSpace
             {
                 _unitOfWork.BookingDetailRepository.Delete(bookingDetail);
             }
-            _unitOfWork.CommitAsync();
+          await  _unitOfWork.CommitAsync();
         }
 
-        private async void Delete(Booking booking)
+        private async Task Delete(Booking booking)
         {
             if (booking == null)
                 throw new ArgumentNullException();
-             _unitOfWork.BookingRepository.Delete(booking);
+            if(booking.BookingDetails == null)
+                throw new ArgumentNullException();
+            foreach (var bookingDetail in booking.BookingDetails)
+            {
+                _unitOfWork.BookingDetailRepository.Delete(bookingDetail);
+            }
+            _unitOfWork.BookingRepository.Delete(booking);
             await _unitOfWork.CommitAsync();
         }
     }
