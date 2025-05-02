@@ -271,66 +271,6 @@ namespace DxLabCoworkingSpace
                     }
                 }
 
-                // BookingCheckedIn
-                var bookingCheckedInEvent = _contract.GetEvent("BookingCheckedIn");
-                var bookingCheckedInFilter = bookingCheckedInEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var bookingCheckedInLogs = await bookingCheckedInEvent.GetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInFilter);
-                var bookingCheckedInLogs = await RetryGetAllChangesAsync<BookingCheckedInEventDTO>(bookingCheckedInEvent, bookingCheckedInFilter);
-                await Task.Delay(200);
-
-                Console.WriteLine($"Found {bookingCheckedInLogs.Count} BookingCheckedIn logs.");
-                foreach (var log in bookingCheckedInLogs)
-                {
-                    try
-                    {
-                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-                        await SaveBookingEventAsync(
-                            log.Event.BookingId,
-                            (int)log.Log.BlockNumber.Value,
-                            log.Log.TransactionHash,
-                            null,
-                            0,
-                            null,
-                            (long)block.Timestamp.Value,
-                            "CheckedIn"
-                        );
-                    }
-                    catch (Exception decodeError)
-                    {
-                        Console.WriteLine($"Error processing BookingCheckedIn log: {decodeError.Message}");
-                    }
-                }
-
-                // UserBlocked
-                var userBlockedEvent = _contract.GetEvent("UserBlocked");
-                var userBlockedFilter = userBlockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var userBlockedLogs = await userBlockedEvent.GetAllChangesAsync<UserBlockedEventDTO>(userBlockedFilter);
-                var userBlockedLogs = await RetryGetAllChangesAsync<UserBlockedEventDTO>(userBlockedEvent, userBlockedFilter);
-                await Task.Delay(200);
-
-                Console.WriteLine($"Found {userBlockedLogs.Count} UserBlocked logs.");
-                foreach (var log in userBlockedLogs)
-                {
-                    try
-                    {
-                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-                        await SaveBookingEventAsync(
-                            null,
-                            (int)log.Log.BlockNumber.Value,
-                            log.Log.TransactionHash,
-                            null,
-                            0,
-                            log.Event.User,
-                            (long)block.Timestamp.Value,
-                            "UserBlocked"
-                        );
-                    }
-                    catch (Exception decodeError)
-                    {
-                        Console.WriteLine($"Error processing UserBlocked log: {decodeError.Message}");
-                    }
-                }
-
                 // UserRegistered
                 var userRegisteredEvent = _contract.GetEvent("UserRegistered");
                 var userRegisteredFilter = userRegisteredEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
@@ -361,36 +301,6 @@ namespace DxLabCoworkingSpace
                     catch (Exception decodeError)
                     {
                         Console.WriteLine($"Error processing UserRegistered log: {decodeError.Message}");
-                    }
-                }
-
-                // UserUnblocked
-                var userUnblockedEvent = _contract.GetEvent("UserUnblocked");
-                var userUnblockedFilter = userUnblockedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var userUnblockedLogs = await userUnblockedEvent.GetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedFilter);
-                var userUnblockedLogs = await RetryGetAllChangesAsync<UserUnblockedEventDTO>(userUnblockedEvent, userUnblockedFilter);
-                await Task.Delay(200);
-
-                Console.WriteLine($"Found {userUnblockedLogs.Count} UserUnblocked logs.");
-                foreach (var log in userUnblockedLogs)
-                {
-                    try
-                    {
-                        var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(new HexBigInteger(log.Log.BlockNumber));
-                        await SaveBookingEventAsync(
-                            null,
-                            (int)log.Log.BlockNumber.Value,
-                            log.Log.TransactionHash,
-                            null,
-                            0,
-                            log.Event.User,
-                            (long)block.Timestamp.Value,
-                            "UserUnblocked"
-                        );
-                    }
-                    catch (Exception decodeError)
-                    {
-                        Console.WriteLine($"Error processing UserUnblocked log: {decodeError.Message}");
                     }
                 }
             }
@@ -509,19 +419,6 @@ namespace DxLabCoworkingSpace
         public BigInteger RefundAmount { get; set; }
     }
 
-    [Event("BookingCheckedIn")]
-    public class BookingCheckedInEventDTO : IEventDTO
-    {
-        [Parameter("bytes32", "bookingId", 1, true)]
-        public string BookingId { get; set; }
-    }
-    [Event("UserBlocked")]
-    public class UserBlockedEventDTO : IEventDTO
-    {
-        [Parameter("address", "user", 1, true)]
-        public string User { get; set; }
-    }
-
     [Event("UserRegistered")]
     public class UserRegisteredEventDTO : IEventDTO
     {
@@ -533,12 +430,5 @@ namespace DxLabCoworkingSpace
 
         [Parameter("bool", "isStaff", 3, false)]
         public bool IsStaff { get; set; }
-    }
-
-    [Event("UserUnblocked")]
-    public class UserUnblockedEventDTO : IEventDTO
-    {
-        [Parameter("address", "user", 1, true)]
-        public string User { get; set; }
     }
 }
