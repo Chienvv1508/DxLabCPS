@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Nethereum.RPC.Eth.DTOs;
 using System;
 using System.Collections.Generic;
@@ -760,6 +761,63 @@ namespace DxLabCoworkingSpace
             }
 
             return new Tuple<bool, string, IEnumerable<Slot>>(true, "",slots);
+        }
+
+        public async Task<ResponseDTO<object>> Cancel(int bookingId, int userId)
+        {
+            try
+            {
+                var booking = await _unitOfWork.BookingRepository.GetWithInclude(x => x.BookingId == bookingId && x.UserId == userId, x => x.BookingDetails);
+                if (booking == null)
+                    return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                var firstBookingDetail = booking.BookingDetails != null ? booking.BookingDetails.OrderBy(x => x.CheckinTime).First() : null;
+                if(firstBookingDetail == null)
+                    return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                if ((DateTime.Now - firstBookingDetail.CheckinTime).TotalMinutes >= 30)
+                {
+                    DecreasingBookingPrice(0.3, booking);
+                    return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
+
+                }
+                if ((DateTime.Now - firstBookingDetail.CheckinTime).TotalMinutes >= 60)
+                {
+                    Delete(booking);
+                    return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
+                }
+                if ((DateTime.Now - firstBookingDetail.CheckinTime).TotalMinutes < 30)
+                {
+                    return new ResponseDTO<object>(400, "Bạn đã quá thời gian hủy đặt chỗ!", null);
+                }
+
+                return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
+
+            }
+            catch(Exception ex)
+            {
+                return new ResponseDTO<object>(500, "Hủy đơn đặt chỗ không thành công!", null);
+            }
+        }
+
+        private void DecreasingBookingPrice(double v, Booking booking)
+        {
+            if (v >= 1 || v <= 0 || booking == null)
+                throw new ArgumentNullException();
+            if (booking.BookingDetails == null)
+                throw new ArgumentNullException();
+            booking.Price = booking.Price * (decimal)(v);
+            foreach(var bookingDetail in booking.BookingDetails)
+            {
+                _unitOfWork.BookingDetailRepository.Delete(bookingDetail);
+            }
+            _unitOfWork.CommitAsync();
+        }
+
+        private async void Delete(Booking booking)
+        {
+            if (booking == null)
+                throw new ArgumentNullException();
+             _unitOfWork.BookingRepository.Delete(booking);
+            await _unitOfWork.CommitAsync();
         }
     }
 
