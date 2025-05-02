@@ -826,6 +826,41 @@ namespace DxLabCoworkingSpace
             _unitOfWork.BookingRepository.Delete(booking);
             await _unitOfWork.CommitAsync();
         }
+
+        public async Task<ResponseDTO<object>> GetCancelInfo(int bookingId, int userId)
+        {
+            try
+            {
+                var booking = await _unitOfWork.BookingRepository.GetWithInclude(x => x.BookingId == bookingId && x.UserId == userId, x => x.BookingDetails);
+                if (booking == null)
+                    return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                var firstBookingDetail = booking.BookingDetails != null ? booking.BookingDetails.OrderBy(x => x.CheckinTime).First() : null;
+                if (firstBookingDetail == null)
+                    return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 30)
+                {
+                    return new ResponseDTO<object>(400, "Bạn đã quá thời gian hủy đặt chỗ!", null);
+                }
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 30 && (firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 60)
+                {
+                    var cancelInfo1 = new { BookingId = booking.BookingId, Amount = booking.Price * (decimal)0.3 };
+                    return new ResponseDTO<object>(200, "Thông tin hủy đặt chỗ", cancelInfo1);
+
+                }
+             
+                    var cancelInfo = new { BookingId = booking.BookingId, Amount = booking.Price };
+                    return new ResponseDTO<object>(200, "Thông tin hủy đặt chỗ", cancelInfo);
+               
+
+
+               
+
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO<object>(500, "Lấy thông tin hủy không thành công!", null);
+            }
+        }
     }
 
     public class FilterPos
