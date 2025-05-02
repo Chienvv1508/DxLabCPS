@@ -773,18 +773,18 @@ namespace DxLabCoworkingSpace
                 var firstBookingDetail = booking.BookingDetails != null ? booking.BookingDetails.OrderBy(x => x.CheckinTime).First() : null;
                 if(firstBookingDetail == null)
                     return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
-                if ((DateTime.Now - firstBookingDetail.CheckinTime).TotalMinutes >= 30)
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 30)
                 {
                     DecreasingBookingPrice(0.3, booking);
                     return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
 
                 }
-                if ((DateTime.Now - firstBookingDetail.CheckinTime).TotalMinutes >= 60)
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 60)
                 {
                     Delete(booking);
                     return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
                 }
-                if ((DateTime.Now - firstBookingDetail.CheckinTime).TotalMinutes < 30)
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 30)
                 {
                     return new ResponseDTO<object>(400, "Bạn đã quá thời gian hủy đặt chỗ!", null);
                 }
@@ -804,7 +804,7 @@ namespace DxLabCoworkingSpace
                 throw new ArgumentNullException();
             if (booking.BookingDetails == null)
                 throw new ArgumentNullException();
-            booking.Price = booking.Price * (decimal)(v);
+            booking.Price = booking.Price * (decimal)( 1 - v);
             foreach(var bookingDetail in booking.BookingDetails)
             {
                 _unitOfWork.BookingDetailRepository.Delete(bookingDetail);
