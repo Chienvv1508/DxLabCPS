@@ -779,7 +779,7 @@ namespace DxLabCoworkingSpace
                 }
                 if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 30 && (firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 60)
                 {
-                   await DecreasingBookingPrice(0.3, booking);
+                   await DecreasingBookingPrice(0.5, booking);
                     return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
 
                 }
@@ -843,7 +843,7 @@ namespace DxLabCoworkingSpace
                 }
                 if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 30 && (firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 60)
                 {
-                    var cancelInfo1 = new { BookingId = booking.BookingId, Amount = booking.Price * (decimal)0.3 };
+                    var cancelInfo1 = new { BookingId = booking.BookingId, Amount = booking.Price * (decimal)0.5 };
                     return new ResponseDTO<object>(200, "Thông tin hủy đặt chỗ", cancelInfo1);
 
                 }
