@@ -48,12 +48,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     );
 
                 // Lọc booking theo UserId trong bộ nhớ
-                var bookings = allBookings.Where(b => b.UserId == userId).ToList();
+                var bookings = allBookings.Where(b => b.UserId == userId && b.BookingDetails.Any() == true).ToList();
+                
 
                 if (!bookings.Any())
                 {
                     return Ok(new ResponseDTO<object>(200, "Bạn không có lịch sử booking nào!", null));
                 }
+
+
 
                 var bookingHistoryList = bookings.Select(b => new
                 {
@@ -96,7 +99,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 // Lọc booking theo BookingId và UserId trong bộ nhớ
                 var booking = allBookings.FirstOrDefault(b => b.BookingId == bookingId && b.UserId == userId);
 
-                if (booking == null)
+                if (booking == null || booking.BookingDetails.Any() == false)
                 {
                     return NotFound(new ResponseDTO<object>(404, "Không tìm thấy booking hoặc bạn không có quyền xem!", null));
                 }

@@ -43,7 +43,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     b => b.BookingDetails,
                     b => b.User
                     );
-
+                bookings = bookings.Where(x => x.BookingDetails.Any() == true);
                 if (!bookings.Any())
                 {
                     return Ok(new ResponseDTO<object>(200, "Không có lịch sử booking nào!", null));
@@ -81,7 +81,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     b => b.User
                 );
 
-                if (booking == null)
+                if (booking == null || booking.BookingDetails.Any() == false)
                 {
                     return NotFound(new ResponseDTO<object>(404, "Không tìm thấy booking!", null));
                 }
