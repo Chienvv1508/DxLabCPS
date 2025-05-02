@@ -63,7 +63,7 @@ namespace DXLAB_Coworking_Space_Booking_System
                 return StatusCode(result.StatusCode, result);
             }
             Booking booking = result.Data as Booking;
-            booking.UserId = 1;
+            booking.UserId = userId;
             await _bookingService.Add(booking);
 
             var allSlots = await _slotService.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);

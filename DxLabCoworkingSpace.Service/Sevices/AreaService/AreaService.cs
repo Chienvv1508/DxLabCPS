@@ -809,7 +809,7 @@ namespace DxLabCoworkingSpace
             {
                 
 
-                var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == areaid && x.ExpiredDate.Date > DateTime.Now.Date);
+                var area = await _unitOfWork.AreaRepository.Get(x => x.AreaId == areaid && x.Status  != 2);
                 if (area == null)
                 {
                     return new ResponseDTO<Area>(400, "Khu vực không tồn tại", null);
@@ -886,7 +886,7 @@ namespace DxLabCoworkingSpace
                 List<AreaGetForManagement> areaDTOs = new List<AreaGetForManagement>();
                 IEnumerable<UsingFacility> usingFacilities = await _unitOfWork.UsingFacilityRepository.GetAllWithInclude(x => x.Facility);
 
-                foreach (var are in room.Areas.Where(x => x.ExpiredDate.Date > DateTime.Now.Date))
+                foreach (var are in room.Areas.Where(x => x.Status != 2))
                 {
                     IEnumerable<UsingFacility> usingFacilities1 = new List<UsingFacility>();
                     if (usingFacilities != null)

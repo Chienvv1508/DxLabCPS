@@ -580,7 +580,7 @@ namespace DxLabCoworkingSpace
                 {
                     return new ResponseDTO<Room>(400, "Room không tồn tại", null);
                 }
-                var areaInRoom = await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == roomId && x.ExpiredDate > DateTime.Now.Date);
+                var areaInRoom = await _unitOfWork.AreaRepository.GetAll(x => x.RoomId == roomId && x.Status != 2);
                 if (areaInRoom.Any())
                 {
                     return new ResponseDTO<Room>(400, "Trong phòng đang các khu vực đang hoạt động. Nếu muốn xóa bạn phải xóa hết khu vực trong phòng", null);

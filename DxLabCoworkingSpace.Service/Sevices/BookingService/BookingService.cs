@@ -78,9 +78,9 @@ namespace DxLabCoworkingSpace
             {
                 booking.UserId = 1;
                 booking.BookingCreatedDate = DateTime.Now;
-
+                var slotBooks = slots.Where(x => x.ExpiredTime.Date > dte.BookingDate);
                 // Tạo ma trận
-                Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areaInRoom, dte.BookingDate.Date,slots.ToList(), existedBookingDetails);
+                Dictionary<int, int[]> searchMatrix = await CreateSearchMatrix(areaInRoom, dte.BookingDate.Date, slotBooks.ToList(), existedBookingDetails);
                 if (searchMatrix == null)
                 {
                     return new Tuple<bool, string, Booking>(false, "Lỗi đặt phòng", null);
@@ -88,7 +88,7 @@ namespace DxLabCoworkingSpace
                 int[] slotArray = new int[dte.SlotId.Count];
                 for (int i = 0; i < slotArray.Length; i++)
                 {
-                    var x =  slots.FirstOrDefault(x => x.SlotId == dte.SlotId[i]);
+                    var x = slotBooks.FirstOrDefault(x => x.SlotId == dte.SlotId[i]);
                     if (x == null)
                     return new Tuple<bool, string, Booking>(false, "Slot không có hoặc đã bị xóa", null);
                     slotArray[i] = x.SlotNumber;
