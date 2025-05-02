@@ -38,9 +38,10 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var slots = await _slotService.GetAll(x => x.Status == 1);
                 int numberOfSlot = slots.Count();
                 List<UltilizationRate> ultilizationRates = new List<UltilizationRate>();
+                var areaInCludeAreaTypeAndRoom = await _areaService.GetAllWithInclude(x => x.AreaType, x => x.Room);
                 foreach (var item in bookingdetailgroup)
                 {
-                    var area = await _areaService.GetWithInclude(x => x.AreaId == item.Key, x => x.AreaType, x => x.Room);
+                    var area =  areaInCludeAreaTypeAndRoom.FirstOrDefault(x => x.AreaId == item.Key);
                     if (area != null)
                     {
                         decimal rate = 0;
@@ -250,7 +251,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 DateTime firstDate = new DateTime(year, 1, 1);
                 DateTime lastDate = new DateTime(year, 12, DateTime.DaysInMonth(year, 12));
                 var result = await _ultilizationRateService.GetAll(x => x.THDate.Date >= firstDate.Date && x.THDate.Date <= lastDate.Date && x.RoomId == roomId);
-                var groupDate = result.GroupBy(x => x.THDate.Year);
+                var groupDate = result.GroupBy(x => x.THDate.Month);
                 List<UltilizationRoomGet> ultilizationRoomGets = new List<UltilizationRoomGet>();
                 foreach (var group in groupDate)
                 {
@@ -265,7 +266,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         RoomId = roomId,
                         RoomName = result.FirstOrDefault(x => x.RoomId == roomId).RoomName,
                         Rate = rate,
-                        DateTH = new DateTime(year, 12, 31)
+                        DateTH = new DateTime(year, group.Key, DateTime.DaysInMonth(year, group.Key))
                     };
                     ultilizationRoomGets.Add(ul);
                 }
