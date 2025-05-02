@@ -44,7 +44,8 @@ namespace DXLAB_Coworking_Space_Booking_System
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromBody] BookingDTO bookingDTO)
         {
-           try {
+            try
+            {
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
                 if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
                 {
@@ -57,24 +58,24 @@ namespace DXLAB_Coworking_Space_Booking_System
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Người dùng không có địa chỉ ví blockchain!", null));
                 }
-                ResponseDTO<object> result =  await _bookingService.CreateBooking(bookingDTO,userId);
-            if(result.StatusCode != 200)
-            {
-                return StatusCode(result.StatusCode, result);
-            }
-            Booking booking = result.Data as Booking;
-            booking.UserId = userId;
-            await _bookingService.Add(booking);
+                ResponseDTO<object> result = await _bookingService.CreateBooking(bookingDTO, userId);
+                if (result.StatusCode != 200)
+                {
+                    return StatusCode(result.StatusCode, result);
+                }
+                Booking booking = result.Data as Booking;
+                booking.UserId = userId;
+                await _bookingService.Add(booking);
 
-            var allSlots = await _slotService.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);
-            var allAreasWithDetails = await _areaService.GetAllWithInclude(a => a.Room, a => a.AreaType, a => a.Positions);
-            //var filteredAreas = allAreasWithDetails.Where(a => areasInRoom.Select(ar => ar.AreaId).Contains(a.AreaId)).ToList();
-            var areaTypeIds = allAreasWithDetails.Select(a => a.AreaTypeId).Distinct().ToList();
-            var areaTypes = await _areaTypeService.GetAll(at => areaTypeIds.Contains(at.AreaTypeId));
+                var allSlots = await _slotService.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);
+                var allAreasWithDetails = await _areaService.GetAllWithInclude(a => a.Room, a => a.AreaType, a => a.Positions);
+                //var filteredAreas = allAreasWithDetails.Where(a => areasInRoom.Select(ar => ar.AreaId).Contains(a.AreaId)).ToList();
+                var areaTypeIds = allAreasWithDetails.Select(a => a.AreaTypeId).Distinct().ToList();
+                var areaTypes = await _areaTypeService.GetAll(at => areaTypeIds.Contains(at.AreaTypeId));
 
                 // Tạo lookup để tra cứu nhanh
-            var areaLookup = allAreasWithDetails.ToDictionary(a => a.AreaId, a => a);
-            var areaTypeLookup = areaTypes.ToDictionary(at => at.AreaTypeId, at => at);
+                var areaLookup = allAreasWithDetails.ToDictionary(a => a.AreaId, a => a);
+                var areaTypeLookup = areaTypes.ToDictionary(at => at.AreaTypeId, at => at);
 
                 var responseData = new
                 {
@@ -696,5 +697,5 @@ namespace DXLAB_Coworking_Space_Booking_System
 
 
     }
-    
+
 }

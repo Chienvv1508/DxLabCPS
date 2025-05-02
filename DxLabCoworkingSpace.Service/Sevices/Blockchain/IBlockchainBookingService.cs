@@ -20,8 +20,8 @@ namespace DxLabCoworkingSpace.Service
         string areaId,
         string areaName,
         string position,
-        long timestamp
-    );
+        long timestamp,
+        decimal requiredTokens);
         Task<BigInteger> GetUserBalance(string walletAddress);
     }
 }

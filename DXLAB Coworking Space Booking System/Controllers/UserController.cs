@@ -149,19 +149,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                     if (mintSuccess)
                                     {
                                         _mintedUsers[savedUser.WalletAddress] = currentTime;
-                                        mintStatus = "Tạo 100 tokens thành công!";
+                                        mintStatus = "Tạo 100 DXL cho sinh viên thành công!";
                                         Console.WriteLine($"Dat thoi gian tao cho {savedUser.WalletAddress} toi {currentTime}");
                                     }
                                     else
                                     {
-                                        mintStatus = "Tạo token thất bại!";
+                                        mintStatus = "Cấp DXL thất bại!";
                                         Console.WriteLine($"Tao that bai cho {savedUser.WalletAddress}");
                                     }
                                 }
                                 catch (RpcResponseException rpcEx)
                                 {
                                     Console.WriteLine($"RPC error while minting for {savedUser.WalletAddress}: {rpcEx.Message}");
-                                    mintStatus = "Tạo token thất bại do lỗi blockchain!";
+                                    mintStatus = "Cấp DXL thất bại do lỗi blockchain!";
                                 }
                             }
                             else
@@ -258,7 +258,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         }
                         else
                         {
-                            mintStatus = "Token đã được tạo hôm nay!";
+                            mintStatus = "Tiền đã được cấp hôm nay!";
                             Console.WriteLine($"Bo qua viec tao cho {user.WalletAddress}: Lan tao moi nhat o {lastMintedTime}, qua som.");
                         }
                     }
@@ -276,19 +276,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             if (mintSuccess)
                             {
                                 _mintedUsers[user.WalletAddress] = currentTime;
-                                mintStatus = "Tạo 100 tokens thành công!";
+                                mintStatus = "Cấp 100 DXL cho sinh viên thành công!";
                                 Console.WriteLine($"Cap nhat thoi gian tao cho {user.WalletAddress} toi {currentTime}");
                             }
                             else
                             {
-                                mintStatus = "Tạo token thất bại!";
+                                mintStatus = "Cấp DXL thất bại!";
                                 Console.WriteLine($"Tao that bai cho {user.WalletAddress}");
                             }
                         }
                         catch (RpcResponseException rpcEx)
                         {
                             Console.WriteLine($"RPC error while minting for {user.WalletAddress}: {rpcEx.Message}");
-                            mintStatus = "Tạo token thất bại do lỗi blockchain!";
+                            mintStatus = "Cấp DXL thất bại do lỗi blockchain!";
                         }
                     }
                 }

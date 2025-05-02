@@ -200,7 +200,7 @@ namespace DxLabCoworkingSpace
                 // Cập nhật tổng giá trong Booking
                 var allDetails = await _unitOfWork.BookingDetailRepository.GetAll(bd => bd.BookingId == booking.BookingId);
                 booking.Price = allDetails.Sum(d => d.Price);
-                _unitOfWork.BookingRepository.Update(booking);
+                    _unitOfWork.BookingRepository.Update(booking);
                 await _unitOfWork.CommitAsync();
             }
         }
