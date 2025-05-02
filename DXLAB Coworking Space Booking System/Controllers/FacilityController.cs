@@ -54,11 +54,16 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     {
                         var worksheet = package.Workbook.Worksheets[0];
                         var rowCount = worksheet.Dimension.Rows;
-
+                       
                         for (int row = 2; row <= rowCount; row++)
                         {
                             string expiredTimeText = worksheet.Cells[row, 6].Text?.Trim() ?? "";
                             string importDateText = worksheet.Cells[row, 8].Text?.Trim() ?? "";
+                            var isValidId = int.TryParse(worksheet.Cells[row, 9].Text?.Trim() ?? "0", out int faciId);
+                            if(isValidId != true || faciId == 0)
+                            {
+                                return BadRequest(new ResponseDTO<object>(400, "Id của thiết bị không hợp lệ!", null));
+                            }
 
                             if (string.IsNullOrEmpty(expiredTimeText))
                             {
@@ -110,7 +115,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             }
 
                             facilities.Add(new Facility
-                            {
+                            {   FacilityId = faciId,
                                 BatchNumber = worksheet.Cells[row, 1].Value?.ToString() ?? "",
                                 FacilityTitle = worksheet.Cells[row, 2].Value?.ToString(),
                                 Cost = cost,
@@ -123,7 +128,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 FacilitiesStatuses = new List<FacilitiesStatus> 
                                                         {
                                                             new FacilitiesStatus
-                                                            {
+                                                            {   FacilityId = faciId,
                                                                 BatchNumber = worksheet.Cells[row, 1].Value?.ToString(),
                                                                 Quantity = quantity,
                                                                 Status = 0,
@@ -181,7 +186,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 var facility = _mapper.Map<Facility>(facilityDto);       
                 facility.RemainingValue = facility.Cost;
                 facility.FacilitiesStatuses.Add(new FacilitiesStatus { BatchNumber = facility.BatchNumber , ImportDate = facility.ImportDate,
-                Quantity = facility.Quantity, Status = 0
+                Quantity = facility.Quantity, Status = 0, FacilityId = facility.FacilityId
                 
                 });
                 await _facilityService.Add(facility);

@@ -82,5 +82,12 @@ namespace DxLabCoworkingSpace
         {
             _entitySet.Remove(entity);
         }
+
+        public async Task<T> GetLast(Expression<Func<T, bool>> expression)
+        {
+            var entity =  await _entitySet.LastOrDefaultAsync(expression);
+
+            return entity;
+        }
     }
 }

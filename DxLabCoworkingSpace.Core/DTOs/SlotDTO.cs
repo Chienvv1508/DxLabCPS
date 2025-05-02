@@ -20,6 +20,8 @@ namespace DxLabCoworkingSpace
         public TimeSpan? EndTime { get; set; }
         public int Status { get; set; }
 
+        public DateTime ExpiredTime { get; set; }
+
 
         public int SlotNumber { get; set; }
     }

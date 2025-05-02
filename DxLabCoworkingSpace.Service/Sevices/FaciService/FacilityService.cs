@@ -26,10 +26,10 @@ namespace DxLabCoworkingSpace
             }
 
             var existingBatchNumbers = (await _unitOfWork.FacilityRepository.GetAll())
-                .Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate })
+                .Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate, f.FacilityId})
                 .ToHashSet();
 
-            var batchNumbersInFile = facilities.Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate }).ToList();
+            var batchNumbersInFile = facilities.Select(f => new { BatchNumber = f.BatchNumber.Trim().ToLower(), f.ImportDate, f.FacilityId }).ToList();
 
             var duplicateBatchNumbersInFile = batchNumbersInFile
                 .GroupBy(b => b)
@@ -39,7 +39,7 @@ namespace DxLabCoworkingSpace
 
             if (duplicateBatchNumbersInFile.Any())
             {
-                throw new InvalidOperationException("Số lô, Ngày nhập bị trùng trong file!");
+                throw new InvalidOperationException("Số lô, Ngày nhập, Mã sản phẩm bị trùng trong file!");
             }
 
             var duplicateBatchNumbersInDB = batchNumbersInFile
@@ -48,7 +48,7 @@ namespace DxLabCoworkingSpace
 
             if (duplicateBatchNumbersInDB.Any())
             {
-                throw new InvalidOperationException("Số lô, Ngày nhập đã tồn tại trong database!");
+                throw new InvalidOperationException("Số lô, Ngày nhập, Mã sản phẩm đã tồn tại trong database!");
             }
 
             var validationErrors = new List<string>();
@@ -60,7 +60,7 @@ namespace DxLabCoworkingSpace
                 var row = i + 2; // Dòng 2 tương ứng với index 0
 
                 var dto = new FacilitiesDTO
-                {
+                {   FacilityId = facility.FacilityId,
                     BatchNumber = facility.BatchNumber,
                     FacilityTitle = facility.FacilityTitle,
                     Cost = facility.Cost,
@@ -121,7 +121,7 @@ namespace DxLabCoworkingSpace
                 throw new ArgumentException("Ngày nhập phải nhỏ hơn hoặc bằng thời gian hiện tại");
             }
 
-            var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate);
+            var existingFacility = await _unitOfWork.FacilityRepository.Get(f => f.BatchNumber == entity.BatchNumber && f.ImportDate == entity.ImportDate && f.FacilityId == entity.FacilityId);
             if (existingFacility != null)
             {
                 throw new InvalidOperationException("Lô hàng đã nhập rồi. Không tạo được nữa!");

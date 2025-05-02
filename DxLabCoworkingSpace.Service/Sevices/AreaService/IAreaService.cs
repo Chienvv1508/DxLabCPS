@@ -11,5 +11,11 @@ namespace DxLabCoworkingSpace
     {
         //Task<IEnumerable<Area>> GetAllWithInclude(Expression<Func<Area, bool>> expression, params Expression<Func<Area, object>>[] includes);
         //Task<Area> GetWithInclude(Expression<Func<Area, bool>> expression, params Expression<Func<Area, object>>[] includes);
+        Task<ResponseDTO<object>> AddFaciToArea(int areaid, int status, FaciAddDTO faciAddDTO);
+        Task<ResponseDTO<Area>> AddNewArea(int roomId, List<AreaAdd> areaAdds);
+        Task<ResponseDTO<object>> GetAreasManagementInRoom(int roomId);
+        Task<ResponseDTO<Area>> RemoveArea(int areaid);
+        Task<ResponseDTO<object>> RemoveFaciFromArea(RemoveFaciDTO removedFaciDTO);
+        Task<ResponseDTO<Area>> SetExpiredTimeToArea(int areaId);
     }
 }

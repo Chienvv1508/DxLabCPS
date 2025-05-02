@@ -20,6 +20,8 @@ namespace DxLabCoworkingSpace
         public int FaciAmount { get; set; }
         public int FaciAmountCh { get; set; }
 
+        public DateTime ExpiredDate { get; set; }
+
         public int Size { get; set; }
     }
 }
