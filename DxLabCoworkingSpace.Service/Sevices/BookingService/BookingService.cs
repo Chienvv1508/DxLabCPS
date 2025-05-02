@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Nethereum.RPC.Eth.DTOs;
 using System;
 using System.Collections.Generic;
@@ -476,6 +477,14 @@ namespace DxLabCoworkingSpace
                 return new Tuple<bool, string>(false, "Ngày đặt bắt buộc lớn hơn hoặc bằng ngày hiện tại!");
             }
 
+            foreach(var date in bookingTimes)
+            {
+                if(date.BookingDate.Date.DayOfWeek == DayOfWeek.Saturday || date.BookingDate.Date.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    return new Tuple<bool, string>(false, "Chỉ cho phép đặt từ thứ 2 đến thứ 6!");
+                }
+            }
+
             var slots = await _unitOfWork.SlotRepository.GetAll(x => x.ExpiredTime.Date > DateTime.Now.Date);
             if (!slots.Any())
             {
@@ -732,6 +741,11 @@ namespace DxLabCoworkingSpace
 
             if(bookingDate.Date > DateTime.Now.Date.AddDays(14) || bookingDate.Date < DateTime.Now.Date)
                 return new Tuple<bool, string, IEnumerable<Slot>>(false, "Ngày đặt không được quá 14 ngày hoặc ngày trong quá khứ!",null);
+            if(bookingDate.Date.DayOfWeek == DayOfWeek.Saturday || bookingDate.Date.DayOfWeek == DayOfWeek.Sunday)
+            {
+                return new Tuple<bool, string, IEnumerable<Slot>>(false, "Chỉ được phép đặt từ thứ 2 đến thứ 6!", null);
+            }
+
             if(bookingDate.Date == DateTime.Now.Date)
             {
                 var currentDateTime = DateTime.Now;
@@ -747,6 +761,105 @@ namespace DxLabCoworkingSpace
             }
 
             return new Tuple<bool, string, IEnumerable<Slot>>(true, "",slots);
+        }
+
+        public async Task<ResponseDTO<object>> Cancel(int bookingId, int userId)
+        {
+            try
+            {
+                var booking = await _unitOfWork.BookingRepository.GetWithInclude(x => x.BookingId == bookingId && x.UserId == userId, x => x.BookingDetails);
+                if (booking == null)
+                    return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                var firstBookingDetail = booking.BookingDetails != null ? booking.BookingDetails.OrderBy(x => x.CheckinTime).First() : null;
+                if(firstBookingDetail == null)
+                    return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 30)
+                {
+                    return new ResponseDTO<object>(400, "Bạn đã quá thời gian hủy đặt chỗ!", null);
+                }
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 30 && (firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 60)
+                {
+                   await DecreasingBookingPrice(0.5, booking);
+                    return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
+
+                }
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 60)
+                {
+                  await  Delete(booking);
+                    return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
+                }
+                
+
+                return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
+
+            }
+            catch(Exception ex)
+            {
+                return new ResponseDTO<object>(500, "Hủy đơn đặt chỗ không thành công!", null);
+            }
+        }
+
+        private async Task DecreasingBookingPrice(double v, Booking booking)
+        {
+            if (v >= 1 || v <= 0 || booking == null)
+                throw new ArgumentNullException();
+            if (booking.BookingDetails == null)
+                throw new ArgumentNullException();
+            booking.Price = booking.Price * (decimal)( 1 - v);
+            foreach(var bookingDetail in booking.BookingDetails)
+            {
+                _unitOfWork.BookingDetailRepository.Delete(bookingDetail);
+            }
+          await  _unitOfWork.CommitAsync();
+        }
+
+        private async Task Delete(Booking booking)
+        {
+            if (booking == null)
+                throw new ArgumentNullException();
+            if(booking.BookingDetails == null)
+                throw new ArgumentNullException();
+            foreach (var bookingDetail in booking.BookingDetails)
+            {
+                _unitOfWork.BookingDetailRepository.Delete(bookingDetail);
+            }
+            _unitOfWork.BookingRepository.Delete(booking);
+            await _unitOfWork.CommitAsync();
+        }
+
+        public async Task<ResponseDTO<object>> GetCancelInfo(int bookingId, int userId)
+        {
+            try
+            {
+                var booking = await _unitOfWork.BookingRepository.GetWithInclude(x => x.BookingId == bookingId && x.UserId == userId, x => x.BookingDetails);
+                if (booking == null)
+                    return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                var firstBookingDetail = booking.BookingDetails != null ? booking.BookingDetails.OrderBy(x => x.CheckinTime).First() : null;
+                if (firstBookingDetail == null)
+                    return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 30)
+                {
+                    return new ResponseDTO<object>(400, "Bạn đã quá thời gian hủy đặt chỗ!", null);
+                }
+                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 30 && (firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 60)
+                {
+                    var cancelInfo1 = new { BookingId = booking.BookingId, Amount = booking.Price * (decimal)0.5 };
+                    return new ResponseDTO<object>(200, "Thông tin hủy đặt chỗ", cancelInfo1);
+
+                }
+             
+                    var cancelInfo = new { BookingId = booking.BookingId, Amount = booking.Price };
+                    return new ResponseDTO<object>(200, "Thông tin hủy đặt chỗ", cancelInfo);
+               
+
+
+               
+
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO<object>(500, "Lấy thông tin hủy không thành công!", null);
+            }
         }
     }
 

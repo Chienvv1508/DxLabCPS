@@ -10,6 +10,7 @@ namespace DxLabCoworkingSpace
     public class FacilitiesDTO
     {
         [Required(ErrorMessage = "FacilityId không được để trống!")]
+        [Range(1000, 9999, ErrorMessage = "Mã sản phẩm phải nằm trong khoảng từ 1000 đến 9999.")]
         public int FacilityId { get; set; }
 
         [Required(ErrorMessage = "BatchNumber không được để trống!")]

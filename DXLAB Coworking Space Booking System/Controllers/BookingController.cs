@@ -129,6 +129,8 @@ namespace DXLAB_Coworking_Space_Booking_System
                 };
                 return Ok(new ResponseDTO<object>(200, "Đặt phòng thành công!", responseData));
 
+
+
                 //try
                 //{
 
@@ -693,7 +695,39 @@ namespace DXLAB_Coworking_Space_Booking_System
             //}
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> Cancel(int bookingId)
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+            }
+            var user = await _userService.Get(u => u.UserId == userId);
+            if (user == null || string.IsNullOrEmpty(user.WalletAddress))
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Người dùng không có địa chỉ ví blockchain!", null));
+            }
+            ResponseDTO<object> result = await _bookingService.Cancel(bookingId,userId);
+            return StatusCode(result.StatusCode, result);
+        }
 
+        [HttpGet("bookingcancelinfo")]
+        public async Task<IActionResult> GetCancelInfo(int bookingId)
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return Unauthorized(new ResponseDTO<object>(401, "Bạn chưa đăng nhập hoặc token không hợp lệ!", null));
+            }
+            var user = await _userService.Get(u => u.UserId == userId);
+            if (user == null || string.IsNullOrEmpty(user.WalletAddress))
+            {
+                return BadRequest(new ResponseDTO<object>(400, "Người dùng không có địa chỉ ví blockchain!", null));
+            }
+            ResponseDTO<object> result = await _bookingService.GetCancelInfo(bookingId, userId);
+            return StatusCode(result.StatusCode, result);
+        }
     }
 
 }
