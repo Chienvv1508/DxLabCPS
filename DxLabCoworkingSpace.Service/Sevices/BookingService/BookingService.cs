@@ -478,7 +478,7 @@ namespace DxLabCoworkingSpace
 
             foreach(var date in bookingTimes)
             {
-                if(date.BookingDate.Date.DayOfWeek == DayOfWeek.Saturday && date.BookingDate.Date.DayOfWeek == DayOfWeek.Sunday)
+                if(date.BookingDate.Date.DayOfWeek == DayOfWeek.Saturday || date.BookingDate.Date.DayOfWeek == DayOfWeek.Sunday)
                 {
                     return new Tuple<bool, string>(false, "Chỉ cho phép đặt từ thứ 2 đến thứ 6!");
                 }
@@ -740,7 +740,7 @@ namespace DxLabCoworkingSpace
 
             if(bookingDate.Date > DateTime.Now.Date.AddDays(14) || bookingDate.Date < DateTime.Now.Date)
                 return new Tuple<bool, string, IEnumerable<Slot>>(false, "Ngày đặt không được quá 14 ngày hoặc ngày trong quá khứ!",null);
-            if(bookingDate.Date.DayOfWeek == DayOfWeek.Saturday && bookingDate.Date.DayOfWeek == DayOfWeek.Sunday)
+            if(bookingDate.Date.DayOfWeek == DayOfWeek.Saturday || bookingDate.Date.DayOfWeek == DayOfWeek.Sunday)
             {
                 return new Tuple<bool, string, IEnumerable<Slot>>(false, "Chỉ được phép đặt từ thứ 2 đến thứ 6!", null);
             }
