@@ -119,6 +119,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return NotFound(new ResponseDTO<object>(404, "Không tìm thấy chi tiết booking!", null));
                 }
 
+                var areasList = await _areaService.GetAll();
+               
+
                 // Lấy tất cả AreaIds từ filteredDetails
                 var areaIds = filteredDetails
                     .Select(bd => bd.Position != null ? bd.Position.AreaId : (bd.Area != null ? bd.Area.AreaId : 0)) // Lấy AreaId từ Position hoặc Area
@@ -197,7 +200,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             CheckinTime = bd.CheckinTime,
                             CheckoutTime = bd.CheckoutTime,
                             Price = bd.Price,
-                            Status = bd.Status
+                            Status = bd.Status,
+                            AreaId = bd.AreaId,
+                            RoomId = areasList.FirstOrDefault(x => x.AreaId == bd.AreaId) != null? areasList.FirstOrDefault(x => x.AreaId == bd.AreaId).RoomId:0
                         };
                     }).ToList()
                 };

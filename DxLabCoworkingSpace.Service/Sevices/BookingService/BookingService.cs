@@ -763,29 +763,31 @@ namespace DxLabCoworkingSpace
             return new Tuple<bool, string, IEnumerable<Slot>>(true, "",slots);
         }
 
-        public async Task<ResponseDTO<object>> Cancel(int bookingId, int userId)
+        public async Task<ResponseDTO<object>> Cancel(int bookingDetailId, int userId)
         {
             try
             {
-                var booking = await _unitOfWork.BookingRepository.GetWithInclude(x => x.BookingId == bookingId && x.UserId == userId, x => x.BookingDetails);
-                if (booking == null)
+                var bookingDetaits = await _unitOfWork.BookingDetailRepository.GetWithInclude(x => x.BookingDetailId == bookingDetailId, x => x.Booking);
+                if (bookingDetaits == null)
                     return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
-                var firstBookingDetail = booking.BookingDetails != null ? booking.BookingDetails.OrderBy(x => x.CheckinTime).First() : null;
-                if(firstBookingDetail == null)
+                if(bookingDetaits.Booking.UserId != userId)
+                {
                     return new ResponseDTO<object>(400, "Không tìm thấy đơn đặt trong hệ thống!", null);
-                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 30)
+                }
+                
+                if ((bookingDetaits.CheckinTime - DateTime.Now).TotalMinutes < 30)
                 {
                     return new ResponseDTO<object>(400, "Bạn đã quá thời gian hủy đặt chỗ!", null);
                 }
-                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 30 && (firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes < 60)
+                if ((bookingDetaits.CheckinTime - DateTime.Now).TotalMinutes >= 30 && (bookingDetaits.CheckinTime - DateTime.Now).TotalMinutes < 60)
                 {
-                   await DecreasingBookingPrice(0.5, booking);
+                   await DecreasingBookingPrice(0.5, bookingDetaits);
                     return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
 
                 }
-                if ((firstBookingDetail.CheckinTime - DateTime.Now).TotalMinutes >= 60)
+                if ((bookingDetaits.CheckinTime - DateTime.Now).TotalMinutes >= 60)
                 {
-                  await  Delete(booking);
+                  await  Delete(bookingDetaits);
                     return new ResponseDTO<object>(200, "Hủy đơn đặt chỗ thành công!", null);
                 }
                 
@@ -799,31 +801,33 @@ namespace DxLabCoworkingSpace
             }
         }
 
-        private async Task DecreasingBookingPrice(double v, Booking booking)
+        private async Task DecreasingBookingPrice(double v, BookingDetail bookingDetaits)
         {
-            if (v >= 1 || v <= 0 || booking == null)
+            if (v >= 1 || v <= 0 || bookingDetaits == null)
                 throw new ArgumentNullException();
-            if (booking.BookingDetails == null)
+            if (bookingDetaits.Booking == null)
                 throw new ArgumentNullException();
-            booking.Price = booking.Price * (decimal)( 1 - v);
-            foreach(var bookingDetail in booking.BookingDetails)
-            {
-                _unitOfWork.BookingDetailRepository.Delete(bookingDetail);
-            }
+            bookingDetaits.Price = bookingDetaits.Price * (decimal)( 1 - v);
+            bookingDetaits.Booking.Price -= bookingDetaits.Price;
           await  _unitOfWork.CommitAsync();
         }
 
-        private async Task Delete(Booking booking)
+        private async Task Delete(BookingDetail bookingDetaits)
         {
-            if (booking == null)
+            if (bookingDetaits == null)
                 throw new ArgumentNullException();
-            if(booking.BookingDetails == null)
+            if(bookingDetaits.Booking == null)
                 throw new ArgumentNullException();
-            foreach (var bookingDetail in booking.BookingDetails)
+            _unitOfWork.BookingDetailRepository.Delete(bookingDetaits);
+            var bookingDetailsInBooking = await _unitOfWork.BookingDetailRepository.GetAll(x => x.BookingId == bookingDetaits.BookingId);
+            if(bookingDetailsInBooking.Count() == 1)
             {
-                _unitOfWork.BookingDetailRepository.Delete(bookingDetail);
+                _unitOfWork.BookingRepository.Delete(bookingDetaits.Booking);
             }
-            _unitOfWork.BookingRepository.Delete(booking);
+            else
+            {
+                bookingDetaits.Booking.Price -= bookingDetaits.Price;
+            }
             await _unitOfWork.CommitAsync();
         }
 

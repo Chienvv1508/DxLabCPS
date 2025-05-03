@@ -696,7 +696,7 @@ namespace DXLAB_Coworking_Space_Booking_System
         }
 
         [HttpDelete]
-        public async Task<IActionResult> Cancel(int bookingId)
+        public async Task<IActionResult> Cancel(int bookingDetaitId)
         {
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
@@ -708,7 +708,7 @@ namespace DXLAB_Coworking_Space_Booking_System
             {
                 return BadRequest(new ResponseDTO<object>(400, "Người dùng không có địa chỉ ví blockchain!", null));
             }
-            ResponseDTO<object> result = await _bookingService.Cancel(bookingId,userId);
+            ResponseDTO<object> result = await _bookingService.Cancel(bookingDetaitId, userId);
             return StatusCode(result.StatusCode, result);
         }
 
