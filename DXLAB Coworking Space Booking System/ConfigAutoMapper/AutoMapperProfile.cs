@@ -178,6 +178,9 @@ namespace DXLAB_Coworking_Space_Booking_System
                 .ForMember(dest => dest.AreaName, opt => opt.MapFrom(src => src.BookingDetail != null && src.BookingDetail.Area != null ? src.BookingDetail.Area.AreaName : "N/A"))
                 .ForMember(dest => dest.AreaTypeName, opt => opt.MapFrom(src => src.BookingDetail != null && src.BookingDetail.Area != null && src.BookingDetail.Area.AreaType != null ? src.BookingDetail.Area.AreaType.AreaTypeName : "N/A"))
                 .ForMember(dest => dest.RoomName, opt => opt.MapFrom(src => src.BookingDetail != null && src.BookingDetail.Area != null && src.BookingDetail.Area.Room != null ? src.BookingDetail.Area.Room.RoomName : "N/A"));
+
+
+            CreateMap<Notification, NotificationDTOForAdd>().ReverseMap();
         }
     }
 }

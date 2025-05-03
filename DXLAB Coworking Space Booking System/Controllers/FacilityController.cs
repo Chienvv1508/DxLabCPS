@@ -59,6 +59,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         {
                             string expiredTimeText = worksheet.Cells[row, 6].Text?.Trim() ?? "";
                             string importDateText = worksheet.Cells[row, 8].Text?.Trim() ?? "";
+                            string text = worksheet.Cells[row, 9].Text?.Trim() ?? "";
                             var isValidId = int.TryParse(worksheet.Cells[row, 9].Text?.Trim() ?? "0", out int faciId);
                             if(isValidId != true || faciId == 0)
                             {

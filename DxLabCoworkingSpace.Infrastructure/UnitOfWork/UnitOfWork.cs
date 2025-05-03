@@ -32,6 +32,8 @@ namespace DxLabCoworkingSpace
         private IGenericRepository<AreaTypeCategory> _areaTypeCategoryRepository { get; }
         private IGenericRepository<DepreciationSum> _depreciationSumRepository { get; }
         private IGenericRepository<UltilizationRate> _ultilizationRateRepository { get; }
+
+        private IGenericRepository<Notification> _notificationRepository { get; }
         public UnitOfWork(DxLabSystemContext dbContext) 
         {
             _dbContext = dbContext;
@@ -56,6 +58,7 @@ namespace DxLabCoworkingSpace
         public IGenericRepository<Image> ImageRepository => _imageRepository ?? new GenericRepository<Image>(_dbContext);
         public IGenericRepository<DepreciationSum> DepreciationSumRepository => _depreciationSumRepository ?? new GenericRepository<DepreciationSum>(_dbContext);
         public IGenericRepository<UltilizationRate> UltilizationRateRepository => _ultilizationRateRepository ?? new GenericRepository<UltilizationRate>(_dbContext);
+        public IGenericRepository<Notification> NotificationRepository => _notificationRepository ?? new GenericRepository<Notification>(_dbContext);
         public DbContext Context => _dbContext;
 
         public async Task CommitAsync()
