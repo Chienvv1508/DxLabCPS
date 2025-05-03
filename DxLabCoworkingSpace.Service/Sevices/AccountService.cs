@@ -316,7 +316,6 @@ namespace DxLabCoworkingSpace
             var bookings = await _unitOfWork.Context.Set<Booking>()
                 .Where(b => b.UserId == id)
                 .Include(b => b.BookingDetails) // Bao gồm BookingDetails
-                .Include(b => b.Notifications) // Bao gồm Notifications
                 .ToListAsync();
 
             foreach (var booking in bookings)
@@ -338,12 +337,6 @@ namespace DxLabCoworkingSpace
 
                     // Xóa các bản ghi BookingDetails
                     _unitOfWork.Context.Set<BookingDetail>().RemoveRange(booking.BookingDetails);
-                }
-
-                // Xóa các bản ghi Notifications liên quan đến Booking
-                if (booking.Notifications != null && booking.Notifications.Any())
-                {
-                    _unitOfWork.Context.Set<Notification>().RemoveRange(booking.Notifications);
                 }
             }
 

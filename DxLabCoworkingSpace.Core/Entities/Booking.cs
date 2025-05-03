@@ -8,7 +8,6 @@ namespace DxLabCoworkingSpace
         public Booking()
         {
             BookingDetails = new HashSet<BookingDetail>();
-            Notifications = new HashSet<Notification>();
         }
 
         public int BookingId { get; set; }
@@ -17,6 +16,5 @@ namespace DxLabCoworkingSpace
         public decimal Price { get; set; }
         public virtual User? User { get; set; }
         public virtual ICollection<BookingDetail> BookingDetails { get; set; }
-        public virtual ICollection<Notification> Notifications { get; set; }
     }
 }
