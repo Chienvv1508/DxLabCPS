@@ -78,7 +78,7 @@ namespace DxLabCoworkingSpace
             RecurringJob.AddOrUpdate(
                 "booking-log-job",
                 () => RunBookingLogJobAsync(),
-                "*/15 * * * * *",
+                "*/10 * * * *",
                 TimeZoneInfo.Local
             );
 
