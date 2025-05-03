@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,12 +25,14 @@ namespace DxLabCoworkingSpace
         private readonly IConfiguration _configuration;
         private readonly IServiceProvider _serviceProvider;
         private readonly string _privateKey;
-        private readonly string _contractAddress;
+        private readonly string _dxlabCoinContractAddress;
+        private readonly string _bookingContractAddress;
         private readonly string _sepoliaRpcUrl;
         private readonly string _labBookingContractAbi;
         private readonly string _fptContractAbi;
         private Web3 _web3;
-        private Contract _contract;
+        private Contract _dxlabCoinContract;
+        private Contract _bookingContract;
 
         public LabBookingJobService(
             ILabBookingCrawlerService crawler,
@@ -45,8 +46,10 @@ namespace DxLabCoworkingSpace
             _serviceProvider = serviceProvider;
             _privateKey = _configuration.GetSection("PrivateKeyBlockchain")["PRIVATE_KEY"]
                 ?? throw new ArgumentNullException("PrivateKeyBlockchain:PRIVATE_KEY not configured");
-            _contractAddress = _configuration.GetSection("ContractAddresses:Sepolia")["DXLABCoin"]
+            _dxlabCoinContractAddress = _configuration.GetSection("ContractAddresses:Sepolia")["DXLABCoin"]
                 ?? throw new ArgumentNullException("ContractAddresses:Sepolia:DXLABCoin not configured");
+            _bookingContractAddress = _configuration.GetSection("ContractAddresses:Sepolia")["Booking"]
+                ?? throw new ArgumentNullException("ContractAddresses:Sepolia:Booking not configured");
             _sepoliaRpcUrl = _configuration.GetSection("Network")["ProviderCrawl"]
                 ?? "https://sepolia.infura.io/v3/ce5f177778e547a19055596b216fd743";
 
@@ -67,10 +70,11 @@ namespace DxLabCoworkingSpace
             _fptContractAbi = fptDoc.RootElement.GetProperty("abi").GetRawText();
 
             var account = new Nethereum.Web3.Accounts.Account(_privateKey, 11155111);
-            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(300) }; // Tăng timeout lên 300s
+            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(300) };
             var client = new RpcClient(new Uri(_sepoliaRpcUrl), httpClient);
             _web3 = new Web3(account, client);
-            _contract = _web3.Eth.GetContract(_fptContractAbi, _contractAddress);
+            _dxlabCoinContract = _web3.Eth.GetContract(_fptContractAbi, _dxlabCoinContractAddress);
+            _bookingContract = _web3.Eth.GetContract(_labBookingContractAbi, _bookingContractAddress);
         }
 
         public void ScheduleJob()
@@ -126,7 +130,7 @@ namespace DxLabCoworkingSpace
                             {
                                 Console.WriteLine($"Skip batch {batchFrom}-{batchTo} after {maxRetry} tries.");
                             }
-                            await Task.Delay(5000 * retry); // Tăng thời gian chờ lên 5000ms
+                            await Task.Delay(5000 * retry);
                         }
                         catch (Exception ex)
                         {
@@ -224,11 +228,11 @@ namespace DxLabCoworkingSpace
             }
         }
 
-        private async Task<string> GetContractOwnerAsync()
+        private async Task<string> GetContractOwnerAsync(Contract contract)
         {
             try
             {
-                var ownerFunction = _contract.GetFunction("owner");
+                var ownerFunction = contract.GetFunction("owner");
                 var ownerAddress = await ownerFunction.CallAsync<string>();
                 Console.WriteLine($"Contract owner retrieved: {ownerAddress}");
                 return ownerAddress?.ToLower();
@@ -244,7 +248,7 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-                var totalSupplyFunction = _contract.GetFunction("totalSupply");
+                var totalSupplyFunction = _dxlabCoinContract.GetFunction("totalSupply");
                 var totalSupply = await totalSupplyFunction.CallAsync<BigInteger>();
                 Console.WriteLine($"Total supply: {totalSupply}");
                 return totalSupply;
@@ -260,7 +264,7 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-                var balanceOfFunction = _contract.GetFunction("balanceOf");
+                var balanceOfFunction = _dxlabCoinContract.GetFunction("balanceOf");
                 var balance = await balanceOfFunction.CallAsync<BigInteger>(walletAddress);
                 Console.WriteLine($"Balance of {walletAddress}: {balance}");
                 return balance;
@@ -280,9 +284,9 @@ namespace DxLabCoworkingSpace
                 return false;
             }
 
-            const int maxRetries = 10; // Tăng số lần thử lại lên 10
+            const int maxRetries = 10;
             var amountToMint = Nethereum.Util.UnitConversion.Convert.ToWei(100m); // 100 token
-            var mintFunction = _contract.GetFunction("mintForUser");
+            var mintFunction = _dxlabCoinContract.GetFunction("mintForUser");
 
             // Kiểm tra chain ID
             var chainId = new HexBigInteger(0);
@@ -362,7 +366,7 @@ namespace DxLabCoworkingSpace
             }
 
             // Kiểm tra owner của hợp đồng
-            var contractOwner = await GetContractOwnerAsync();
+            var contractOwner = await GetContractOwnerAsync(_dxlabCoinContract);
             if (string.IsNullOrEmpty(contractOwner))
             {
                 Console.WriteLine("Unable to retrieve contract owner. Aborting minting.");
@@ -458,23 +462,23 @@ namespace DxLabCoworkingSpace
                     var gasEstimate = await mintFunction.EstimateGasAsync(
                         _web3.TransactionManager.Account.Address,
                         null,
-                        new HexBigInteger(0), // Không gửi ETH
+                        new HexBigInteger(0),
                         walletAddress,
                         amountToMint);
 
-                    var gasLimit = new HexBigInteger(gasEstimate.Value * 120 / 100); // Tăng 20% để tránh lỗi out-of-gas
+                    var gasLimit = new HexBigInteger(gasEstimate.Value * 120 / 100);
                     var gasPrice = await _web3.Eth.GasPrice.SendRequestAsync();
-                    var adjustedGasPrice = new HexBigInteger(gasPrice.Value * 120 / 100); // Tăng 20% để ưu tiên giao dịch
+                    var adjustedGasPrice = new HexBigInteger(gasPrice.Value * 120 / 100);
                     Console.WriteLine($"Using gas price: {adjustedGasPrice.Value} Wei, Gas limit: {gasLimit.Value}");
 
                     // Tạo TransactionInput
                     var txInput = new TransactionInput(
                         mintFunction.GetData(walletAddress, amountToMint),
-                        _contractAddress,
+                        _dxlabCoinContractAddress,
                         _web3.TransactionManager.Account.Address,
                         gasLimit,
                         adjustedGasPrice,
-                        new HexBigInteger(0) // Đặt value = 0 để không gửi ETH
+                        new HexBigInteger(0)
                     )
                     {
                         Nonce = nonce
@@ -484,7 +488,7 @@ namespace DxLabCoworkingSpace
                     var signedTx = await _web3.TransactionManager.SignTransactionAsync(txInput);
                     Console.WriteLine($"Transaction signed locally: {signedTx}");
 
-                    // Gửi giao dịch đã ký bằng eth_sendRawTransaction
+                    // Gửi giao dịch đã ký
                     txHash = await _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + signedTx);
 
                     Console.WriteLine($"Transaction sent: Sender (owner) {_web3.TransactionManager.Account.Address} minting for user {walletAddress}. TxHash: {txHash}");
@@ -503,7 +507,7 @@ namespace DxLabCoworkingSpace
                         {
                             var callInput = new TransactionInput(
                                 mintFunction.GetData(walletAddress, amountToMint),
-                                _contractAddress,
+                                _dxlabCoinContractAddress,
                                 _web3.TransactionManager.Account.Address,
                                 gasLimit,
                                 adjustedGasPrice,
@@ -565,6 +569,287 @@ namespace DxLabCoworkingSpace
             }
 
             return minted;
+        }
+
+        public async Task<bool> RegisterUserOnBlockchain(string walletAddress, string email)
+        {
+            if (!AddressUtil.Current.IsValidEthereumAddressHexFormat(walletAddress))
+            {
+                Console.WriteLine($"Invalid wallet address: {walletAddress}");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(email))
+            {
+                Console.WriteLine($"Email cannot be empty for user registration: {walletAddress}");
+                return false;
+            }
+
+            const int maxRetries = 10;
+            var registerFunction = _bookingContract.GetFunction("registerUser");
+
+            // Kiểm tra chain ID
+            var chainId = new HexBigInteger(0);
+            for (int retry = 1; retry <= maxRetries; retry++)
+            {
+                try
+                {
+                    chainId = await _web3.Eth.ChainId.SendRequestAsync();
+                    Console.WriteLine($"Current chain ID: {chainId}");
+                    break;
+                }
+                catch (RpcResponseException rpcEx)
+                {
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_chainId: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_chainId. Aborting registration.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error (retry {retry}/{maxRetries}) for eth_chainId: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_chainId. Aborting registration.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
+                }
+            }
+
+            if (chainId.Value != 11155111)
+            {
+                Console.WriteLine($"Chain ID mismatch! Expected 11155111 (Sepolia), but got {chainId.Value}. Aborting registration.");
+                return false;
+            }
+
+            // Kiểm tra số dư ETH của ví owner
+            decimal ethBalance = 0;
+            for (int retry = 1; retry <= maxRetries; retry++)
+            {
+                try
+                {
+                    var balance = await _web3.Eth.GetBalance.SendRequestAsync(_web3.TransactionManager.Account.Address);
+                    ethBalance = Nethereum.Util.UnitConversion.Convert.FromWei(balance.Value);
+                    Console.WriteLine($"ETH Balance of sender (owner) {_web3.TransactionManager.Account.Address}: {ethBalance} ETH");
+                    break;
+                }
+                catch (RpcResponseException rpcEx)
+                {
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getBalance: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_getBalance. Aborting registration.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error (retry {retry}/{maxRetries}) for eth_getBalance: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_getBalance. Aborting registration.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
+                }
+            }
+
+            if (ethBalance < 0.01m)
+            {
+                Console.WriteLine("Insufficient ETH balance for transactions! At least 0.01 ETH is required.");
+                return false;
+            }
+
+            // Kiểm tra owner của hợp đồng Booking
+            var contractOwner = await GetContractOwnerAsync(_bookingContract);
+            if (string.IsNullOrEmpty(contractOwner))
+            {
+                Console.WriteLine("Unable to retrieve contract owner. Aborting registration.");
+                return false;
+            }
+
+            var callerAddress = _web3.TransactionManager.Account.Address.ToLower();
+            if (contractOwner != callerAddress)
+            {
+                Console.WriteLine($"Caller {callerAddress} is not the contract owner ({contractOwner}). Aborting registration.");
+                return false;
+            }
+            else
+            {
+                Console.WriteLine($"Caller {callerAddress} is the contract owner. Proceeding to register user {walletAddress}.");
+            }
+
+            // Lấy nonce
+            HexBigInteger nonce = null;
+            for (int retry = 1; retry <= maxRetries; retry++)
+            {
+                try
+                {
+                    nonce = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
+                        _web3.TransactionManager.Account.Address,
+                        BlockParameter.CreatePending()
+                    );
+                    Console.WriteLine($"Current nonce for sender (owner) {_web3.TransactionManager.Account.Address}: {nonce.Value}");
+                    break;
+                }
+                catch (RpcResponseException rpcEx)
+                {
+                    Console.WriteLine($"RPC Error (retry {retry}/{maxRetries}) for eth_getTransactionCount: {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_getTransactionCount. Aborting registration.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error (retry {retry}/{maxRetries}) for eth_getTransactionCount: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached for eth_getTransactionCount. Aborting registration.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
+                }
+            }
+
+            if (nonce == null)
+            {
+                Console.WriteLine("Failed to retrieve nonce. Aborting registration.");
+                return false;
+            }
+
+            // Hủy các giao dịch đang chờ nếu có
+            await CancelPendingTransactionsIfAny();
+
+            // Thực hiện register
+            bool registered = false;
+            string txHash = null;
+            for (int retry = 1; retry <= maxRetries && !registered; retry++)
+            {
+                try
+                {
+                    Console.WriteLine($"Processing registration for user {walletAddress} with email {email} (attempt {retry}/{maxRetries}) using sender (owner) {_web3.TransactionManager.Account.Address}...");
+
+                    // Ước lượng gas
+                    var gasEstimate = await registerFunction.EstimateGasAsync(
+                        _web3.TransactionManager.Account.Address,
+                        null,
+                        new HexBigInteger(0),
+                        walletAddress,
+                        email,
+                        false // isStaff = false cho Student
+                    );
+
+                    var gasLimit = new HexBigInteger(gasEstimate.Value * 120 / 100);
+                    var gasPrice = await _web3.Eth.GasPrice.SendRequestAsync();
+                    var adjustedGasPrice = new HexBigInteger(gasPrice.Value * 120 / 100);
+                    Console.WriteLine($"Using gas price: {adjustedGasPrice.Value} Wei, Gas limit: {gasLimit.Value}");
+
+                    // Tạo TransactionInput
+                    var txInput = new TransactionInput(
+                        registerFunction.GetData(walletAddress, email, false),
+                        _bookingContractAddress,
+                        _web3.TransactionManager.Account.Address,
+                        gasLimit,
+                        adjustedGasPrice,
+                        new HexBigInteger(0)
+                    )
+                    {
+                        Nonce = nonce
+                    };
+
+                    // Ký giao dịch cục bộ
+                    var signedTx = await _web3.TransactionManager.SignTransactionAsync(txInput);
+                    Console.WriteLine($"Transaction signed locally: {signedTx}");
+
+                    // Gửi giao dịch đã ký
+                    txHash = await _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + signedTx);
+
+                    Console.WriteLine($"Transaction sent: Sender (owner) {_web3.TransactionManager.Account.Address} registering user {walletAddress}. TxHash: {txHash}");
+
+                    // Chờ receipt
+                    var receipt = await WaitForReceipt(_web3, txHash);
+                    if (receipt?.Status.Value == 1)
+                    {
+                        Console.WriteLine($"Registered successfully: Sender (owner) {_web3.TransactionManager.Account.Address} registered user {walletAddress}");
+                        registered = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Registration failed for user {walletAddress}: {(receipt == null ? "No receipt" : $"Status = {receipt.Status.Value}")}");
+                        try
+                        {
+                            var callInput = new TransactionInput(
+                                registerFunction.GetData(walletAddress, email, false),
+                                _bookingContractAddress,
+                                _web3.TransactionManager.Account.Address,
+                                gasLimit,
+                                adjustedGasPrice,
+                                new HexBigInteger(0)
+                            );
+
+                            var error = await _web3.Eth.Transactions.Call.SendRequestAsync(callInput, BlockParameter.CreateLatest());
+                            if (string.IsNullOrEmpty(error) || error == "0x")
+                            {
+                                Console.WriteLine("Revert reason not available or empty. Check the contract logic on Remix for more details.");
+                            }
+                            else
+                            {
+                                var revertMessage = new FunctionCallDecoder().DecodeFunctionErrorMessage(error);
+                                Console.WriteLine($"Revert reason: {revertMessage}");
+                            }
+                        }
+                        catch (RpcResponseException rpcEx)
+                        {
+                            Console.WriteLine($"Failed to retrieve revert reason: execution reverted - {rpcEx.Message}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to retrieve revert reason: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                        }
+                        return false;
+                    }
+                }
+                catch (SmartContractRevertException revertEx)
+                {
+                    Console.WriteLine($"SmartContractRevertException for user {walletAddress}: {revertEx.RevertMessage}");
+                    return false;
+                }
+                catch (RpcResponseException rpcEx)
+                {
+                    Console.WriteLine($"RPC Error for user {walletAddress} (retry {retry}/{maxRetries}): {rpcEx.Message} (Code: {rpcEx.RpcError?.Code}, Data: {rpcEx.RpcError?.Data}, URL: {_sepoliaRpcUrl})");
+                    if (rpcEx.Message.Contains("replacement transaction underpriced"))
+                    {
+                        nonce = new HexBigInteger(nonce.Value + 1);
+                        Console.WriteLine($"Incrementing nonce to {nonce.Value} due to underpriced replacement transaction.");
+                    }
+                    else if (retry == maxRetries)
+                    {
+                        Console.WriteLine($"Max retries reached for user {walletAddress}. Skipping.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error for user {walletAddress} (retry {retry}/{maxRetries}): {ex.Message}\nStackTrace: {ex.StackTrace}");
+                    if (retry == maxRetries)
+                    {
+                        Console.WriteLine($"Max retries reached for user {walletAddress}. Skipping.");
+                        return false;
+                    }
+                    await Task.Delay(5000 * retry);
+                }
+            }
+
+            return registered;
         }
 
         private async Task<TransactionReceipt> WaitForReceipt(Web3 web3, string transactionHash)

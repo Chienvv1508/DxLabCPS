@@ -6,18 +6,28 @@ using Nethereum.Contracts;
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
+using System.Net.Http;
 
 namespace DxLabCoworkingSpace
 {
     public class LabBookingCrawlerService : ILabBookingCrawlerService
     {
         private readonly Web3 _web3;
-        private readonly Contract _contract;    
+        private readonly Contract _contract;
         private readonly IUnitOfWork _unitOfWork;
         private readonly string _contractAddress;
         private readonly IAreaService _areaService;
         private readonly IAreaTypeService _areaTypeService;
-        public LabBookingCrawlerService(string providerCrawl, string contractAddress, string contractAbi, IUnitOfWork unitOfWork, IAreaService areaService, IAreaTypeService areaTypeService)
+        private readonly ISlotService _slotService;
+
+        public LabBookingCrawlerService(
+            string providerCrawl,
+            string contractAddress,
+            string contractAbi,
+            IUnitOfWork unitOfWork,
+            IAreaService areaService,
+            IAreaTypeService areaTypeService,
+            ISlotService slotService)
         {
             var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             var client = new Nethereum.JsonRpc.Client.RpcClient(new Uri(providerCrawl), httpClient);
@@ -27,14 +37,16 @@ namespace DxLabCoworkingSpace
             _unitOfWork = unitOfWork;
             _areaService = areaService;
             _areaTypeService = areaTypeService;
+            _slotService = slotService;
         }
 
         private async Task SaveBookingEventAsync(
             string bookingId = null,
             int blockNumber = 0,
             string transactionHash = null,
-            string roomId = null,
-            byte slot = 0,
+            BigInteger? roomId = null,
+            BigInteger? areaTypeId = null,
+            BigInteger? slotId = null,
             string userAddress = null,
             long timestamp = 0,
             string eventType = null,
@@ -44,24 +56,32 @@ namespace DxLabCoworkingSpace
         {
             if (eventType.StartsWith("User"))
             {
-                // Xử lý sự kiện liên quan đến user
-                var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress == userAddress);
+                var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress.ToLower() == userAddress.ToLower());
                 if (user == null && userAddress != null)
                 {
+                    // Tạo người dùng mới
                     user = new User
                     {
-                        Email = email ?? $"{userAddress}@default.com",
+                        Email = string.IsNullOrEmpty(email) ? $"{userAddress}@default.com" : email,
                         FullName = "Unknown",
                         WalletAddress = userAddress,
-                        Status = eventType == "UserBlocked" ? false : true
+                        RoleId = isStaff.HasValue && isStaff.Value ? 2 : 3, // 2 cho Staff, 3 cho Student
+                        Status = eventType == "UserBlocked" ? false : true,
+                        IsRegister = eventType == "UserRegistered" // Đặt IsRegistered = true cho UserRegistered
                     };
                     await _unitOfWork.UserRepository.Add(user);
                 }
                 else if (user != null)
                 {
-                    if (eventType == "UserRegistered" && email != null)
+                    // Cập nhật người dùng hiện có
+                    if (eventType == "UserRegistered")
                     {
-                        user.Email = email;
+                        if (!string.IsNullOrEmpty(email))
+                        {
+                            user.Email = email;
+                        }
+                        user.IsRegister = true; // Cập nhật IsRegistered = true
+                        user.RoleId = isStaff.HasValue && isStaff.Value ? 2 : 3; // Cập nhật RoleId
                         user.Status = true;
                     }
                     else if (eventType == "UserBlocked")
@@ -77,46 +97,11 @@ namespace DxLabCoworkingSpace
                 await _unitOfWork.CommitAsync();
                 Console.WriteLine($"Processed {eventType} for user {userAddress}, txHash: {transactionHash}");
             }
-            else
+            else if (eventType == "Created")
             {
-                // Chuyển bookingId (bytes32) từ blockchain thành BookingId (int)
-                int parsedBookingId;
-                try
-                {
-                    var bigIntBookingId = BigInteger.Parse("0" + bookingId.Replace("0x", ""), System.Globalization.NumberStyles.HexNumber);
-                    parsedBookingId = (int)bigIntBookingId;
-                    if (parsedBookingId <= 0)
-                    {
-                        throw new ArgumentException("BookingId must be a positive integer.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error converting bookingId {bookingId} to int: {ex.Message}");
-                    return;
-                }
+                Console.WriteLine($"Processing BookingCreated event with transactionHash: {transactionHash}, bookingId: {bookingId}");
 
-                // Kiểm tra xem booking đã tồn tại trong database chưa
-                var existingBooking = await _unitOfWork.BookingRepository.Get(b => b.BookingId == parsedBookingId);
-                if (existingBooking != null)
-                {
-                    var existingDetail = await _unitOfWork.BookingDetailRepository.GetWithInclude(
-                        bd => bd.BookingId == existingBooking.BookingId &&
-                              bd.SlotId == slot &&
-                              bd.Status == (eventType == "Created" ? 1 : eventType == "Cancelled" ? 0 : 2),
-                        bd => bd.Booking
-                    );
-
-                    if (existingDetail != null)
-                    {
-                        Console.WriteLine($"Booking event with transactionHash: {transactionHash} and bookingId: {bookingId} already exists.");
-                        return;
-                    }
-                }
-
-                Console.WriteLine($"Processing booking event with transactionHash: {transactionHash}, bookingId: {bookingId}");
-
-                var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress == userAddress);
+                var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress.ToLower() == userAddress.ToLower());
                 if (user == null && userAddress != null)
                 {
                     user = new User
@@ -124,84 +109,72 @@ namespace DxLabCoworkingSpace
                         Email = $"{userAddress}@default.com",
                         FullName = "Unknown",
                         WalletAddress = userAddress,
-                        Status = true
+                        RoleId = 3, // Mặc định là Student
+                        Status = true,
+                        IsRegister = false // Người dùng mới từ BookingCreated chưa chắc đã đăng ký
                     };
                     await _unitOfWork.UserRepository.Add(user);
                     await _unitOfWork.CommitAsync();
                 }
 
-                Booking booking;
-                if (existingBooking == null)
+                var slot = await _slotService.Get(s => s.SlotNumber == (int)slotId.Value);
+                if (slot == null)
                 {
-                    // Booking chưa tồn tại, tạo mới
-                    booking = new Booking
-                    {
-                        BookingId = parsedBookingId, // Gán BookingId từ blockchain
-                        UserId = user?.UserId,
-                        BookingCreatedDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime,
-                        Price = 0m // Sẽ được tính sau khi có BookingDetail
-                    };
-                    await _unitOfWork.BookingRepository.Add(booking);
-                    await _unitOfWork.CommitAsync();
-                }
-                else
-                {
-                    booking = existingBooking;
+                    Console.WriteLine($"Slot with SlotNumber {slotId} not found in database. Skipping.");
+                    return;
                 }
 
-                // Lấy giá từ AreaType thông qua Area
-                decimal areaTypePrice = 0m;
-                int? areaId = null;
-                if (!string.IsNullOrEmpty(roomId))
+                var area = await _areaService.GetWithInclude(
+                    a => a.RoomId == (int)roomId.Value && a.AreaTypeId == (int)areaTypeId.Value && a.Status == 1,
+                    a => a.AreaType);
+                if (area == null)
                 {
-                    var area = await _areaService.GetWithInclude(
-                        a => a.RoomId.ToString() == roomId && a.Status == 1,
-                        a => a.AreaType);
-                    if (area != null)
-                    {
-                        areaId = area.AreaId;
-                        var areaType = await _areaTypeService.Get(at => at.AreaTypeId == area.AreaTypeId);
-                        if (areaType != null)
-                        {
-                            areaTypePrice = areaType.Price;
-                        }
-                        else
-                        {
-                            Console.WriteLine($"No AreaType found for AreaId: {area.AreaId}. Using price 0.");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"No Area found for RoomId: {roomId}. Using price 0.");
-                    }
+                    Console.WriteLine($"Area with RoomId {roomId} and AreaTypeId {areaTypeId} not found. Skipping.");
+                    return;
                 }
 
-                var bookingDetail = new BookingDetail
+                if (user == null)
                 {
-                    Status = eventType switch
-                    {
-                        "Created" => 1,
-                        "Cancelled" => 0,
-                        "CheckedIn" => 2,
-                        _ => 1
-                    },
-                    CheckinTime = eventType == "CheckedIn" ? DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime : DateTime.MinValue,
-                    CheckoutTime = DateTime.MinValue,
-                    BookingId = booking.BookingId,
-                    SlotId = slot,
-                    AreaId = areaId,
-                    PositionId = null,
-                    Price = areaTypePrice
-                };
+                    Console.WriteLine($"User with WalletAddress {userAddress} not found. Skipping.");
+                    return;
+                }
 
-                await _unitOfWork.BookingDetailRepository.Add(bookingDetail);
+                var bookingDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime;
+                var existingBookingDetail = await _unitOfWork.BookingDetailRepository.GetWithInclude(
+                    bd => bd.SlotId == slot.SlotId &&
+                          bd.Booking.BookingCreatedDate.Date == bookingDate.Date &&
+                          bd.AreaId == area.AreaId &&
+                          bd.Booking.UserId == user.UserId,
+                    bd => bd.Booking);
+
+                if (existingBookingDetail == null)
+                {
+                    Console.WriteLine($"No matching booking detail found for RoomId {roomId}, AreaTypeId {areaTypeId}, SlotId {slot.SlotId}, Time {timestamp}. Skipping.");
+                    return;
+                }
+
+                existingBookingDetail.BookingGenerate = bookingId;
+                existingBookingDetail.TransactionHash = transactionHash;
+                _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
                 await _unitOfWork.CommitAsync();
 
-                // Cập nhật tổng giá trong Booking
-                var allDetails = await _unitOfWork.BookingDetailRepository.GetAll(bd => bd.BookingId == booking.BookingId);
-                booking.Price = allDetails.Sum(d => d.Price);
-                    _unitOfWork.BookingRepository.Update(booking);
+                Console.WriteLine($"Updated BookingDetail {existingBookingDetail.BookingDetailId} with BookingGenerate: {bookingId}, TransactionHash: {transactionHash}");
+            }
+            else if (eventType == "Cancelled")
+            {
+                var parsedBookingId = bookingId;
+                var existingBookingDetail = await _unitOfWork.BookingDetailRepository.Get(bd => bd.BookingGenerate == parsedBookingId);
+                if (existingBookingDetail == null)
+                {
+                    Console.WriteLine($"BookingDetail with BookingGenerate {parsedBookingId} not found for cancellation. Skipping.");
+                    return;
+                }
+
+                existingBookingDetail.Status = 0; // Hủy
+                _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
                 await _unitOfWork.CommitAsync();
+
+                Console.WriteLine($"Processed BookingCancelled for BookingGenerate {parsedBookingId}, txHash: {transactionHash}");
             }
         }
 
@@ -209,10 +182,8 @@ namespace DxLabCoworkingSpace
         {
             try
             {
-                // BookingCreated
                 var bookingCreatedEvent = _contract.GetEvent("BookingCreated");
                 var bookingCreatedFilter = bookingCreatedEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var bookingCreatedLogs = await bookingCreatedEvent.GetAllChangesAsync<BookingCreatedEventDTO>(bookingCreatedFilter);
                 var bookingCreatedLogs = await RetryGetAllChangesAsync<BookingCreatedEventDTO>(bookingCreatedEvent, bookingCreatedFilter);
                 await Task.Delay(200);
 
@@ -227,7 +198,8 @@ namespace DxLabCoworkingSpace
                             (int)log.Log.BlockNumber.Value,
                             log.Log.TransactionHash,
                             log.Event.RoomId,
-                            log.Event.Slot,
+                            log.Event.AreaTypeId,
+                            log.Event.SlotId,
                             log.Event.User,
                             (long)block.Timestamp.Value,
                             "Created"
@@ -239,10 +211,8 @@ namespace DxLabCoworkingSpace
                     }
                 }
 
-                // BookingCancelled
                 var bookingCancelledEvent = _contract.GetEvent("BookingCancelled");
                 var bookingCancelledFilter = bookingCancelledEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var bookingCancelledLogs = await bookingCancelledEvent.GetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledFilter);
                 var bookingCancelledLogs = await RetryGetAllChangesAsync<BookingCancelledEventDTO>(bookingCancelledEvent, bookingCancelledFilter);
                 await Task.Delay(200);
 
@@ -258,7 +228,8 @@ namespace DxLabCoworkingSpace
                             (int)log.Log.BlockNumber.Value,
                             log.Log.TransactionHash,
                             null,
-                            0,
+                            null,
+                            null,
                             null,
                             (long)block.Timestamp.Value,
                             "Cancelled",
@@ -271,10 +242,8 @@ namespace DxLabCoworkingSpace
                     }
                 }
 
-                // UserRegistered
                 var userRegisteredEvent = _contract.GetEvent("UserRegistered");
                 var userRegisteredFilter = userRegisteredEvent.CreateFilterInput(new BlockParameter(new HexBigInteger(fromBlock)), new BlockParameter(new HexBigInteger(toBlock)));
-                //var userRegisteredLogs = await userRegisteredEvent.GetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredFilter);
                 var userRegisteredLogs = await RetryGetAllChangesAsync<UserRegisteredEventDTO>(userRegisteredEvent, userRegisteredFilter);
                 await Task.Delay(200);
 
@@ -289,7 +258,8 @@ namespace DxLabCoworkingSpace
                             (int)log.Log.BlockNumber.Value,
                             log.Log.TransactionHash,
                             null,
-                            0,
+                            null,
+                            null,
                             log.Event.User,
                             (long)block.Timestamp.Value,
                             "UserRegistered",
@@ -387,7 +357,6 @@ namespace DxLabCoworkingSpace
                 }
             }
         }
-
     }
 
     [Event("BookingCreated")]
@@ -396,16 +365,19 @@ namespace DxLabCoworkingSpace
         [Parameter("bytes32", "bookingId", 1, true)]
         public string BookingId { get; set; }
 
-        [Parameter("string", "roomId", 2, false)]
-        public string RoomId { get; set; }
+        [Parameter("uint256", "roomId", 2, false)]
+        public BigInteger RoomId { get; set; }
 
-        [Parameter("uint8", "slot", 3, false)]
-        public byte Slot { get; set; }
+        [Parameter("uint256", "areaTypeId", 3, false)]
+        public BigInteger AreaTypeId { get; set; }
 
-        [Parameter("address", "user", 4, false)]
+        [Parameter("uint8", "slot", 4, false)]
+        public BigInteger SlotId { get; set; }
+
+        [Parameter("address", "user", 5, true)]
         public string User { get; set; }
 
-        [Parameter("uint256", "time", 5, false)]
+        [Parameter("uint256", "time", 6, false)]
         public BigInteger Time { get; set; }
     }
 
@@ -415,7 +387,10 @@ namespace DxLabCoworkingSpace
         [Parameter("bytes32", "bookingId", 1, true)]
         public string BookingId { get; set; }
 
-        [Parameter("uint256", "refundAmount", 2, false)]
+        [Parameter("uint256", "roomId", 2, false)]
+        public BigInteger RoomId { get; set; }
+
+        [Parameter("uint256", "refundAmount", 3, false)]
         public BigInteger RefundAmount { get; set; }
     }
 
