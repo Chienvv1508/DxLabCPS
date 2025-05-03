@@ -23,5 +23,6 @@ namespace DxLabCoworkingSpace
         [MinLength(5, ErrorMessage = "FullName phải có ít nhất 5 ký tự.")]
         public string FullName { get; set; } = null!;
         public bool Status { get; set; }
+
     }
 }

@@ -120,7 +120,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 WalletAddress = userinfo.WalletAddress,
                                 FullName = userinfo.FullName,
                                 RoleId = 3,
-                                Status = true
+                                Status = true,
+                                IsRegister = false
                             };
 
                             try
@@ -151,6 +152,20 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                         _mintedUsers[savedUser.WalletAddress] = currentTime;
                                         mintStatus = "Tạo 100 DXL cho sinh viên thành công!";
                                         Console.WriteLine($"Dat thoi gian tao cho {savedUser.WalletAddress} toi {currentTime}");
+
+                                        // Gọi registerUser trên blockchain
+                                        bool registerSuccess = await _labBookingJobService.RegisterUserOnBlockchain(savedUser.WalletAddress, savedUser.Email);
+                                        if (registerSuccess)
+                                        {
+                                            mintStatus += " Đăng ký người dùng trên blockchain thành công!";
+                                            Console.WriteLine($"Đã đăng ký {savedUser.WalletAddress} trên blockchain");
+                                        }
+                                        else
+                                        {
+                                            mintStatus += " Đăng ký người dùng trên blockchain thất bại!";
+                                            Console.WriteLine($"Đăng ký thất bại cho {savedUser.WalletAddress}");
+                                        }
+
                                     }
                                     else
                                     {
@@ -278,6 +293,20 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 _mintedUsers[user.WalletAddress] = currentTime;
                                 mintStatus = "Cấp 100 DXL cho sinh viên thành công!";
                                 Console.WriteLine($"Cap nhat thoi gian tao cho {user.WalletAddress} toi {currentTime}");
+
+                                // Gọi registerUser trên blockchain
+                                bool registerSuccess = await _labBookingJobService.RegisterUserOnBlockchain(user.WalletAddress, user.Email);
+                                if (registerSuccess)
+                                {
+                                    mintStatus += " Đăng ký người dùng trên blockchain thành công!";
+                                    Console.WriteLine($"Đã đăng ký {user.WalletAddress} trên blockchain");
+                                }
+                                else
+                                {
+                                    mintStatus += " Đăng ký người dùng trên blockchain thất bại!";
+                                    Console.WriteLine($"Đăng ký thất bại cho {user.WalletAddress}");
+                                }
+
                             }
                             else
                             {
@@ -311,6 +340,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 userDto.RoleId = user.RoleId;
                 userDto.FullName = user.FullName;
                 userDto.Status = user.Status;
+                
 
                 responseData = new
                 {

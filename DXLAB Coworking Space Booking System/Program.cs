@@ -182,7 +182,8 @@ builder.Services.AddScoped<ILabBookingCrawlerService>(sp =>
         contractAbi,
         sp.GetRequiredService<IUnitOfWork>(),
         sp.GetRequiredService<IAreaService>(),
-        sp.GetRequiredService<IAreaTypeService>()
+        sp.GetRequiredService<IAreaTypeService>(),
+        sp.GetRequiredService<ISlotService>()
     ));
 
 // Đăng ký LabBookingJobService
