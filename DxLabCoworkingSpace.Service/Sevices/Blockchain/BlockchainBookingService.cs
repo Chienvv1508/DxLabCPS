@@ -60,28 +60,37 @@ public class BlockchainBookingService : IBlockchainBookingService
 
     private async Task<BigInteger> GetNextNonce()
     {
-        try
+        const int maxRetries = 5; // Tăng số lần thử lại
+        for (int retry = 1; retry <= maxRetries; retry++)
         {
-            var pendingNonce = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
-                _web3.TransactionManager.Account.Address,
-                BlockParameter.CreatePending()
-            );
-            var confirmedNonce = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
-                _web3.TransactionManager.Account.Address,
-                BlockParameter.CreateLatest()
-            );
+            try
+            {
+                var pendingNonce = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
+                    _web3.TransactionManager.Account.Address,
+                    BlockParameter.CreatePending()
+                );
+                var confirmedNonce = await _web3.Eth.Transactions.GetTransactionCount.SendRequestAsync(
+                    _web3.TransactionManager.Account.Address,
+                    BlockParameter.CreateLatest()
+                );
 
-            var nextNonce = BigInteger.Max(pendingNonce.Value, confirmedNonce.Value);
-            _currentNonce = BigInteger.Max(nextNonce, _currentNonce + 1);
+                var nextNonce = BigInteger.Max(pendingNonce.Value, confirmedNonce.Value);
+                _currentNonce = BigInteger.Max(nextNonce, _currentNonce + 1);
 
-            Console.WriteLine($"Using nonce: {_currentNonce}");
-            return _currentNonce;
+                Console.WriteLine($"Using nonce: {_currentNonce}");
+                return _currentNonce;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Retry {retry}/{maxRetries} - Error getting nonce: {ex.Message}");
+                if (retry == maxRetries)
+                {
+                    throw new Exception($"Failed to get nonce after {maxRetries} retries: {ex.Message}");
+                }
+                await Task.Delay(5000 * retry);
+            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error getting nonce: {ex.Message}\nStackTrace: {ex.StackTrace}");
-            throw;
-        }
+        throw new Exception("Failed to get nonce after maximum retries.");
     }
 
     public async Task<(bool Success, string TransactionHash)> BookOnBlockchain(
@@ -138,111 +147,81 @@ public class BlockchainBookingService : IBlockchainBookingService
             return (false, null);
         }
 
-        // Kiểm tra allowance của user đối với hợp đồng Booking
-        var allowanceFunction = _tokenContract.GetFunction("allowance");
-        var currentAllowance = await allowanceFunction.CallAsync<BigInteger>(userWalletAddress, _bookingContractAddress);
-        Console.WriteLine($"Current allowance of {userWalletAddress} for Booking contract: {Nethereum.Util.UnitConversion.Convert.FromWei(currentAllowance)} tokens");
+        // Thử đăng ký user nếu chưa đăng ký (bỏ kiểm tra getUser)
+        var registerFunction = _bookingContract.GetFunction("registerUser");
+        string txHashRegister = null;
 
-        if (currentAllowance < requiredTokensWei)
+        for (int retry = 1; retry <= maxRetries; retry++)
         {
-            Console.WriteLine($"Insufficient allowance: {Nethereum.Util.UnitConversion.Convert.FromWei(currentAllowance)} < {requiredTokens} tokens. User must approve tokens first.");
-            return (false, null);
-        }
-
-        // Kiểm tra đăng ký user
-        var userCheckResult = await CheckUserRegistration(userWalletAddress);
-        if (!userCheckResult.Success)
-        {
-            return (false, null);
-        }
-        bool isRegistered = userCheckResult.IsRegistered;
-        string emailFromContract = userCheckResult.Email;
-
-        if (!isRegistered)
-        {
-            Console.WriteLine($"User {userWalletAddress} not registered. Proceeding to register...");
-            var registerFunction = _bookingContract.GetFunction("registerUser");
-            bool registered = false;
-            string txHashRegister = null;
-
-            for (int retry = 1; retry <= maxRetries && !registered; retry++)
+            try
             {
-                try
+                var nonce = await GetNextNonce();
+                var gasEstimate = await registerFunction.EstimateGasAsync(
+                    _web3.TransactionManager.Account.Address,
+                    null,
+                    new HexBigInteger(0),
+                    userWalletAddress,
+                    $"{userWalletAddress}@default.com",
+                    false
+                );
+
+                var gasLimit = new HexBigInteger(gasEstimate.Value * 120 / 100);
+                var gasPrice = await _web3.Eth.GasPrice.SendRequestAsync();
+                var adjustedGasPrice = new HexBigInteger(gasPrice.Value * 120 / 100);
+
+                var txInput = new TransactionInput(
+                    registerFunction.GetData(userWalletAddress, $"{userWalletAddress}@default.com", false),
+                    _bookingContractAddress,
+                    _web3.TransactionManager.Account.Address,
+                    gasLimit,
+                    adjustedGasPrice,
+                    new HexBigInteger(0)
+                )
                 {
-                    var nonce = await GetNextNonce();
-                    var gasEstimate = await registerFunction.EstimateGasAsync(
-                        _web3.TransactionManager.Account.Address,
-                        null,
-                        new HexBigInteger(0),
-                        userWalletAddress,
-                        $"{userWalletAddress}@default.com",
-                        false
-                    );
+                    Nonce = new HexBigInteger(nonce)
+                };
 
-                    var gasLimit = new HexBigInteger(gasEstimate.Value * 120 / 100);
-                    var gasPrice = await _web3.Eth.GasPrice.SendRequestAsync();
-                    var adjustedGasPrice = new HexBigInteger(gasPrice.Value * 120 / 100);
+                var signedTx = await _web3.TransactionManager.SignTransactionAsync(txInput);
+                txHashRegister = await _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + signedTx);
 
-                    var txInput = new TransactionInput(
-                        registerFunction.GetData(userWalletAddress, $"{userWalletAddress}@default.com", false),
-                        _bookingContractAddress,
-                        _web3.TransactionManager.Account.Address,
-                        gasLimit,
-                        adjustedGasPrice,
-                        new HexBigInteger(0)
-                    )
-                    {
-                        Nonce = new HexBigInteger(nonce)
-                    };
-
-                    var signedTx = await _web3.TransactionManager.SignTransactionAsync(txInput);
-                    txHashRegister = await _web3.Eth.Transactions.SendRawTransaction.SendRequestAsync("0x" + signedTx);
-
-                    var receipt = await WaitForReceipt(_web3, txHashRegister);
-                    if (receipt?.Status.Value != 1)
-                    {
-                        Console.WriteLine($"Registration failed: {(receipt == null ? "No receipt" : $"Status = {receipt.Status.Value}")}");
-                        return (false, txHashRegister);
-                    }
-
-                    var userCheckResultAfter = await CheckUserRegistration(userWalletAddress);
-                    if (!userCheckResultAfter.Success || !userCheckResultAfter.IsRegistered)
-                    {
-                        Console.WriteLine($"User {userWalletAddress} still not registered after transaction {txHashRegister}.");
-                        return (false, txHashRegister);
-                    }
-
-                    registered = true;
-                }
-                catch (Exception ex)
+                var receipt = await WaitForReceipt(_web3, txHashRegister);
+                if (receipt?.Status.Value != 1)
                 {
-                    Console.WriteLine($"Error registering user {userWalletAddress} (retry {retry}/{maxRetries}): {ex.Message}");
-                    if (retry == maxRetries)
-                    {
-                        return (false, txHashRegister);
-                    }
-                    await Task.Delay(5000 * retry);
+                    Console.WriteLine($"Registration failed: {(receipt == null ? "No receipt" : $"Status = {receipt.Status.Value}")}");
+                    return (false, txHashRegister);
                 }
+
+                Console.WriteLine($"User {userWalletAddress} registered successfully with txHash: {txHashRegister}");
+                break; // Đăng ký thành công, thoát vòng lặp
             }
-
-            if (!registered)
+            catch (Exception ex)
             {
-                return (false, txHashRegister);
+                if (ex.Message.Contains("User already registered"))
+                {
+                    Console.WriteLine($"User {userWalletAddress} is already registered. Proceeding to book...");
+                    break; // User đã đăng ký, tiếp tục gọi hàm book
+                }
+                Console.WriteLine($"Error registering user {userWalletAddress} (retry {retry}/{maxRetries}): {ex.Message}");
+                if (retry == maxRetries)
+                {
+                    return (false, txHashRegister);
+                }
+                await Task.Delay(5000 * retry);
             }
         }
 
-        // Gọi hàm book
+        // Gọi hàm book với userWalletAddress làm msg.sender
         var bookFunction = _bookingContract.GetFunction("book");
         bool booked = false;
         string txHashBook = null;
 
-        for (int retry = 1; retry <= maxRetries && !booked; retry++)
+        for (int retry = 1; retry <= maxRetries; retry++)
         {
             try
             {
                 var nonce = await GetNextNonce();
                 var gasEstimate = await bookFunction.EstimateGasAsync(
-                    _web3.TransactionManager.Account.Address,
+                    userWalletAddress, // Sử dụng địa chỉ user làm msg.sender
                     null,
                     new HexBigInteger(0),
                     roomId,
@@ -261,13 +240,14 @@ public class BlockchainBookingService : IBlockchainBookingService
                 var txInput = new TransactionInput(
                     bookFunction.GetData(roomId, roomName, areaId, areaName, position, slot, timestamp),
                     _bookingContractAddress,
-                    _web3.TransactionManager.Account.Address,
+                    _web3.TransactionManager.Account.Address, // Backend ký giao dịch
                     gasLimit,
                     adjustedGasPrice,
                     new HexBigInteger(0)
                 )
                 {
-                    Nonce = new HexBigInteger(nonce)
+                    Nonce = new HexBigInteger(nonce),
+                    From = userWalletAddress // Đặt userWalletAddress làm msg.sender
                 };
 
                 var signedTx = await _web3.TransactionManager.SignTransactionAsync(txInput);
@@ -284,11 +264,10 @@ public class BlockchainBookingService : IBlockchainBookingService
                     var filteredLogs = logs.Where(log => log.Topics[0].ToString().ToLower() == eventTopic.ToLower()).ToArray();
                     var eventLogs = Event<BookingCreatedEventDTO>.DecodeAllEvents(filteredLogs);
 
-
                     bool bookingConfirmed = false;
                     foreach (var log in eventLogs)
                     {
-                        var bookingIdFromEvent = log.Event.BookingId;
+                        var bookingIdFromEvent = (int)log.Event.BookingId;
                         var userFromEvent = log.Event.User;
                         if (bookingIdFromEvent == bookingId && userFromEvent.Equals(userWalletAddress, StringComparison.OrdinalIgnoreCase))
                         {
@@ -326,29 +305,12 @@ public class BlockchainBookingService : IBlockchainBookingService
         return (booked, txHashBook);
     }
 
-    private async Task<(bool Success, bool IsRegistered, string Email)> CheckUserRegistration(string userWalletAddress)
-    {
-        try
-        {
-            var getUserFunction = _bookingContract.GetFunction("getUser");
-            var userData = await getUserFunction.CallDeserializingToObjectAsync<UserData>(userWalletAddress);
-
-            Console.WriteLine($"User {userWalletAddress} registration status: isRegistered={userData.IsRegistered}, Email={userData.Email}");
-            return (true, userData.IsRegistered, userData.Email ?? "");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error calling getUser function for {userWalletAddress}: {ex.Message}\nStackTrace: {ex.StackTrace}");
-            return (true, false, "");
-        }
-    }
-
     private async Task<TransactionReceipt> WaitForReceipt(Web3 web3, string transactionHash)
     {
         if (string.IsNullOrEmpty(transactionHash))
             return null;
 
-        const int maxAttempts = 30;
+        const int maxAttempts = 60; // Tăng số lần thử lại
         const int delayMs = 5000;
         TransactionReceipt receipt = null;
         int attempts = 0;
@@ -395,28 +357,9 @@ public class BlockchainBookingService : IBlockchainBookingService
 
     public async Task<BigInteger> GetUserBalance(string walletAddress)
     {
-        var balanceFunction = _tokenContract.GetFunction("balanceOf");
-        return await balanceFunction.CallAsync<BigInteger>(walletAddress);
+        var balanceOfFunction = _tokenContract.GetFunction("balanceOf");
+        return await balanceOfFunction.CallAsync<BigInteger>(walletAddress);
     }
-}
-
-[FunctionOutput]
-public class UserData
-{
-    [Parameter("bool", "isRegistered", 1)]
-    public bool IsRegistered { get; set; }
-
-    [Parameter("bool", "isStaff", 2)]
-    public bool IsStaff { get; set; }
-
-    [Parameter("uint256", "consecutiveCancellations", 3)]
-    public BigInteger ConsecutiveCancellations { get; set; }
-
-    [Parameter("uint256", "blockEndTime", 4)]
-    public BigInteger BlockEndTime { get; set; }
-
-    [Parameter("string", "email", 5)]
-    public string Email { get; set; }
 }
 
 [Event("BookingCreated")]

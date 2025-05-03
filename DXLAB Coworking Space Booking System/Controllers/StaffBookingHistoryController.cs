@@ -292,15 +292,15 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return BadRequest(new ResponseDTO<object>(400, "Booking này đã hoàn thành!", null));
                 }
 
-                var currentTime = DateTime.Now;
-                var slotEndTime = bookingDetail.Slot?.EndTime ?? TimeSpan.Zero; // Xử lý null cho TimeSpan?
-                var bookingDate = bookingDetail.CheckoutTime.Value.Date;
-                var slotEndDateTime = bookingDate + slotEndTime;
+                //var currentTime = DateTime.Now;
+                //var slotEndTime = bookingDetail.Slot?.EndTime ?? TimeSpan.Zero; // Xử lý null cho TimeSpan?
+                //var bookingDate = bookingDetail.CheckoutTime.Value.Date;
+                //var slotEndDateTime = bookingDate + slotEndTime;
 
-                if (currentTime < bookingDetail.CheckoutTime)
-                {
-                    return BadRequest(new ResponseDTO<object>(400, $"Chưa đến thời gian check-out ({bookingDetail.CheckoutTime})!", null));
-                }
+                //if (currentTime < bookingDetail.CheckoutTime)
+                //{
+                //    return BadRequest(new ResponseDTO<object>(400, $"Chưa đến thời gian check-out ({bookingDetail.CheckoutTime})!", null));
+                //}
 
                 //if (currentTime > slotEndDateTime)
                 //{
