@@ -30,7 +30,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
         // Add Facility From Excel File
         [HttpPost("importexcel")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddFacilityFromExcel(IFormFile? file)
         {
             try
@@ -142,18 +142,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 await _facilityService.AddFacilityFromExcel(facilities);
-                //foreach(var item in facilitySatusList)
-                //{
-                //    var existedFaciStatus = await _facilityStatusSerive.Get(x => x.FailityId == item.FailityId && x.Status == 1 && x.BatchNumber == item.BatchNumber);
-                //    if(existedFaciStatus == null)
-                //    await _facilityStatusSerive.Add(item);
-                //    else
-                //    {
-                //        existedFaciStatus.Quantity += item.Quantity;
-                //        await _facilityStatusSerive.Update(item);
-
-                //    }   
-                //}
                 
                 var facilityDtos = _mapper.Map<IEnumerable<FacilitiesDTO>>(facilities);
                 return Created("", new ResponseDTO<IEnumerable<FacilitiesDTO>>(200, $"{facilities.Count} facility đã được thêm thành công!", facilityDtos));
@@ -174,7 +162,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
        
         // Add New Facility
         [HttpPost("createfacility")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateFacility([FromBody] FacilitiesDTO facilityDto)
         {
             try
@@ -245,6 +233,5 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi lấy facility: {ex.Message}", null));
             }
         }
-
     }
 }

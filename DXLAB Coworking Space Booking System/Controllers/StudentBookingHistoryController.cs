@@ -8,7 +8,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 {
     [Route("api/studentbookinghistory")]
     [ApiController]
-    //[Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student")]
     public class StudentBookingHistoryController : ControllerBase
     {
         private readonly IRoomService _roomService;

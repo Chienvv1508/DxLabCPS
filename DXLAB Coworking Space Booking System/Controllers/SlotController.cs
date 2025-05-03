@@ -19,22 +19,9 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         }
         // API Generate slot
         [HttpPost("create")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateSlots([FromBody] SlotGenerationRequest request)
         {
-            //if (!ModelState.IsValid)
-            //{
-            //    // Lấy lỗi từ ModelState
-            //    var errors = ModelState
-            //        .Where(m => m.Value.Errors.Any())
-            //        .SelectMany(m => m.Value.Errors)
-            //        .Select(e => e.ErrorMessage)
-            //        .Where(e => !string.IsNullOrEmpty(e))
-            //        .ToList();
-
-            //    string errorMessage = errors.Any() ? string.Join(", ", errors) : "Dữ liệu đầu vào không hợp lệ!";
-            //    return BadRequest(new ResponseDTO<object>(400, errorMessage, null));
-            //}
             try
             {
                 // Parse StartTime và EndTime
@@ -125,22 +112,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 DateTime expiredDate = await _slotService.GetNewExpiredDate(id);
                 existingSlot.ExpiredTime = expiredDate;
 
-                //// Đổi trạng thái: 1 -> 0, 0 -> 1
-                //int newStatus = existingSlot.Status == 1 ? 0 : 1;
-
-                //// Tạo entity để cập nhật
-                //var slotToUpdate = new Slot
-                //{
-                //    SlotId = id,
-                //    Status = newStatus
-                //};
-
                 // Gọi service để cập nhật
                 await _slotService.Update(existingSlot);
 
                 // Map lại thành DTO để trả về
                 var updatedSlotDto = _mapper.Map<SlotDTO>(existingSlot);
-               /* updatedSlotDto.Status = newStatus; */// Đảm bảo DTO phản ánh Status mới
                 return Ok(new ResponseDTO<SlotDTO>(200, $"Cập nhật trạng thái slot thành công!", updatedSlotDto));
             }
             catch (InvalidOperationException ex)

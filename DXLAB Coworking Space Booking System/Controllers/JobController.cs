@@ -23,8 +23,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         public async Task<IActionResult> SumaryExpense([FromBody] THJobExpenseDTO tHJobExpenseDTO)
         {
             try
-            {
-                
+            {           
                 _logger.LogInformation("Chạy job tổng hợp chi phí");
                 //Check date xem ngày có hơp lệ ko
                 if(tHJobExpenseDTO.dateSum > DateTime.Now)
@@ -64,8 +63,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
-
-            
         }
 
         [HttpGet("month")]
@@ -79,16 +76,8 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
 
                 DateTime date = new DateTime(year, month, 1);
-                //if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year && date.Month < DateTime.Now.Month))
-                //{
                     var sums = await _sumaryExpenseService.GetAll(x=>x.SumaryDate.Year == date.Year && x.SumaryDate.Month == date.Month);
-                    return Ok(new ResponseDTO<object>(200, "Lấy dữ liệu thành công", sums));
-               // }
-                //else
-                //{
-                //    return BadRequest(new ResponseDTO<object>(400,"Chưa tổng hợp chi phí cho tháng này!", null));
-                //}
-               
+                    return Ok(new ResponseDTO<object>(200, "Lấy dữ liệu thành công", sums));     
             }
             catch(Exception ex)
             {
@@ -101,8 +90,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
         {
             try
             {
-                //if (date.Year < DateTime.Now.Year || (date.Year == DateTime.Now.Year))
-                //{
                 if (year > 9999 || year < 2000 )
                 {
                     return BadRequest(new ResponseDTO<object>(400, "Nhập năm không hợp lệ!", null));
@@ -111,19 +98,11 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 DateTime date = new DateTime(year, 1, 1);
                 var sums = await _sumaryExpenseService.GetAll(x => x.SumaryDate.Year == date.Year);
                     return Ok(new ResponseDTO<object>(200, "Lấy dữ liệu thành công", sums));
-                //}
-                //else
-                //{
-                //    return BadRequest(new ResponseDTO<object>(400, "Chưa tổng hợp chi phí cho tháng này!", null));
-                //}
-
             }
             catch (Exception ex)
             {
                 return StatusCode(500);
             }
-            
         }
-
     }
 }

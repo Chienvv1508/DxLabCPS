@@ -58,17 +58,11 @@ namespace DxLabCoworkingSpace
         {
             return await _unitOfWork.AreaRepository.GetAllWithInclude(includes);
         }
-        //public async Task<Area> GetWithInclude(Expression<Func<Area, bool>> expression, params Expression<Func<Area, object>>[] includes)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
         public async Task<Area> GetWithInclude(Expression<Func<Area, bool>> expression, params Expression<Func<Area, object>>[] includes)
         {
             var x = await _unitOfWork.AreaRepository.GetAllWithInclude(includes);
             return x.FirstOrDefault(expression.Compile());
         }
-
         public async Task Update(Area entity)
         {
             try
@@ -86,7 +80,6 @@ namespace DxLabCoworkingSpace
                 }
 
                 await _unitOfWork.CommitAsync();
-
             }
             catch (Exception ex)
             {
@@ -117,7 +110,6 @@ namespace DxLabCoworkingSpace
                 if (fullInfoOfFaci == null)
                 {
                     return new ResponseDTO<object>(400, "Thông tin thiết bị nhập sai. Vui lòng nhập lại", null);
-
                 }
                 // item1: addable, item2: isfull, item3: mã lỗi
                 Tuple<bool, bool, string> checkIsAddable = await checkIsAddableAndStatusAfterAdd(fullInfoOfFaci, areaInRoom, faciAddDTO);
@@ -127,11 +119,9 @@ namespace DxLabCoworkingSpace
                 }
 
                 //check lượng đang có trong status
-
                 Tuple<bool, string> checkIsAvailFaciForAdd = await CheckIsAvailFaciForAdd(faciAddDTO, status);
                 if (checkIsAvailFaciForAdd.Item1 == false)
-                {
-                   
+                {  
                     return new ResponseDTO<object>(400, checkIsAvailFaciForAdd.Item2, null);
                 }
 

@@ -61,7 +61,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(120),
+                expires: DateTime.UtcNow.AddDays(14),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -130,7 +130,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Error adding new user: {ex.Message}");
+                                //Console.WriteLine($"Error adding new user: {ex.Message}");
                                 return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi thêm người dùng mới: {ex.Message}", null));
                             }
 
@@ -151,31 +151,31 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                     {
                                         _mintedUsers[savedUser.WalletAddress] = currentTime;
                                         mintStatus = "Tạo 100 DXL cho sinh viên thành công!";
-                                        Console.WriteLine($"Dat thoi gian tao cho {savedUser.WalletAddress} toi {currentTime}");
+                                        //Console.WriteLine($"Dat thoi gian tao cho {savedUser.WalletAddress} toi {currentTime}");
 
-                                        // Gọi registerUser trên blockchain
-                                        bool registerSuccess = await _labBookingJobService.RegisterUserOnBlockchain(savedUser.WalletAddress, savedUser.Email);
-                                        if (registerSuccess)
-                                        {
-                                            mintStatus += " Đăng ký người dùng trên blockchain thành công!";
-                                            Console.WriteLine($"Đã đăng ký {savedUser.WalletAddress} trên blockchain");
-                                        }
-                                        else
-                                        {
-                                            mintStatus += " Đăng ký người dùng trên blockchain thất bại!";
-                                            Console.WriteLine($"Đăng ký thất bại cho {savedUser.WalletAddress}");
-                                        }
+                                        //// Gọi registerUser trên blockchain
+                                        //bool registerSuccess = await _labBookingJobService.RegisterUserOnBlockchain(savedUser.WalletAddress, savedUser.Email);
+                                        //if (registerSuccess)
+                                        //{
+                                        //    mintStatus += " Đăng ký người dùng trên blockchain thành công!";
+                                        //    Console.WriteLine($"Đã đăng ký {savedUser.WalletAddress} trên blockchain");
+                                        //}
+                                        //else
+                                        //{
+                                        //    mintStatus += " Đăng ký người dùng trên blockchain thất bại!";
+                                        //    Console.WriteLine($"Đăng ký thất bại cho {savedUser.WalletAddress}");
+                                        //}
 
                                     }
                                     else
                                     {
                                         mintStatus = "Cấp DXL thất bại!";
-                                        Console.WriteLine($"Tao that bai cho {savedUser.WalletAddress}");
+                                        //Console.WriteLine($"Tao that bai cho {savedUser.WalletAddress}");
                                     }
                                 }
                                 catch (RpcResponseException rpcEx)
                                 {
-                                    Console.WriteLine($"RPC error while minting for {savedUser.WalletAddress}: {rpcEx.Message}");
+                                    //Console.WriteLine($"RPC error while minting for {savedUser.WalletAddress}: {rpcEx.Message}");
                                     mintStatus = "Cấp DXL thất bại do lỗi blockchain!";
                                 }
                             }
@@ -191,7 +191,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Error updating new user {savedUser.UserId}: {ex.Message}");
+                                //Console.WriteLine($"Error updating new user {savedUser.UserId}: {ex.Message}");
                                 return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi cập nhật AccessToken cho user mới: {ex.Message}", null));
                             }
 
@@ -213,7 +213,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         }
                         else
                         {
-                            Console.WriteLine($"Email {userinfo.Email} khong có đuoi @fpt.edu.vn");
+                            //Console.WriteLine($"Email {userinfo.Email} khong có đuoi @fpt.edu.vn");
                             return Unauthorized(new ResponseDTO<object>(401, "Email không tồn tại trong hệ thống!", null));
                         }
                     }
@@ -224,7 +224,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     // Kiểm tra định dạng WalletAddress
                     if (!IsValidEthereumAddress(userinfo.WalletAddress))
                     {
-                        Console.WriteLine($"Địa chỉ ví không hợp lệ: {userinfo.WalletAddress}");
+                        //Console.WriteLine($"Địa chỉ ví không hợp lệ: {userinfo.WalletAddress}");
                         return BadRequest(new ResponseDTO<object>(400, "Địa chỉ ví không hợp lệ!", null));
                     }
 
@@ -232,7 +232,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     user = await _userService.GetWithInclude(x => x.WalletAddress == userinfo.WalletAddress, u => u.Role);
                     if (user == null)
                     {
-                        Console.WriteLine($"Địa chỉ ví {userinfo.WalletAddress} không tồn tại trong hệ thống.");
+                        //Console.WriteLine($"Địa chỉ ví {userinfo.WalletAddress} không tồn tại trong hệ thống.");
                         return Unauthorized(new ResponseDTO<object>(401, "Địa chỉ ví không tồn tại trong hệ thống!", null));
                     }
                 }
@@ -248,7 +248,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
 
                 if ((string.IsNullOrEmpty(user.WalletAddress) || user.WalletAddress == "NULL") && !string.IsNullOrEmpty(userinfo.WalletAddress))
                 {
-                    Console.WriteLine($"Cap nhat dia chi vi cho nguoi dung {user.UserId} tu {user.WalletAddress} den {userinfo.WalletAddress}");
+                    //Console.WriteLine($"Cap nhat dia chi vi cho nguoi dung {user.UserId} tu {user.WalletAddress} den {userinfo.WalletAddress}");
                     user.WalletAddress = userinfo.WalletAddress;
                     try
                     {
@@ -256,7 +256,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error updating wallet address for user {user.UserId}: {ex.Message}");
+                        //Console.WriteLine($"Error updating wallet address for user {user.UserId}: {ex.Message}");
                         return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi cập nhật WalletAddress: {ex.Message}", null));
                     }
                 }
@@ -269,18 +269,18 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                         if ((currentTime - lastMintedTime).TotalHours >= 24)
                         {
                             shouldMint = true;
-                            Console.WriteLine($"Tao token cho {user.WalletAddress}: Lan tao moi nhat tai {lastMintedTime}, du dieu kien bay gio.");
+                            //Console.WriteLine($"Tao token cho {user.WalletAddress}: Lan tao moi nhat tai {lastMintedTime}, du dieu kien bay gio.");
                         }
                         else
                         {
                             mintStatus = "Tiền đã được cấp hôm nay!";
-                            Console.WriteLine($"Bo qua viec tao cho {user.WalletAddress}: Lan tao moi nhat o {lastMintedTime}, qua som.");
+                            //Console.WriteLine($"Bo qua viec tao cho {user.WalletAddress}: Lan tao moi nhat o {lastMintedTime}, qua som.");
                         }
                     }
                     else
                     {
                         shouldMint = true;
-                        Console.WriteLine($"Tao lan dau cho {user.WalletAddress}");
+                        //Console.WriteLine($"Tao lan dau cho {user.WalletAddress}");
                     }
 
                     if (shouldMint)
@@ -292,31 +292,31 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                             {
                                 _mintedUsers[user.WalletAddress] = currentTime;
                                 mintStatus = "Cấp 100 DXL cho sinh viên thành công!";
-                                Console.WriteLine($"Cap nhat thoi gian tao cho {user.WalletAddress} toi {currentTime}");
+                                //Console.WriteLine($"Cap nhat thoi gian tao cho {user.WalletAddress} toi {currentTime}");
 
-                                // Gọi registerUser trên blockchain
-                                bool registerSuccess = await _labBookingJobService.RegisterUserOnBlockchain(user.WalletAddress, user.Email);
-                                if (registerSuccess)
-                                {
-                                    mintStatus += " Đăng ký người dùng trên blockchain thành công!";
-                                    Console.WriteLine($"Đã đăng ký {user.WalletAddress} trên blockchain");
-                                }
-                                else
-                                {
-                                    mintStatus += " Đăng ký người dùng trên blockchain thất bại!";
-                                    Console.WriteLine($"Đăng ký thất bại cho {user.WalletAddress}");
-                                }
+                                //// Gọi registerUser trên blockchain
+                                //bool registerSuccess = await _labBookingJobService.RegisterUserOnBlockchain(user.WalletAddress, user.Email);
+                                //if (registerSuccess)
+                                //{
+                                //    mintStatus += " Đăng ký người dùng trên blockchain thành công!";
+                                //    Console.WriteLine($"Đã đăng ký {user.WalletAddress} trên blockchain");
+                                //}
+                                //else
+                                //{
+                                //    mintStatus += " Đăng ký người dùng trên blockchain thất bại!";
+                                //    Console.WriteLine($"Đăng ký thất bại cho {user.WalletAddress}");
+                                //}
 
                             }
                             else
                             {
                                 mintStatus = "Cấp DXL thất bại!";
-                                Console.WriteLine($"Tao that bai cho {user.WalletAddress}");
+                                //Console.WriteLine($"Tao that bai cho {user.WalletAddress}");
                             }
                         }
                         catch (RpcResponseException rpcEx)
                         {
-                            Console.WriteLine($"RPC error while minting for {user.WalletAddress}: {rpcEx.Message}");
+                            //Console.WriteLine($"RPC error while minting for {user.WalletAddress}: {rpcEx.Message}");
                             mintStatus = "Cấp DXL thất bại do lỗi blockchain!";
                         }
                     }
@@ -329,7 +329,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error updating user {user.UserId}: {ex.Message}");
+                    //Console.WriteLine($"Error updating user {user.UserId}: {ex.Message}");
                     return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi cập nhật AccessToken: {ex.Message}", null));
                 }
 
@@ -352,7 +352,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing user: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                //Console.WriteLine($"Error processing user: {ex.Message}\nStackTrace: {ex.StackTrace}");
                 return StatusCode(500, new ResponseDTO<object>(500, $"Lỗi khi xử lý người dùng: {ex.Message}", null));
             }
         }

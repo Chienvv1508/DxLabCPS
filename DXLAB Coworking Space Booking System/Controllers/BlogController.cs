@@ -153,8 +153,6 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                     return NotFound(new ResponseDTO<object>(404, "Không tìm thấy blog nào với trạng thái này!", null));
                 }
 
-
-
                 // Chỉ trả về các trường cần thiết trong response
                 var responseDtos = blogDtos.Select(dto => new
                 {
