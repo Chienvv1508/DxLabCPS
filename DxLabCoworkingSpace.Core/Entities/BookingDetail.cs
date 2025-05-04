@@ -14,8 +14,6 @@ namespace DxLabCoworkingSpace
         public int? AreaId { get; set; }
         public int? PositionId { get; set; }
         public decimal Price { get; set; }
-        public string BookingGenerate { get; set; }
-        public string TransactionHash { get; set; }
         public virtual Area? Area { get; set; }
         public virtual Booking? Booking { get; set; }
         public  Position? Position { get; set; }

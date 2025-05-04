@@ -54,128 +54,128 @@ namespace DxLabCoworkingSpace
             string email = null,
             bool? isStaff = null)
         {
-            if (eventType.StartsWith("User"))
-            {
-                var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress.ToLower() == userAddress.ToLower());
-                if (user == null && userAddress != null)
-                {
-                    // Tạo người dùng mới
-                    user = new User
-                    {
-                        Email = string.IsNullOrEmpty(email) ? $"{userAddress}@default.com" : email,
-                        FullName = "Unknown",
-                        WalletAddress = userAddress,
-                        RoleId = isStaff.HasValue && isStaff.Value ? 2 : 3, // 2 cho Staff, 3 cho Student
-                        Status = eventType == "UserBlocked" ? false : true,
-                        //IsRegister = eventType == "UserRegistered" // Đặt IsRegistered = true cho UserRegistered
-                    };
-                    await _unitOfWork.UserRepository.Add(user);
-                }
-                else if (user != null)
-                {
-                    // Cập nhật người dùng hiện có
-                    if (eventType == "UserRegistered")
-                    {
-                        if (!string.IsNullOrEmpty(email))
-                        {
-                            user.Email = email;
-                        }
-                        //user.IsRegister = true; // Cập nhật IsRegistered = true
-                        user.RoleId = isStaff.HasValue && isStaff.Value ? 2 : 3; // Cập nhật RoleId
-                        user.Status = true;
-                    }
-                    else if (eventType == "UserBlocked")
-                    {
-                        user.Status = false;
-                    }
-                    else if (eventType == "UserUnblocked")
-                    {
-                        user.Status = true;
-                    }
-                    _unitOfWork.UserRepository.Update(user);
-                }
-                await _unitOfWork.CommitAsync();
-                Console.WriteLine($"Processed {eventType} for user {userAddress}, txHash: {transactionHash}");
-            }
-            else if (eventType == "Created")
-            {
-                Console.WriteLine($"Processing BookingCreated event with transactionHash: {transactionHash}, bookingId: {bookingId}");
+            //if (eventType.StartsWith("User"))
+            //{
+            //    var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress.ToLower() == userAddress.ToLower());
+            //    if (user == null && userAddress != null)
+            //    {
+            //        // Tạo người dùng mới
+            //        user = new User
+            //        {
+            //            Email = string.IsNullOrEmpty(email) ? $"{userAddress}@default.com" : email,
+            //            FullName = "Unknown",
+            //            WalletAddress = userAddress,
+            //            RoleId = isStaff.HasValue && isStaff.Value ? 2 : 3, // 2 cho Staff, 3 cho Student
+            //            Status = eventType == "UserBlocked" ? false : true,
+            //            //IsRegister = eventType == "UserRegistered" // Đặt IsRegistered = true cho UserRegistered
+            //        };
+            //        await _unitOfWork.UserRepository.Add(user);
+            //    }
+            //    else if (user != null)
+            //    {
+            //        // Cập nhật người dùng hiện có
+            //        if (eventType == "UserRegistered")
+            //        {
+            //            if (!string.IsNullOrEmpty(email))
+            //            {
+            //                user.Email = email;
+            //            }
+            //            //user.IsRegister = true; // Cập nhật IsRegistered = true
+            //            user.RoleId = isStaff.HasValue && isStaff.Value ? 2 : 3; // Cập nhật RoleId
+            //            user.Status = true;
+            //        }
+            //        else if (eventType == "UserBlocked")
+            //        {
+            //            user.Status = false;
+            //        }
+            //        else if (eventType == "UserUnblocked")
+            //        {
+            //            user.Status = true;
+            //        }
+            //        _unitOfWork.UserRepository.Update(user);
+            //    }
+            //    await _unitOfWork.CommitAsync();
+            //    Console.WriteLine($"Processed {eventType} for user {userAddress}, txHash: {transactionHash}");
+            //}
+            //else if (eventType == "Created")
+            //{
+            //    Console.WriteLine($"Processing BookingCreated event with transactionHash: {transactionHash}, bookingId: {bookingId}");
 
-                var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress.ToLower() == userAddress.ToLower());
-                if (user == null && userAddress != null)
-                {
-                    user = new User
-                    {
-                        Email = $"{userAddress}@default.com",
-                        FullName = "Unknown",
-                        WalletAddress = userAddress,
-                        RoleId = 3, // Mặc định là Student
-                        Status = true,
-                        //IsRegister = false // Người dùng mới từ BookingCreated chưa chắc đã đăng ký
-                    };
-                    await _unitOfWork.UserRepository.Add(user);
-                    await _unitOfWork.CommitAsync();
-                }
+            //    var user = await _unitOfWork.UserRepository.Get(u => u.WalletAddress.ToLower() == userAddress.ToLower());
+            //    if (user == null && userAddress != null)
+            //    {
+            //        user = new User
+            //        {
+            //            Email = $"{userAddress}@default.com",
+            //            FullName = "Unknown",
+            //            WalletAddress = userAddress,
+            //            RoleId = 3, // Mặc định là Student
+            //            Status = true,
+            //            //IsRegister = false // Người dùng mới từ BookingCreated chưa chắc đã đăng ký
+            //        };
+            //        await _unitOfWork.UserRepository.Add(user);
+            //        await _unitOfWork.CommitAsync();
+            //    }
 
-                var slot = await _slotService.Get(s => s.SlotNumber == (int)slotId.Value);
-                if (slot == null)
-                {
-                    Console.WriteLine($"Slot with SlotNumber {slotId} not found in database. Skipping.");
-                    return;
-                }
+            //    var slot = await _slotService.Get(s => s.SlotNumber == (int)slotId.Value);
+            //    if (slot == null)
+            //    {
+            //        Console.WriteLine($"Slot with SlotNumber {slotId} not found in database. Skipping.");
+            //        return;
+            //    }
 
-                var area = await _areaService.GetWithInclude(
-                    a => a.RoomId == (int)roomId.Value && a.AreaTypeId == (int)areaTypeId.Value && a.Status == 1,
-                    a => a.AreaType);
-                if (area == null)
-                {
-                    Console.WriteLine($"Area with RoomId {roomId} and AreaTypeId {areaTypeId} not found. Skipping.");
-                    return;
-                }
+            //    var area = await _areaService.GetWithInclude(
+            //        a => a.RoomId == (int)roomId.Value && a.AreaTypeId == (int)areaTypeId.Value && a.Status == 1,
+            //        a => a.AreaType);
+            //    if (area == null)
+            //    {
+            //        Console.WriteLine($"Area with RoomId {roomId} and AreaTypeId {areaTypeId} not found. Skipping.");
+            //        return;
+            //    }
 
-                if (user == null)
-                {
-                    Console.WriteLine($"User with WalletAddress {userAddress} not found. Skipping.");
-                    return;
-                }
+            //    if (user == null)
+            //    {
+            //        Console.WriteLine($"User with WalletAddress {userAddress} not found. Skipping.");
+            //        return;
+            //    }
 
-                var bookingDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime;
-                var existingBookingDetail = await _unitOfWork.BookingDetailRepository.GetWithInclude(
-                    bd => bd.SlotId == slot.SlotId &&
-                          bd.Booking.BookingCreatedDate.Date == bookingDate.Date &&
-                          bd.AreaId == area.AreaId &&
-                          bd.Booking.UserId == user.UserId,
-                    bd => bd.Booking);
+            //    var bookingDate = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime;
+            //    var existingBookingDetail = await _unitOfWork.BookingDetailRepository.GetWithInclude(
+            //        bd => bd.SlotId == slot.SlotId &&
+            //              bd.Booking.BookingCreatedDate.Date == bookingDate.Date &&
+            //              bd.AreaId == area.AreaId &&
+            //              bd.Booking.UserId == user.UserId,
+            //        bd => bd.Booking);
 
-                if (existingBookingDetail == null)
-                {
-                    Console.WriteLine($"No matching booking detail found for RoomId {roomId}, AreaTypeId {areaTypeId}, SlotId {slot.SlotId}, Time {timestamp}. Skipping.");
-                    return;
-                }
+            //    if (existingBookingDetail == null)
+            //    {
+            //        Console.WriteLine($"No matching booking detail found for RoomId {roomId}, AreaTypeId {areaTypeId}, SlotId {slot.SlotId}, Time {timestamp}. Skipping.");
+            //        return;
+            //    }
 
-                existingBookingDetail.BookingGenerate = bookingId;
-                existingBookingDetail.TransactionHash = transactionHash;
-                _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
-                await _unitOfWork.CommitAsync();
+            //    //existingBookingDetail.BookingGenerate = bookingId;
+            //    //existingBookingDetail.TransactionHash = transactionHash;
+            //    _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
+            //    await _unitOfWork.CommitAsync();
 
-                Console.WriteLine($"Updated BookingDetail {existingBookingDetail.BookingDetailId} with BookingGenerate: {bookingId}, TransactionHash: {transactionHash}");
-            }
-            else if (eventType == "Cancelled")
-            {
-                var parsedBookingId = bookingId;
-                var existingBookingDetail = await _unitOfWork.BookingDetailRepository.Get(bd => bd.BookingGenerate == parsedBookingId);
-                if (existingBookingDetail == null)
-                {
-                    Console.WriteLine($"BookingDetail with BookingGenerate {parsedBookingId} not found for cancellation. Skipping.");
-                    return;
-                }
+            //    Console.WriteLine($"Updated BookingDetail {existingBookingDetail.BookingDetailId} with BookingGenerate: {bookingId}, TransactionHash: {transactionHash}");
+            //}
+            //else if (eventType == "Cancelled")
+            //{
+            //    var parsedBookingId = bookingId;
+            //   // var existingBookingDetail = await _unitOfWork.BookingDetailRepository.Get(bd => bd.BookingGenerate == parsedBookingId);
+            //    if (existingBookingDetail == null)
+            //    {
+            //        Console.WriteLine($"BookingDetail with BookingGenerate {parsedBookingId} not found for cancellation. Skipping.");
+            //        return;
+            //    }
 
-                existingBookingDetail.Status = 0; // Hủy
-                _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
-                await _unitOfWork.CommitAsync();
+            //    existingBookingDetail.Status = 0; // Hủy
+            //    _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
+            //    await _unitOfWork.CommitAsync();
 
-                Console.WriteLine($"Processed BookingCancelled for BookingGenerate {parsedBookingId}, txHash: {transactionHash}");
-            }
+            //    Console.WriteLine($"Processed BookingCancelled for BookingGenerate {parsedBookingId}, txHash: {transactionHash}");
+            //}
         }
 
         public async Task CrawlBookingEventsAsync(int fromBlock, int toBlock)
