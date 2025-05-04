@@ -153,29 +153,29 @@ namespace DxLabCoworkingSpace
                     return;
                 }
 
-                existingBookingDetail.BookingGenerate = bookingId;
-                existingBookingDetail.TransactionHash = transactionHash;
+                //existingBookingDetail.BookingGenerate = bookingId;
+                //existingBookingDetail.TransactionHash = transactionHash;
                 _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
                 await _unitOfWork.CommitAsync();
 
                 Console.WriteLine($"Updated BookingDetail {existingBookingDetail.BookingDetailId} with BookingGenerate: {bookingId}, TransactionHash: {transactionHash}");
             }
-            else if (eventType == "Cancelled")
-            {
-                var parsedBookingId = bookingId;
-                var existingBookingDetail = await _unitOfWork.BookingDetailRepository.Get(bd => bd.BookingGenerate == parsedBookingId);
-                if (existingBookingDetail == null)
-                {
-                    Console.WriteLine($"BookingDetail with BookingGenerate {parsedBookingId} not found for cancellation. Skipping.");
-                    return;
-                }
+            //else if (eventType == "Cancelled")
+            //{
+            //    var parsedBookingId = bookingId;
+            //    var existingBookingDetail = await _unitOfWork.BookingDetailRepository.Get(bd => bd.BookingGenerate == parsedBookingId);
+            //    if (existingBookingDetail == null)
+            //    {
+            //        Console.WriteLine($"BookingDetail with BookingGenerate {parsedBookingId} not found for cancellation. Skipping.");
+            //        return;
+            //    }
 
-                existingBookingDetail.Status = 0; // Hủy
-                _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
-                await _unitOfWork.CommitAsync();
+            //    existingBookingDetail.Status = 0; // Hủy
+            //    _unitOfWork.BookingDetailRepository.Update(existingBookingDetail);
+            //    await _unitOfWork.CommitAsync();
 
-                Console.WriteLine($"Processed BookingCancelled for BookingGenerate {parsedBookingId}, txHash: {transactionHash}");
-            }
+            //    Console.WriteLine($"Processed BookingCancelled for BookingGenerate {parsedBookingId}, txHash: {transactionHash}");
+            //}
         }
 
         public async Task CrawlBookingEventsAsync(int fromBlock, int toBlock)
