@@ -121,7 +121,7 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                                 FullName = userinfo.FullName,
                                 RoleId = 3,
                                 Status = true,
-                                IsRegister = false
+                                //IsRegister = false
                             };
 
                             try

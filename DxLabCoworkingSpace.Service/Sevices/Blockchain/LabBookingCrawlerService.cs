@@ -67,7 +67,7 @@ namespace DxLabCoworkingSpace
                         WalletAddress = userAddress,
                         RoleId = isStaff.HasValue && isStaff.Value ? 2 : 3, // 2 cho Staff, 3 cho Student
                         Status = eventType == "UserBlocked" ? false : true,
-                        IsRegister = eventType == "UserRegistered" // Đặt IsRegistered = true cho UserRegistered
+                        //IsRegister = eventType == "UserRegistered" // Đặt IsRegistered = true cho UserRegistered
                     };
                     await _unitOfWork.UserRepository.Add(user);
                 }
@@ -80,7 +80,7 @@ namespace DxLabCoworkingSpace
                         {
                             user.Email = email;
                         }
-                        user.IsRegister = true; // Cập nhật IsRegistered = true
+                        //user.IsRegister = true; // Cập nhật IsRegistered = true
                         user.RoleId = isStaff.HasValue && isStaff.Value ? 2 : 3; // Cập nhật RoleId
                         user.Status = true;
                     }
@@ -111,7 +111,7 @@ namespace DxLabCoworkingSpace
                         WalletAddress = userAddress,
                         RoleId = 3, // Mặc định là Student
                         Status = true,
-                        IsRegister = false // Người dùng mới từ BookingCreated chưa chắc đã đăng ký
+                        //IsRegister = false // Người dùng mới từ BookingCreated chưa chắc đã đăng ký
                     };
                     await _unitOfWork.UserRepository.Add(user);
                     await _unitOfWork.CommitAsync();

@@ -16,6 +16,7 @@ namespace DxLabCoworkingSpace
         Task<ResponseDTO<object>> GetAreasManagementInRoom(int roomId);
         Task<ResponseDTO<Area>> RemoveArea(int areaid);
         Task<ResponseDTO<object>> RemoveFaciFromArea(RemoveFaciDTO removedFaciDTO);
+        Task<ResponseDTO<object>> RemoveFaciFromReport(int reportId, RemoveFaciDTO removedFaciDTO);
         Task<ResponseDTO<Area>> SetExpiredTimeToArea(int areaId);
     }
 }

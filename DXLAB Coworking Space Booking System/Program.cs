@@ -94,7 +94,7 @@ if (string.IsNullOrEmpty(contractAddress))
     throw new Exception("ContractAddress is missing in appsettings.json");
 
 // Đọc contract ABI từ file với đường dẫn chính xác
-var contractAbiPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "Booking.json");
+var contractAbiPath = Path.Combine(Directory.GetCurrentDirectory(), "contracts", "Booking.json");
 if (!File.Exists(contractAbiPath))
     throw new Exception($"Contract ABI file not found at: {contractAbiPath}");
 

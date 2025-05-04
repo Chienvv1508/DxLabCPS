@@ -347,6 +347,13 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
                 {
                     return Ok(new ResponseDTO<object>(200, "Không có báo cáo nào!", null));
                 }
+                List<Report> lsReport = new List<Report>();
+                foreach (var report in reports)
+                {
+                    if(report.FacilityQuantity > 0)
+                        lsReport.Add(report);
+                }
+                reports = lsReport;
 
                 var responseData = new List<ReportResponseDTO>();
                 foreach (var report in reports)

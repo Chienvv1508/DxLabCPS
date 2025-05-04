@@ -34,8 +34,8 @@ public class BlockchainBookingService : IBlockchainBookingService
         var sepoliaRpcUrl = configuration.GetSection("Network")["ProviderCrawl"]
             ?? "https://sepolia.infura.io/v3/ce5f177778e547a19055596b216fd743";
 
-        string labBookingPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "Booking.json");
-        string tokenPath = Path.Combine(Directory.GetCurrentDirectory(), "Contracts", "DXLABCoin.json");
+        string labBookingPath = Path.Combine(Directory.GetCurrentDirectory(), "contracts", "Booking.json");
+        string tokenPath = Path.Combine(Directory.GetCurrentDirectory(), "contracts", "DXLABCoin.json");
 
         if (!File.Exists(labBookingPath))
             throw new FileNotFoundException($"Booking ABI file not found at {labBookingPath}");

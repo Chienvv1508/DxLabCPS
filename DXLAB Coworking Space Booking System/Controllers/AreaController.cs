@@ -75,6 +75,19 @@ namespace DXLAB_Coworking_Space_Booking_System.Controllers
             return StatusCode(result.StatusCode, result);
 
         }
+
+
+        [HttpPost("faciremovingreport")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RemoveFaciFromReport(int reportId,[FromBody] RemoveFaciDTO removedFaciDTO)
+        {
+
+            ResponseDTO<object> result = await _areaService.RemoveFaciFromReport(reportId,removedFaciDTO);
+            return StatusCode(result.StatusCode, result);
+
+        }
+
+
         [HttpPost("faciremovereport")]
         public async Task<IActionResult> GetAllBrokenFaciReport([FromBody] BrokernFaciReportDTO removedFaciDTO)
         {

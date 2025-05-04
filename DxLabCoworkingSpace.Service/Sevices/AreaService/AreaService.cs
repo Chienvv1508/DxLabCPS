@@ -979,6 +979,45 @@ namespace DxLabCoworkingSpace
             }
         }
 
-       
+        public async Task<ResponseDTO<object>> RemoveFaciFromReport(int reportId, RemoveFaciDTO removedFaciDTO)
+        {
+            try
+            {
+                var isValid = ValidationModel<RemoveFaciDTO>.ValidateModel(removedFaciDTO);
+                if (isValid.Item1 == false)
+                {
+                    return new ResponseDTO<object>(400, isValid.Item2, null);
+                }
+                var report = await _unitOfWork.ReportRepository.Get(x => x.FacilityQuantity > 0 && x.ReportId == reportId);
+                if(report == null)
+                {
+                    return new ResponseDTO<object>(400, "Không tìm thấy báo cáo này!", null);
+                }
+                if(report.FacilityQuantity < removedFaciDTO.Quantity)
+                {
+                    return new ResponseDTO<object>(400, "Số lượng xóa nhiều hơn số lượng trong báo cáo", null);
+                }
+                var existedFaciInArea = await _unitOfWork.UsingFacilityRepository.Get(x => x.FacilityId == removedFaciDTO.FacilityId &&
+                 x.AreaId == removedFaciDTO.AreaId && x.BatchNumber == removedFaciDTO.BatchNumber && x.ImportDate == removedFaciDTO.ImportDate
+                 );
+                if (existedFaciInArea == null)
+                {
+
+                    return new ResponseDTO<object>(400, "Không thấy thiết bị hoặc phòng tương ứng. Vui lòng nhập lại", null);
+                }
+                report.FacilityQuantity -= removedFaciDTO.Quantity;
+
+                await Update(removedFaciDTO);
+                
+
+
+                return new ResponseDTO<object>(200, "Cập nhập thành công", null);
+
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO<object>(500, "Lỗi cơ sở dữ liệu", null);
+            }
+        }
     }
 }

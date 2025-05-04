@@ -19,7 +19,6 @@ namespace DxLabCoworkingSpace
         public string FullName { get; set; } = null!;
         public string? WalletAddress { get; set; }
         public bool Status { get; set; }
-        public bool? IsRegister {  get; set; }
 
         public virtual Role? Role { get; set; }
         public virtual ICollection<Blog> Blogs { get; set; }
