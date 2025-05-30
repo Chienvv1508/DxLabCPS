@@ -26,11 +26,11 @@ namespace JobService
                 try
                 {
                     int.TryParse(_configuration["UltilizationRate:Start"], out int start);
-                    _logger.LogInformation($"{start}");
+                    _logger.LogInformation($"Hiệu suất: {start}");
                     int.TryParse(_configuration["UltilizationRate:End"], out int end);
-                    _logger.LogInformation($"{end}");
+                    _logger.LogInformation($"Hiệu suất:  {end}");
                     int.TryParse(DateTime.Now.ToString("HHmm"), out int realTime);
-                    _logger.LogInformation($"{realTime}");
+                    _logger.LogInformation($"Hiệu suất: {realTime}");
 
                     if (realTime >= start && realTime <= end)
                     {
@@ -38,7 +38,7 @@ namespace JobService
                         var response = await _httpClient.PostAsync(apiUrl, null, stoppingToken);
                         if (response.IsSuccessStatusCode)
                         {
-                            _logger.LogInformation("Chạy thành công");
+                            _logger.LogInformation("Chạy thành công hiệu suất");
                         }
                         else
                             _logger.LogInformation("Chạy thất bại");
